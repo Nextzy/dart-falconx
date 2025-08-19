@@ -1,0 +1,41 @@
+name: dart_falconx
+description: A dart falcon package.
+version: 1.0.0
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+workspace:
+  - dart_falconnect
+  - dart_falmodel
+  - dart_faltool
+
+dev_dependencies:
+  melos: ^7.0.0
+
+melos:
+  scripts:
+    get:
+      description: Get dependencies for all packages
+      run: dart pub get
+      exec:
+        concurrency: 3
+
+    upgrade:
+      description: Upgrade dependencies in all packages
+      run: dart pub upgrade
+      exec:
+        concurrency: 3
+
+    outdated:
+      description: Check outdated dependencies
+      run: dart pub outdated
+      exec:
+        concurrency: 1
+
+    build_runner:
+      description: Run build_runner in all packages
+      run: dart pub run build_runner build --delete-conflicting-outputs
+      exec:
+        concurrency: 3
+

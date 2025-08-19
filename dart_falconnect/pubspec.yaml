@@ -1,0 +1,30 @@
+name: dart_falconnect
+description: A new Flutter package project.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  dart_faltool:
+    path: ../dart_faltool
+  dart_falmodel:
+    path: ../dart_falmodel
+
+  #PLATFORM: All
+  ansicolor: ^2.0.3
+  dio: ^5.9.0
+  retrofit: ^4.7.1
+  web_socket_channel: ^3.0.3
+  dio_cache_interceptor: ^4.0.3
+  freezed_annotation: ^3.1.0
+
+dev_dependencies:
+  test: ^1.26.3
+  build_runner: ^2.7.0
+  json_serializable: ^6.10.0
+  freezed: ^3.2.0
+  very_good_analysis: ^9.0.0
