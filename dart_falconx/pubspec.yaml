@@ -1,0 +1,22 @@
+name: dart_falconx
+description: A dart falcon package.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  dart_falconnect:
+    path: ../dart_falconnect
+  dart_falmodel:
+    path: ../dart_falmodel
+  dart_faltool:
+    path: ../dart_faltool
+
+dev_dependencies:
+  test: ^1.26.3
+  build_runner: ^2.7.0
+  very_good_analysis: ^9.0.0

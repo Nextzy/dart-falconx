@@ -1,4 +1,4 @@
-name: dart_falconx
+name: dart_falconx_core
 description: A dart falcon package.
 version: 1.0.0
 
@@ -7,6 +7,7 @@ environment:
 
 workspace:
   - dart_falconnect
+  - dart_falconx
   - dart_falmodel
   - dart_faltool
 
