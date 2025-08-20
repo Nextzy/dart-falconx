@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
 class BadGatewayException extends ServerNetworkException {
   const BadGatewayException({

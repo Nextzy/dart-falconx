@@ -20,13 +20,13 @@ melos:
       description: Get dependencies for all packages
       run: dart pub get
       exec:
-        concurrency: 3
+        concurrency: 1
 
     upgrade:
       description: Upgrade dependencies in all packages
       run: dart pub upgrade
       exec:
-        concurrency: 3
+        concurrency: 1
 
     outdated:
       description: Check outdated dependencies
@@ -38,5 +38,5 @@ melos:
       description: Run build_runner in all packages
       run: dart pub run build_runner build --delete-conflicting-outputs
       exec:
-        concurrency: 3
+        concurrency: 1
 

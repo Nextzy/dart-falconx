@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class InternalServerErrorException extends ServerNetworkException {
-  const InternalServerErrorException({
-    super.statusCode = 500,
+class MethodNotAllowedException extends ClientNetworkException {
+  const MethodNotAllowedException({
+    super.statusCode = 405,
     super.type,
     super.statusMessage,
     super.errorMessage,

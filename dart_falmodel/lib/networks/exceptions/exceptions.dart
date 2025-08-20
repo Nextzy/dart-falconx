@@ -1,3 +1,4 @@
+export 'base_http_exception.dart';
 export 'code4XX/authentication_exception.dart';
 export 'code4XX/bad_request_exception.dart';
 export 'code4XX/client_error_exception.dart';

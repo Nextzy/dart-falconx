@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class NotFoundException extends ClientNetworkException {
-  const NotFoundException({
-    super.statusCode = 404,
+class BadRequestException extends ClientNetworkException {
+  const BadRequestException({
+    super.statusCode = 400,
     super.type,
     super.statusMessage,
     super.errorMessage,

@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class NotImplementException extends ServerNetworkException {
-  const NotImplementException({
-    super.statusCode = 501,
+class UnauthorizedException extends ClientNetworkException {
+  const UnauthorizedException({
+    super.statusCode = 401,
     super.type,
     super.statusMessage,
     super.errorMessage,

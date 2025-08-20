@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class ServiceUnavailableException extends ServerNetworkException {
-  const ServiceUnavailableException({
-    super.statusCode = 503,
+class InternalServerErrorException extends ServerNetworkException {
+  const InternalServerErrorException({
+    super.statusCode = 500,
     super.type,
     super.statusMessage,
     super.errorMessage,

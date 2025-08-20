@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/engine/https/exceptions/base_http_exception.dart';
+import 'package:dart_falmodel/lib.dart';
 
 /// Base class for all 4XX client error exceptions.
 /// 

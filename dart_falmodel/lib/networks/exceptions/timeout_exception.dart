@@ -1,13 +1,17 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class NoInternetConnectException implements Exception {
-  const NoInternetConnectException({
+class NetworkTimeoutException implements Exception {
+  const NetworkTimeoutException({
     this.message,
     this.requestOptions,
+    this.response,
     this.stackTrace,
+    this.timeout,
   });
 
   final String? message;
+  final Duration? timeout;
+  final Response? response;
   final RequestOptions? requestOptions;
   final StackTrace? stackTrace;
 
@@ -21,6 +25,7 @@ class NoInternetConnectException implements Exception {
       DioException(
         requestOptions:
             requestOptions ?? this.requestOptions ?? RequestOptions(),
+        response: response ?? this.response,
         error: this,
         stackTrace: stackTrace ?? this.stackTrace ?? StackTrace.current,
         type: type ?? DioExceptionType.unknown,
@@ -30,9 +35,13 @@ class NoInternetConnectException implements Exception {
   @override
   String toString() {
     var msg = '';
+    if (timeout != null) {
+      msg += '>>Timeout: $timeout\n';
+    }
     if (message != null && message!.isNotEmpty) {
       msg += '>>Message: $message\n';
     }
+    if (response != null) msg += '>>Response: $response\n';
     return msg;
   }
 }
