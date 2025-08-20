@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/engine/https/exceptions/base_http_exception.dart';
+import 'package:dart_falmodel/lib.dart';
 
 /// Exception for non-standard HTTP error status codes.
 ///

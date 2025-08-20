@@ -417,6 +417,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.10.0"
+  lints:
+    dependency: transitive
+    description:
+      name: lints
+      sha256: a5e2b223cb7c9c8efdc663ef484fdd95bb243bff242ef5b13e26883547fce9a0
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
   logger:
     dependency: transitive
     description:
@@ -537,6 +545,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  protobuf:
+    dependency: transitive
+    description:
+      name: protobuf
+      sha256: de9c9eb2c33f8e933a42932fe1dc504800ca45ebc3d673e6ed7f39754ee4053e
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2.0"
   pub_semver:
     dependency: transitive
     description:
@@ -569,6 +585,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.7.1"
+  retrofit_generator:
+    dependency: transitive
+    description:
+      name: retrofit_generator
+      sha256: c72bb844c0603df3459611f4315ec021726b27c9daa0633e649115862c3ea9ac
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.0.2"
   retry:
     dependency: transitive
     description:

@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
 class BatchJsonRpcBody<RESPONSE,ERROR> extends JsonRpc {
   const BatchJsonRpcBody({

@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class MethodNotAllowedException extends ClientNetworkException {
-  const MethodNotAllowedException({
-    super.statusCode = 405,
+class ServiceUnavailableException extends ServerNetworkException {
+  const ServiceUnavailableException({
+    super.statusCode = 503,
     super.type,
     super.statusMessage,
     super.errorMessage,

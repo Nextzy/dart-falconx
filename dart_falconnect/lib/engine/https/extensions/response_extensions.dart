@@ -1,6 +1,6 @@
 import 'package:dart_falconnect/lib.dart';
 
-extension dart_falconnectHttpFutureDynamicExtensions on Future<Response<dynamic>> {
+extension DartFalconnectHttpFutureDynamicExtensions on Future<Response<dynamic>> {
   Future<Response<T>> mapJson<T>(
       FutureOr<T> Function(Map<String, Object?> response) f) {
     return then((Response<dynamic> response) async {
@@ -18,7 +18,7 @@ extension dart_falconnectHttpFutureDynamicExtensions on Future<Response<dynamic>
   }
 }
 
-extension dart_falconnectFutureResponseExtensions<T> on Future<Response<T>> {
+extension DartFalconnectFutureResponseExtensions<T> on Future<Response<T>> {
   Future<T> unwrapResponse() {
     return then<T>((Response<T> response) {
       return Future.value(response.data);
@@ -41,7 +41,7 @@ extension dart_falconnectFutureResponseExtensions<T> on Future<Response<T>> {
   }
 }
 
-extension dart_falconnectHttpFutureRpcResponseExtensions<T, E>
+extension DartFalconnectHttpFutureRpcResponseExtensions<T, E>
     on Future<JsonRpcResponse<T, E>> {
   Future<T> unwrapResponse() {
     return then<T>((JsonRpcResponse<T, E> response) {
@@ -65,7 +65,7 @@ extension dart_falconnectHttpFutureRpcResponseExtensions<T, E>
   }
 }
 
-extension dart_falconnectHttpFutureResponseExtensions<T> on Future<HttpResponse<T>> {
+extension DartFalconnectHttpFutureResponseExtensions<T> on Future<HttpResponse<T>> {
   Future<T> unwrapResponse() {
     return then<T>((HttpResponse<T> response) {
       return Future.value(response.data);
@@ -88,7 +88,7 @@ extension dart_falconnectHttpFutureResponseExtensions<T> on Future<HttpResponse<
   }
 }
 
-extension dart_falconnectResponseExtensions on Response? {
+extension DartFalconnectResponseExtensions on Response? {
   Response<T> copyWith<T>({
     T? data,
     Headers? headers,

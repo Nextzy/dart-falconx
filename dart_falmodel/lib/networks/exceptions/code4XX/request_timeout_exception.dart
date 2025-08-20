@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class GatewayTimeoutException extends ServerNetworkException {
-  const GatewayTimeoutException({
-    super.statusCode = 504,
+class RequestTimeoutException extends ClientNetworkException {
+  const RequestTimeoutException({
+    super.statusCode = 408,
     super.type,
     super.statusMessage,
     super.errorMessage,

@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class UnauthorizedException extends ClientNetworkException {
-  const UnauthorizedException({
-    super.statusCode = 401,
+class NotFoundException extends ClientNetworkException {
+  const NotFoundException({
+    super.statusCode = 404,
     super.type,
     super.statusMessage,
     super.errorMessage,

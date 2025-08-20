@@ -1,8 +1,8 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falmodel/lib.dart';
 
-class AuthenticationException extends ClientNetworkException {
-  const AuthenticationException({
-    super.statusCode = 401,
+class ForbiddenException extends ClientNetworkException {
+  const ForbiddenException({
+    super.statusCode = 403,
     super.type,
     super.statusMessage,
     super.errorMessage,

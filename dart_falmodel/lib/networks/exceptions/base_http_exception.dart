@@ -1,5 +1,4 @@
-import 'package:dio/dio.dart';
-import 'package:dart_falconnect/engine/https/exceptions/network_exception.dart';
+import 'package:dart_falmodel/lib.dart';
 
 /// Base class for all HTTP-specific exceptions.
 ///

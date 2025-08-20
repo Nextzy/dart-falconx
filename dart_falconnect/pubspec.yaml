@@ -9,10 +9,10 @@ environment:
 resolution: workspace
 
 dependencies:
-  dart_faltool:
-    path: ../dart_faltool
   dart_falmodel:
     path: ../dart_falmodel
+  dart_faltool:
+    path: ../dart_faltool
 
   #PLATFORM: All
   ansicolor: ^2.0.3
@@ -23,8 +23,10 @@ dependencies:
   freezed_annotation: ^3.1.0
 
 dev_dependencies:
-  test: ^1.26.3
   build_runner: ^2.7.0
+  lints: ^6.0.0
+  test: ^1.26.3
   json_serializable: ^6.10.0
   freezed: ^3.2.0
+  retrofit_generator: ^10.0.2
   very_good_analysis: ^9.0.0

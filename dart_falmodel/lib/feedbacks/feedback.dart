@@ -279,6 +279,7 @@ class Failure<T> extends UserFeedback<T> {
         stackTrace,
         failureList,
       ];
+
 }
 
 /// Severity levels for warnings.
