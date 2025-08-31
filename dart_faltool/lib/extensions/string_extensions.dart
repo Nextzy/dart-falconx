@@ -16,6 +16,17 @@ extension FalconToolStringExtension on String {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
+  static final RegExp _htmlTags = RegExp(
+    '<[^>]*>',
+    multiLine: true,
+    caseSensitive: false,
+  );
+
+  static final RegExp _htmlEntities = RegExp(
+    '&[^;]+;',
+    multiLine: true,
+  );
+
   // Whitespace and Formatting
 
   /// Removes all whitespace characters from the string.
@@ -26,6 +37,11 @@ extension FalconToolStringExtension on String {
   /// '  tab\tspace\n '.removeWhiteSpace; // 'tabspace'
   /// ```
   String get removeWhiteSpace => replaceAll(RegExp(r'\s+'), '');
+
+  String get removeHtmlTags => replaceAll(
+    _htmlTags,
+    '',
+  ).replaceAll(_htmlEntities, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
 
   /// Removes leading and trailing whitespace and collapses internal whitespace.
   ///
@@ -117,8 +133,23 @@ extension FalconToolStringExtension on String {
     return int.tryParse(cleaned) ?? 0;
   }
 
-  // toDouble() and toDoubleOrNull() are now provided by dartx package.
-  // Use: string.toDouble() and string.toDoubleOrNull()
+  String hashStr({int? length}) {
+    // Generate hash
+    final bytes = utf8.encode(this);
+    final digest = sha256.convert(bytes);
+    final hash = digest.toString();
+
+    // Adjust length if specified
+    if (length != null && length > 0) {
+      if (length > hash.length) {
+        // Pad with zeros if requested length is longer
+        return hash.padRight(length, '0');
+      }
+      return hash.substring(0, length);
+    }
+
+    return hash;
+  }
 
   /// Converts the string to a double, returning 0.0 if parsing fails.
   double toDoubleOrZero() => double.tryParse(this) ?? 0.0;
@@ -288,8 +319,10 @@ extension FalconToolStringExtension on String {
   /// ```
   String capitalizeWords() {
     return split(' ')
-        .map((word) =>
-            word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
+        .map(
+          (word) =>
+              word.isEmpty ? word : word[0].toUpperCase() + word.substring(1),
+        )
         .join(' ');
   }
 

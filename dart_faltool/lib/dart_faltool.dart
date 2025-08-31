@@ -3,6 +3,7 @@ export 'package:crypto/crypto.dart' hide Hash;
 export 'package:dartx/dartx.dart'
     hide
         IterableAll,
+        IterableAppend,
         IterableNumAverageExtension,
         IterablePartition,
         IterableZip,
