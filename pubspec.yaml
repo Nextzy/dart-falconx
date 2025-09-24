@@ -1,6 +1,6 @@
 name: dart_falconx_core
 description: A dart falcon package.
-version: 1.0.0
+version: 1.0.1
 
 environment:
   sdk: ">=3.9.0 <4.0.0"
@@ -12,7 +12,7 @@ workspace:
   - dart_faltool
 
 dev_dependencies:
-  melos: ^7.0.0
+  melos: ^7.1.1
 
 melos:
   scripts:
@@ -36,7 +36,7 @@ melos:
 
     build_runner:
       description: Run build_runner in all packages
-      run: dart pub run build_runner build --delete-conflicting-outputs
+      run: dart run build_runner build -d
       exec:
         concurrency: 1
 
