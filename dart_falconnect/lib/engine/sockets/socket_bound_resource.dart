@@ -5,8 +5,7 @@ class SocketBoundResource<EntityType, ResponseType> {
 
   static const String TAG = 'SocketBoundResource';
 
-  static Stream<Either<Failure, EntityType>>
-  asStream<EntityType, ResponseType>({
+  static Stream<Result<EntityType>> asStream<EntityType, ResponseType>({
     bool Function(EntityType? data)? whenSave,
     required Stream<ResponseType> Function() createCallStream,
     FutureOr<EntityType> Function(ResponseType result)? processResponse,
@@ -25,37 +24,33 @@ class SocketBoundResource<EntityType, ResponseType> {
       required VoidErrorCallback? onError,
       required Object exception,
       required StackTrace? stackTrace,
-      required EventSink<Either<Failure, EntityType>> sink,
+      required EventSink<Result<EntityType>> sink,
     }) {
-      if (exception is Failure) {
-        sink.add(Left(exception));
-      } else if (exception is Exception) {
-        try {
-          onError?.call(exception, stackTrace);
-        } catch (newException, stackTrace) {
-          if (newException is Failure) {
-            sink.add(Left(newException));
-          } else if (newException is Exception) {
-            sink.add(
-              Left(
-                Failure(
-                  message: newException.toString(),
-                  exception: newException,
-                  stackTrace: stackTrace,
-                ),
-              ),
-            );
-          }
-        }
-        if (log) {
-          print('Operation failed $exception');
-        }
+      try {
+        onError?.call(exception, stackTrace);
+      } catch (callbackException, callbackStackTrace) {
+        sink.add(
+          Result.failure(
+            callbackException.toException(stackTrace: callbackStackTrace),
+          ),
+        );
+        return;
+      }
+
+      sink.add(
+        Result.failure(
+          exception.toException(stackTrace: stackTrace),
+        ),
+      );
+
+      if (log) {
+        print('Operation failed $exception');
       }
     }
     // End: inner function
 
     return createCallStream().transform(
-      StreamTransformer<ResponseType, Either<Failure, EntityType>>.fromHandlers(
+      StreamTransformer<ResponseType, Result<EntityType>>.fromHandlers(
         handleData: (ResponseType response, sink) async {
           try {
             late EntityType data;
@@ -73,7 +68,7 @@ class SocketBoundResource<EntityType, ResponseType> {
                 print('Success save result data');
               }
             }
-            sink.add(Right(data));
+            sink.add(Result.success(data));
           } on Exception catch (exception, stackTrace) {
             onHandleException(
               onError: error,

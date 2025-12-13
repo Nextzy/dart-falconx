@@ -1,28 +1,24 @@
 import 'package:dart_falmodel/lib.dart';
 
 class Result<T> {
-
   /// Creates a successful result.
   factory Result.success(T value) => Result._success(value);
 
   /// Creates a failed result.
-  factory Result.failure(Object error, [StackTrace? stackTrace]) =>
-      Result._failure(error, stackTrace ?? StackTrace.current);
+  factory Result.failure(CommonException exception) =>
+      Result._failure(exception);
 
   const Result._success(T value)
-      : _value = value,
-        _error = null,
-        _stackTrace = null,
-        _isSuccess = true;
+    : _value = value,
+      _exception = null,
+      _isSuccess = true;
 
-  const Result._failure(Object error, StackTrace stackTrace)
-      : _value = null,
-        _error = error,
-        _stackTrace = stackTrace,
-        _isSuccess = false;
+  const Result._failure(CommonException exception)
+    : _value = null,
+      _exception = exception,
+      _isSuccess = false;
   final T? _value;
-  final Object? _error;
-  final StackTrace? _stackTrace;
+  final CommonException? _exception;
   final bool _isSuccess;
 
   /// True if the result is successful.
@@ -38,13 +34,13 @@ class Result<T> {
   }
 
   /// Gets the error if failed, throws if successful.
-  Object get error {
-    if (!_isSuccess) return _error!;
+  CommonException get exception {
+    if (!_isSuccess) return _exception!;
     throw StateError('Cannot get error from successful Result');
   }
 
   /// Gets the stack trace if failed.
-  StackTrace? get stackTrace => _stackTrace;
+  StackTrace? get stackTrace => exception.stackTrace;
 
   /// Gets the value or null if failed.
   T? get valueOrNull => _isSuccess ? _value : null;
@@ -58,40 +54,44 @@ class Result<T> {
       try {
         return Result.success(transform(_value as T));
       } catch (error, stackTrace) {
-        return Result.failure(error, stackTrace);
+        return Result.failure(
+          error.toException(stackTrace: stackTrace),
+        );
       }
     }
-    return Result.failure(_error!, _stackTrace);
+    return Result.failure(_exception!);
   }
 
   /// Transforms the error if failed.
-  Result<T> mapError(Object Function(Object error) transform) {
+  Result<T> mapException(
+    CommonException Function(CommonException error) transform,
+  ) {
     if (!_isSuccess) {
-      return Result.failure(transform(_error!), _stackTrace);
+      return Result.failure(transform(_exception!));
     }
     return this;
   }
 
   /// Folds the result into a single value.
-  R fold<R>({
-    required R Function(T value) onSuccess,
-    required R Function(Object error, StackTrace? stackTrace) onFailure,
-  }) {
+  R resolve<R>(
+    R Function(T value) onSuccess,
+    R Function(CommonException error, StackTrace? stackTrace) onFailure,
+  ) {
     if (_isSuccess) {
       return onSuccess(_value as T);
     }
-    return onFailure(_error!, _stackTrace);
+    return onFailure(_exception!, stackTrace);
   }
 
   /// Executes a callback based on the result.
-  void when({
-    required void Function(T value) onSuccess,
-    required void Function(Object error, StackTrace? stackTrace) onFailure,
-  }) {
+  void when(
+    void Function(T value) onSuccess,
+    void Function(Object error, StackTrace? stackTrace) onFailure,
+  ) {
     if (_isSuccess) {
       onSuccess(_value as T);
     } else {
-      onFailure(_error!, _stackTrace);
+      onFailure(_exception!, stackTrace);
     }
   }
 }
