@@ -33,20 +33,22 @@ class Result<T> {
     throw StateError('Cannot get value from failed Result');
   }
 
+  /// Gets the value or null if failed.
+  T? get valueOrNull => _isSuccess ? _value : null;
+
+  /// Gets the value or the provided default if failed.
+  T valueOr(T defaultValue) => _isSuccess ? _value as T : defaultValue;
+
   /// Gets the error if failed, throws if successful.
   CommonException get exception {
     if (!_isSuccess) return _exception!;
     throw StateError('Cannot get error from successful Result');
   }
 
+  CommonException? get exceptionOrNull => !_isSuccess ? _exception : null;
+
   /// Gets the stack trace if failed.
   StackTrace? get stackTrace => exception.stackTrace;
-
-  /// Gets the value or null if failed.
-  T? get valueOrNull => _isSuccess ? _value : null;
-
-  /// Gets the value or the provided default if failed.
-  T valueOr(T defaultValue) => _isSuccess ? _value as T : defaultValue;
 
   /// Transforms the value if successful.
   Result<R> map<R>(R Function(T value) transform) {
@@ -75,23 +77,23 @@ class Result<T> {
   /// Folds the result into a single value.
   R resolve<R>(
     R Function(T value) onSuccess,
-    R Function(CommonException error, StackTrace? stackTrace) onFailure,
+    R Function(CommonException exception, StackTrace? stackTrace) onError,
   ) {
     if (_isSuccess) {
       return onSuccess(_value as T);
     }
-    return onFailure(_exception!, stackTrace);
+    return onError(_exception!, stackTrace);
   }
 
   /// Executes a callback based on the result.
   void when(
     void Function(T value) onSuccess,
-    void Function(Object error, StackTrace? stackTrace) onFailure,
+    void Function(CommonException exception, StackTrace? stackTrace) onError,
   ) {
     if (_isSuccess) {
       onSuccess(_value as T);
     } else {
-      onFailure(_exception!, stackTrace);
+      onError(_exception!, stackTrace);
     }
   }
 }

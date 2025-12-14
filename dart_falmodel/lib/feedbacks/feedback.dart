@@ -1,5 +1,16 @@
 import 'package:dart_falmodel/lib.dart';
 
+/// Severity levels for warnings.
+enum FeedbackLevel {
+  low,
+  medium,
+  high,
+  critical;
+
+  /// Whether this warning should be prominently displayed.
+  bool get isProminent => this == high || this == critical;
+}
+
 /// Type alias for void callback that receives a Failure.
 typedef VoidFailureCallback = void Function(Failure failure);
 
@@ -21,241 +32,149 @@ typedef VoidFailureCallback = void Function(Failure failure);
 /// ```
 sealed class UserFeedback<T> extends Equatable {
   const UserFeedback({
-    this.userMessage,
+    this.message,
     this.data,
+    this.level = FeedbackLevel.medium,
   });
 
   /// A human-readable message describing the feedback.
-  final String? userMessage;
+  final String? message;
 
   /// Optional data associated with the feedback.
   final T? data;
 
+  /// The severity level of the feedback.
+  final FeedbackLevel level;
+
   @override
-  List<Object?> get props => [userMessage, data];
+  List<Object?> get props => [message, data, level];
 }
 
 /// Represents a successful operation.
 class Success<T> extends UserFeedback<T> {
   const Success({
-    super.userMessage,
+    super.message,
     super.data,
+    super.level,
   });
 
   /// Creates a copy of this Success with the given fields replaced.
   Success<T> copyWith({
-    String? userMessage,
+    String? message,
     T? data,
+    FeedbackLevel? level,
   }) => Success(
-    userMessage: userMessage ?? this.userMessage,
+    message: message ?? this.message,
     data: data ?? this.data,
+    level: level ?? this.level,
   );
 }
 
 /// Represents an informational message.
 class Information<T> extends UserFeedback<T> {
   const Information({
-    super.userMessage,
+    super.message,
     super.data,
+    super.level,
   });
 
   /// Creates a copy of this Information with the given fields replaced.
   Information<T> copyWith({
-    String? userMessage,
+    String? message,
     T? data,
+    FeedbackLevel? level,
   }) => Information(
-    userMessage: userMessage ?? this.userMessage,
+    message: message ?? this.message,
     data: data ?? this.data,
+    level: level ?? this.level,
   );
 }
 
 /// Represents a warning that doesn't prevent operation completion.
 class Warning<T> extends UserFeedback<T> {
   const Warning({
-    super.userMessage,
+    super.message,
     super.data,
-    this.developerMessage,
-    this.exception,
-    this.stackTrace,
-    this.warningList,
-    this.severity = WarningSeverity.medium,
+    super.level,
   });
 
   /// Creates a Warning from an Error object.
-  factory Warning.fromError(
-    Error? error, {
-    String? userMessage,
-    String? developerMessage,
-    StackTrace? stackTrace,
-    List<Warning>? warningList,
-    T? data,
-    WarningSeverity severity = WarningSeverity.medium,
-  }) => Warning(
-    userMessage: userMessage,
-    developerMessage: developerMessage ?? error.toString(),
-    exception: error,
-    stackTrace: stackTrace ?? error?.stackTrace ?? StackTrace.current,
-    warningList: warningList,
-    data: data,
-    severity: severity,
-  );
-
-  /// Creates a Warning from an Exception object.
   factory Warning.fromException(
-    Object? exception, {
-    String? userMessage,
-    String? developerMessage,
-    StackTrace? stackTrace,
-    List<Warning>? warningList,
+    CommonException<T>? exception, {
     T? data,
-    WarningSeverity severity = WarningSeverity.medium,
-  }) => Warning(
-    userMessage: userMessage,
-    developerMessage: developerMessage ?? exception.toString(),
-    exception: exception,
-    stackTrace: stackTrace ?? StackTrace.current,
-    warningList: warningList,
-    data: data,
-    severity: severity,
+    FeedbackLevel level = FeedbackLevel.medium,
+  }) => Warning<T>(
+    message: exception?.userMessage,
+    data: data ?? exception?.type,
+    level: level,
   );
-
-  /// A technical message for developers (not shown to users).
-  final String? developerMessage;
-
-  /// The exception that caused the warning.
-  final Object? exception;
-
-  /// The stack trace at the point of warning.
-  final StackTrace? stackTrace;
-
-  /// List of nested warnings for composite warning scenarios.
-  final List<Warning>? warningList;
-
-  /// The severity level of the warning.
-  final WarningSeverity severity;
 
   /// Creates a copy of this Warning with the given fields replaced.
   Warning<T> copyWith({
-    String? userMessage,
-    String? developerMessage,
-    Object? exception,
-    StackTrace? stackTrace,
-    List<Warning>? warningList,
+    String? message,
     T? data,
-    WarningSeverity? severity,
+    FeedbackLevel? level,
   }) => Warning(
-    userMessage: userMessage ?? this.userMessage,
-    developerMessage: developerMessage ?? this.developerMessage,
-    exception: exception ?? this.exception,
-    stackTrace: stackTrace ?? this.stackTrace,
-    warningList: warningList ?? this.warningList,
+    message: message ?? this.message,
     data: data ?? this.data,
-    severity: severity ?? this.severity,
+    level: level ?? this.level,
   );
 
   @override
   List<Object?> get props => [
     ...super.props,
-    developerMessage,
-    exception,
-    stackTrace,
-    warningList,
-    severity,
   ];
 }
 
 /// Represents a failure or error condition.
 class Failure<T> extends UserFeedback<T> {
   const Failure({
-    super.userMessage,
+    super.message,
     super.data,
-    this.developerMessage,
-    this.exception,
-    this.stackTrace,
-    this.failureList,
+    super.level,
   });
 
   /// Creates a Failure from an Exception object.
   factory Failure.fromException(
     CommonException<T>? exception, {
-    String? userMessage,
-    String? developerMessage,
-    StackTrace? stackTrace,
-    List<Failure>? failureList,
     T? data,
+    FeedbackLevel level = FeedbackLevel.medium,
   }) => Failure<T>(
-    userMessage: userMessage ?? exception?.userMessage,
-    developerMessage:
-        developerMessage ?? exception?.developerMessage ?? exception.toString(),
-    exception: exception,
-    stackTrace: stackTrace ?? exception?.stackTrace ?? StackTrace.current,
-    failureList: failureList,
+    message: exception?.userMessage,
     data: data ?? exception?.type,
+    level: level,
   );
-
-  /// A technical message for developers (not shown to users).
-  final String? developerMessage;
-
-  /// The exception that caused the failure.
-  final CommonException? exception;
-
-  /// The stack trace at the point of failure.
-  final StackTrace? stackTrace;
-
-  /// List of nested failures for composite error scenarios.
-  final List<Failure>? failureList;
 
   /// Creates a copy of this Failure with the given fields replaced.
   Failure<T> copyWith({
-    String? userMessage,
-    String? developerMessage,
-    CommonException? exception,
-    StackTrace? stackTrace,
-    List<Failure>? failureList,
+    String? message,
     T? data,
+    FeedbackLevel? level,
   }) => Failure(
-    userMessage: userMessage ?? this.userMessage,
-    developerMessage: developerMessage ?? this.developerMessage,
-    exception: exception ?? this.exception,
-    stackTrace: stackTrace ?? this.stackTrace,
-    failureList: failureList ?? this.failureList,
+    message: message ?? this.message,
     data: data ?? this.data,
+    level: level ?? this.level,
   );
 
   @override
   List<Object?> get props => [
     ...super.props,
-    developerMessage,
-    exception,
-    stackTrace,
-    failureList,
   ];
 }
 
-/// Severity levels for warnings.
-enum WarningSeverity {
-  low,
-  medium,
-  high,
-  critical;
-
-  /// Whether this warning should be prominently displayed.
-  bool get isProminent => this == high || this == critical;
-}
-
 /// Extension methods for pattern matching on feedback types.
-extension UserFeedbackX<T> on UserFeedback<T> {
+extension UserFeedbackExtension<T> on UserFeedback<T> {
   /// Gets the message if this is a Success feedback.
-  String? get successMessage => this is Success ? userMessage : null;
+  String? get successMessage => this is Success ? message : null;
 
   /// Gets the message if this is a Failure feedback.
-  String? get errorMessage => this is Failure ? userMessage : null;
+  String? get errorMessage => this is Failure ? message : null;
 
   /// Gets the message if this is a Warning feedback.
-  String? get warningMessage => this is Warning ? userMessage : null;
+  String? get warningMessage => this is Warning ? message : null;
 
   /// Gets the message if this is an Information feedback.
-  String? get informationMessage => this is Information ? userMessage : null;
+  String? get informationMessage => this is Information ? message : null;
 
   /// Executes the appropriate callback based on the feedback type.
   R when<R>({
@@ -275,31 +194,26 @@ extension UserFeedbackX<T> on UserFeedback<T> {
   /// Maps the data contained in the feedback to a new type.
   UserFeedback<R> mapData<R>(R Function(T? data) mapper) {
     return switch (this) {
-      Success(userMessage: final message) => Success<R>(
-        userMessage: userMessage,
+      Success(message: final message, level: final level) => Success<R>(
+        message: message,
         data: mapper(data),
+        level: level,
       ),
-      Warning(userMessage: final message, :final severity) => Warning<R>(
-        userMessage: userMessage,
+      Warning(message: final message, level: final level) => Warning<R>(
+        message: message,
         data: mapper(data),
-        severity: severity,
+        level: level,
       ),
-      Failure(
-        userMessage: final message,
-        :final developerMessage,
-        :final exception,
-        :final stackTrace,
-      ) =>
+      Failure(message: final message, level: final level) =>
         Failure<R>(
-          userMessage: userMessage,
+          message: message,
           data: mapper(data),
-          developerMessage: developerMessage,
-          exception: exception,
-          stackTrace: stackTrace,
+          level: level,
         ),
-      Information(userMessage: final message) => Information<R>(
-        userMessage: userMessage,
+      Information(message: final message, level: final level) => Information<R>(
+        message: message,
         data: mapper(data),
+        level: level,
       ),
     };
   }
