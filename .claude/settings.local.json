@@ -20,7 +20,10 @@
       "Bash(sed:*)",
       "Bash(git commit:*)",
       "mcp__serena__list_dir",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__activate_project",
+      "mcp__serena__check_onboarding_performed"
     ],
     "deny": []
   }
