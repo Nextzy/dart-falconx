@@ -1,27 +1,34 @@
 import 'package:dart_falmodel/lib.dart';
 
 /// Base class for all 4XX client error exceptions.
-/// 
+///
 /// Client errors indicate that the request contains bad syntax or cannot
 /// be fulfilled. These errors are typically the client's responsibility.
-/// 
+///
 /// Ref: https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-class ClientNetworkException extends BaseHttpException {
-  const ClientNetworkException({
+class NetworkClientException extends BaseHttpException {
+  const NetworkClientException({
     required super.statusCode,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
     super.stackTrace,
     super.errors,
   }) : assert(
-            statusCode >= 400 && statusCode < 500, 'Error code not 400 to 500');
+         statusCode >= 400 && statusCode < 500,
+         'Error code not 400 to 500',
+       );
 
   @override
-  String get userFriendlyMessage {
+  String get message {
+    // If userMessage is provided, use it
+    if (userMessage != null && userMessage!.isNotEmpty) {
+      return userMessage!;
+    }
+
+    // Otherwise, return status-code-specific default message
     switch (statusCode) {
       case 400:
         return 'Invalid request. Please check your input.';
@@ -35,10 +42,14 @@ class ClientNetworkException extends BaseHttpException {
         return 'This operation is not allowed.';
       case 408:
         return 'Request timed out. Please try again.';
+      case 409:
+        return 'A conflict occurred. Please try again.';
+      case 422:
+        return 'Invalid input. Please check your data.';
       case 429:
         return 'Too many requests. Please wait and try again.';
       default:
-        return super.userFriendlyMessage;
+        return 'The request could not be processed. Please check your input and try again.';
     }
   }
 }

@@ -1,11 +1,10 @@
 import 'package:dart_falmodel/lib.dart';
 
-class BadRequestException extends ClientNetworkException {
-  const BadRequestException({
+class NetworkBadRequestException extends NetworkClientException {
+  const NetworkBadRequestException({
     super.statusCode = 400,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,

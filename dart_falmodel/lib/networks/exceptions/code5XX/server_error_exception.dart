@@ -1,27 +1,34 @@
 import 'package:dart_falmodel/lib.dart';
 
 /// Base class for all 5XX server error exceptions.
-/// 
+///
 /// Server errors indicate that the server failed to fulfill a valid request.
 /// These errors are typically the server's responsibility and often retryable.
-/// 
+///
 /// Ref: https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-class ServerNetworkException extends BaseHttpException {
-  const ServerNetworkException({
+class NetworkServerException extends BaseHttpException {
+  const NetworkServerException({
     required super.statusCode,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
     super.stackTrace,
     super.errors,
   }) : assert(
-            statusCode >= 500 && statusCode < 600, 'Error code not 500 to 600');
+         statusCode >= 500 && statusCode < 600,
+         'Error code not 500 to 600',
+       );
 
   @override
-  String get userFriendlyMessage {
+  String get message {
+    // If userMessage is provided, use it
+    if (userMessage != null && userMessage!.isNotEmpty) {
+      return userMessage!;
+    }
+
+    // Otherwise, return status-code-specific default message
     switch (statusCode) {
       case 500:
         return 'Internal server error. Please try again later.';
@@ -34,7 +41,7 @@ class ServerNetworkException extends BaseHttpException {
       case 504:
         return 'Server timeout. Please try again.';
       default:
-        return super.userFriendlyMessage;
+        return 'The server encountered an error. Please try again later.';
     }
   }
 

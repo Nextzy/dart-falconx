@@ -8,6 +8,7 @@ enum ErrorType {
   network,
   timeout,
   noInternet,
+  clientError,
   serverError,
   serviceUnavailable,
 
@@ -56,6 +57,7 @@ enum ErrorType {
       ErrorType.network => 'Network error. Please check your connection.',
       ErrorType.timeout => 'Request timed out. Please try again.',
       ErrorType.noInternet => 'No internet connection.',
+      ErrorType.clientError => 'Client error. Please check your request.',
       ErrorType.serverError => 'Server error. Please try again later.',
       ErrorType.serviceUnavailable => 'Service is currently unavailable.',
       ErrorType.authentication => 'Authentication failed.',

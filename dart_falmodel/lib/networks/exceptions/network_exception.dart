@@ -1,27 +1,22 @@
+import 'package:dart_falmodel/dart_falmodel.dart';
 import 'package:dio/dio.dart';
 
-class NetworkException implements Exception {
+class NetworkException extends CommonException<String> {
   const NetworkException({
+    String? type,
     this.statusCode = 0,
-    this.type,
-    this.statusMessage,
-    this.errorMessage,
-    this.developerMessage,
+    super.userMessage,
+    super.developerMessage,
     this.response,
     this.requestOptions,
-    this.stackTrace,
+    super.stackTrace,
     this.errors,
-  });
+  }) : super(type: type ?? 'UNKNOWN');
 
   final int statusCode;
-  final String? type;
-  final String? statusMessage;
-  final String? errorMessage;
-  final String? developerMessage;
   final Response? response;
   final RequestOptions? requestOptions;
   final List<NetworkException>? errors;
-  final StackTrace? stackTrace;
 
   DioException toDioException({
     RequestOptions? requestOptions,
@@ -29,29 +24,22 @@ class NetworkException implements Exception {
     StackTrace? stackTrace,
     DioExceptionType? type,
     String? message,
-  }) =>
-      DioException(
-        requestOptions:
-            requestOptions ?? this.requestOptions ?? RequestOptions(),
-        response: response ?? this.response,
-        error: this,
-        stackTrace: stackTrace ?? this.stackTrace ?? StackTrace.current,
-        type: type ?? DioExceptionType.unknown,
-        message: message ?? statusMessage,
-      );
+  }) => DioException(
+    requestOptions: requestOptions ?? this.requestOptions ?? RequestOptions(),
+    response: response ?? this.response,
+    error: this,
+    stackTrace: stackTrace ?? this.stackTrace ?? StackTrace.current,
+    type: type ?? DioExceptionType.unknown,
+    message: message ?? userMessage ?? developerMessage,
+  );
 
   @override
   String toString() {
     var msg = '';
     if (statusCode != 0) msg += '>>Status code: $statusCode\n';
-    if (type != null && type!.isNotEmpty) {
-      msg += '>>Type: $type\n';
-    }
-    if (statusMessage != null && statusMessage!.isNotEmpty) {
-      msg += '>>Status message: $statusMessage\n';
-    }
-    if (errorMessage != null && errorMessage!.isNotEmpty) {
-      msg += '>>Error message: $errorMessage\n';
+    msg += '>>Type: $type\n';
+    if (userMessage != null && userMessage!.isNotEmpty) {
+      msg += '>>User message: $userMessage\n';
     }
     if (developerMessage != null && developerMessage!.isNotEmpty) {
       msg += '>>Developer message: $developerMessage\n';

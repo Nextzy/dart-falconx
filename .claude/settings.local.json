@@ -17,7 +17,9 @@
       "Bash(dart:*)",
       "Bash(rm:*)",
       "Bash(flutter pub:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(git commit:*)",
+      "mcp__serena__list_dir"
     ],
     "deny": []
   }

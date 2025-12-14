@@ -1,11 +1,10 @@
 import 'package:dart_falmodel/lib.dart';
 
-class AuthenticationException extends ClientNetworkException {
-  const AuthenticationException({
+class NetworkAuthenticationException extends NetworkClientException {
+  const NetworkAuthenticationException({
     super.statusCode = 401,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,

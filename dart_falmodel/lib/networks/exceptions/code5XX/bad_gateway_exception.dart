@@ -1,11 +1,10 @@
 import 'package:dart_falmodel/lib.dart';
 
-class BadGatewayException extends ServerNetworkException {
-  const BadGatewayException({
+class NetworkBadGatewayException extends NetworkServerException {
+  const NetworkBadGatewayException({
     super.statusCode = 502,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
