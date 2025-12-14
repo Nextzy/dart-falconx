@@ -80,45 +80,45 @@ extension FalconObjectExceptionExtensions on Object {
     String? developerMessage,
     StackTrace? stackTrace,
   }) {
-    final statusCode = response?.statusCode ?? 0;
-
-    String? type;
+    final finalStatusCode = response?.statusCode ?? 0;
+    String? finalType;
     String? finalUserMessage;
     String? finalDeveloperMessage;
     final finalStackTrace = stackTrace ?? StackTrace.current;
     if (response?.data is String) {
       finalUserMessage = response?.data as String?;
     } else if (response?.data is Map) {
-      type = response?.data['type'] as String?;
+      finalType = response?.data['type'] as String?;
       finalUserMessage = userMessage ?? response?.data['message'] as String?;
       finalDeveloperMessage =
           developerMessage ?? response?.data['developerMessage'] as String?;
     }
 
-    if (statusCode >= 600) {
+    if (finalStatusCode >= 600) {
       return NetworkNonStandardException(
-        statusCode: statusCode,
+        statusCode: finalStatusCode,
+        type: finalType,
         userMessage: finalUserMessage,
         developerMessage: finalDeveloperMessage,
         requestOptions: response?.requestOptions,
         response: response,
         stackTrace: finalStackTrace,
       );
-    } else if (statusCode >= 500 && statusCode < 600) {
-      if (statusCode == 500) {
+    } else if (finalStatusCode >= 500 && finalStatusCode < 600) {
+      if (finalStatusCode == 500) {
         return NetworkInternalServerException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
           developerMessage: finalDeveloperMessage,
           requestOptions: response?.requestOptions,
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 501) {
+      } else if (finalStatusCode == 501) {
         return NetowrkNotImplementException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ?? 'This service is currently unavailable.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
@@ -126,20 +126,20 @@ extension FalconObjectExceptionExtensions on Object {
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 502) {
+      } else if (finalStatusCode == 502) {
         return NetworkBadGatewayException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
           requestOptions: response?.requestOptions,
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 503) {
+      } else if (finalStatusCode == 503) {
         return ServiceUnavailableException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ?? 'This service is currently unavailable.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
@@ -147,10 +147,10 @@ extension FalconObjectExceptionExtensions on Object {
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 504) {
+      } else if (finalStatusCode == 504) {
         return NetworkGatewayTimeoutException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ?? 'Request timed out. Please try again.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
@@ -160,8 +160,8 @@ extension FalconObjectExceptionExtensions on Object {
         );
       } else {
         return NetworkServerException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
           requestOptions: response?.requestOptions,
@@ -169,31 +169,31 @@ extension FalconObjectExceptionExtensions on Object {
           stackTrace: finalStackTrace,
         );
       }
-    } else if (statusCode >= 400 && statusCode < 500) {
-      if (statusCode == 400) {
+    } else if (finalStatusCode >= 400 && finalStatusCode < 500) {
+      if (finalStatusCode == 400) {
         return NetworkBadRequestException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'Invalid format.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
           requestOptions: response?.requestOptions,
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 401) {
+      } else if (finalStatusCode == 401) {
         return NetworkAuthenticationException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'Please log in to continue.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
           requestOptions: response?.requestOptions,
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 403) {
+      } else if (finalStatusCode == 403) {
         return NetworkForbiddenException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ??
               'You do not have permission to perform this action.',
@@ -202,10 +202,10 @@ extension FalconObjectExceptionExtensions on Object {
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 404) {
+      } else if (finalStatusCode == 404) {
         return NetworkNotFoundException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ?? 'The requested resource was not found.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
@@ -213,20 +213,20 @@ extension FalconObjectExceptionExtensions on Object {
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 405) {
+      } else if (finalStatusCode == 405) {
         return MethodNotAllowedException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'This operation is not allowed.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
           requestOptions: response?.requestOptions,
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 408) {
+      } else if (finalStatusCode == 408) {
         return NetworkTimeoutException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ?? 'Request timed out. Please try again.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
@@ -234,10 +234,10 @@ extension FalconObjectExceptionExtensions on Object {
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 409) {
+      } else if (finalStatusCode == 409) {
         return NetworkConflictException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ?? 'A conflict occurred. Please try again.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
@@ -245,10 +245,10 @@ extension FalconObjectExceptionExtensions on Object {
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 422) {
+      } else if (finalStatusCode == 422) {
         return NetworkInvalidException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage:
               finalUserMessage ?? 'Invalid input. Please check your data.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
@@ -256,10 +256,10 @@ extension FalconObjectExceptionExtensions on Object {
           response: response,
           stackTrace: finalStackTrace,
         );
-      } else if (statusCode == 429) {
+      } else if (finalStatusCode == 429) {
         return NetworkLimitExceededException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'Limit exceeded. Please try again.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
           requestOptions: response?.requestOptions,
@@ -268,8 +268,8 @@ extension FalconObjectExceptionExtensions on Object {
         );
       } else {
         return NetworkClientException(
-          statusCode: statusCode,
-          type: type,
+          statusCode: finalStatusCode,
+          type: finalType,
           userMessage: finalUserMessage ?? 'Sorry. Please check your request.',
           developerMessage: finalDeveloperMessage ?? response?.statusMessage,
           requestOptions: response?.requestOptions,
@@ -279,8 +279,8 @@ extension FalconObjectExceptionExtensions on Object {
       }
     }
     return NetworkException(
-      statusCode: statusCode,
-      type: type,
+      statusCode: finalStatusCode,
+      type: finalType,
       userMessage:
           finalUserMessage ?? 'Something went wrong. Please try again.',
       developerMessage: finalDeveloperMessage ?? response?.statusMessage,

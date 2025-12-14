@@ -19,7 +19,8 @@
       "Bash(flutter pub:*)",
       "Bash(sed:*)",
       "Bash(git commit:*)",
-      "mcp__serena__list_dir"
+      "mcp__serena__list_dir",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
