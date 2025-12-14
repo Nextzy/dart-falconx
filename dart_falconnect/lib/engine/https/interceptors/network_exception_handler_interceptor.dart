@@ -21,9 +21,17 @@ abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
     final exception = err.toException();
     if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.receiveTimeout) {
+      final timeout = err.requestOptions.connectTimeout;
+
       handler.reject(
         err.copyWith(
-          error: exception,
+          error: NetworkTimeoutException(
+            timeout: timeout,
+            requestOptions: err.requestOptions,
+            response: err.response,
+            userMessage: err.message,
+            stackTrace: err.stackTrace,
+          ),
           stackTrace: err.stackTrace,
         ),
       );
