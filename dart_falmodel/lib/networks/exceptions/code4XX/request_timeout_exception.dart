@@ -1,11 +1,10 @@
 import 'package:dart_falmodel/lib.dart';
 
-class RequestTimeoutException extends ClientNetworkException {
-  const RequestTimeoutException({
+class NetworkTimeoutException extends NetworkClientException {
+  const NetworkTimeoutException({
     super.statusCode = 408,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
@@ -14,5 +13,5 @@ class RequestTimeoutException extends ClientNetworkException {
     this.timeout,
   });
 
-  final int? timeout;
+  final Duration? timeout;
 }

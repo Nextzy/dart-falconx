@@ -13,8 +13,7 @@ abstract class BaseHttpException extends NetworkException {
   const BaseHttpException({
     required super.statusCode,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
@@ -27,17 +26,6 @@ abstract class BaseHttpException extends NetworkException {
     if (statusCode >= 400 && statusCode < 500) return '4XX';
     if (statusCode >= 500 && statusCode < 600) return '5XX';
     return 'Unknown';
-  }
-
-  /// Returns a user-friendly error message based on the status code.
-  String get userFriendlyMessage {
-    if (statusCode >= 400 && statusCode < 500) {
-      return 'The request could not be processed. Please check your input and try again.';
-    }
-    if (statusCode >= 500 && statusCode < 600) {
-      return 'The server encountered an error. Please try again later.';
-    }
-    return 'An unexpected error occurred. Please try again.';
   }
 
   /// Checks if this is a client error (4XX).
@@ -99,25 +87,28 @@ abstract class BaseHttpException extends NetworkException {
     // Handle JSON responses
     if (data is Map<String, dynamic>) {
       // Common error message fields
-      result['message'] = (data['message'] ??
-              data['error'] ??
-              data['error_message'] ??
-              data['detail'])
-          ?.toString();
+      result['message'] =
+          (data['message'] ??
+                  data['error'] ??
+                  data['error_message'] ??
+                  data['detail'])
+              ?.toString();
 
       // Developer/debug message fields
-      result['developerMessage'] = (data['developerMessage'] ??
-              data['developer_message'] ??
-              data['debug_message'] ??
-              data['debug'])
-          ?.toString();
+      result['developerMessage'] =
+          (data['developerMessage'] ??
+                  data['developer_message'] ??
+                  data['debug_message'] ??
+                  data['debug'])
+              ?.toString();
 
       // Error type/code fields
-      result['type'] = (data['type'] ??
-              data['error_type'] ??
-              data['error_code'] ??
-              data['code'])
-          ?.toString();
+      result['type'] =
+          (data['type'] ??
+                  data['error_type'] ??
+                  data['error_code'] ??
+                  data['code'])
+              ?.toString();
     }
     // Handle string responses
     else if (data is String) {
@@ -137,16 +128,16 @@ abstract class BaseHttpException extends NetworkException {
       ..writeln('Status Code: $statusCode ($statusCategory)');
 
     if (requestOptions != null) {
-      buffer
-          .writeln('Request: ${requestOptions!.method} ${requestOptions!.uri}');
+      buffer.writeln(
+        'Request: ${requestOptions!.method} ${requestOptions!.uri}',
+      );
     }
 
-    if (type != null) buffer.writeln('Type: $type');
-    if (errorMessage != null) buffer.writeln('Error: $errorMessage');
+    buffer.writeln('Type: $type');
+    if (userMessage != null) buffer.writeln('Error: $userMessage');
     if (developerMessage != null) {
       buffer.writeln('Developer Message: $developerMessage');
     }
-    if (statusMessage != null) buffer.writeln('Status Message: $statusMessage');
 
     return buffer.toString();
   }

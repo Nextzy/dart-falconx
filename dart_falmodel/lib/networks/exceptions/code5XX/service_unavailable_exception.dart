@@ -1,11 +1,10 @@
 import 'package:dart_falmodel/lib.dart';
 
-class ServiceUnavailableException extends ServerNetworkException {
+class ServiceUnavailableException extends NetworkServerException {
   const ServiceUnavailableException({
     super.statusCode = 503,
     super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
