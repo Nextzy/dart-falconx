@@ -108,6 +108,19 @@ class CommonException<T> implements Exception {
       developerMessage ??
       'Something went wrong. Please try again.';
 
+  /// Creates a copy of this CommonException with the given fields replaced.
+  CommonException<T> copyWith({
+    T? type,
+    String? userMessage,
+    String? developerMessage,
+    StackTrace? stackTrace,
+  }) => CommonException(
+    type: type ?? this.type,
+    userMessage: userMessage ?? this.userMessage,
+    developerMessage: developerMessage ?? this.developerMessage,
+    stackTrace: stackTrace ?? this.stackTrace,
+  );
+
   @override
   String toString() {
     final buffer = StringBuffer('[$type]');

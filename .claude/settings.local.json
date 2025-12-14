@@ -23,7 +23,8 @@
       "Bash(git add:*)",
       "mcp__serena__get_symbols_overview",
       "mcp__serena__activate_project",
-      "mcp__serena__check_onboarding_performed"
+      "mcp__serena__check_onboarding_performed",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

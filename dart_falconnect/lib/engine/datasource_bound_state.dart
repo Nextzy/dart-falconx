@@ -37,9 +37,10 @@ class DatasourceBoundState<DataType, ResponseType> {
   ///   handleError: (error, stackTrace) => DatabaseException(error),
   /// );
   /// ```
-  static Stream<Result<DataType>> asLocalStream<DataType>({
+  static Stream<Result<DataType>> asLocalResultStream<DataType>({
     required Future<DataType> Function() loadFromDbFuture,
-    Exception Function(Object error, StackTrace? stacktrace)? handleError,
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
+    handleError,
     bool log = false,
   }) async* {
     try {
@@ -47,23 +48,22 @@ class DatasourceBoundState<DataType, ResponseType> {
       if (log) print('Success load data from database');
       yield Result.success(dataFromDb);
       return;
-    } on Exception catch (exception, stackTrace) {
+    } catch (exception, stackTrace) {
       if (log) print('Load from DB failed: $exception');
-      final tmpException = handleError?.call(exception, stackTrace);
+      final commonException = exception.toException(stackTrace: stackTrace);
       yield Result.failure(
-        (tmpException ?? exception).toException(
-          stackTrace: stackTrace,
-        ),
+        handleError?.call(commonException, stackTrace) ?? commonException,
       );
       return;
     }
   }
 
-  static Future<Result<DataType>> asLocalFuture<DataType>({
+  static Future<Result<DataType>> asLocalResultFuture<DataType>({
     required Future<DataType> Function() loadFromDbFuture,
-    Exception Function(Object error, StackTrace? stacktrace)? handleError,
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
+    handleError,
     bool log = false,
-  }) => asLocalStream(
+  }) => asLocalResultStream(
     loadFromDbFuture: loadFromDbFuture,
     handleError: handleError,
     log: log,
@@ -106,10 +106,11 @@ class DatasourceBoundState<DataType, ResponseType> {
   ///   handleError: (error, stackTrace) => CustomException(error),
   /// );
   /// ```
-  static Stream<Result<DataType>> asRemoteStream<ResponseType, DataType>({
+  static Stream<Result<DataType>> asRemoteResultStream<ResponseType, DataType>({
     required Future<ResponseType> Function() callRemoteFuture,
     FutureOr<DataType> Function(ResponseType response)? processResponse,
-    Exception Function(Object error, StackTrace? stacktrace)? handleError,
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
+    handleError,
     bool log = false,
   }) async* {
     assert(
@@ -132,23 +133,22 @@ class DatasourceBoundState<DataType, ResponseType> {
 
       yield Result.success(data);
       return;
-    } on Exception catch (exception, stackTrace) {
+    } catch (exception, stackTrace) {
       if (log) print('Fetching failed: $exception');
-      final tmpException = handleError?.call(exception, stackTrace);
+      final commonException = exception.toException(stackTrace: stackTrace);
       yield Result.failure(
-        (tmpException ?? exception).toException(
-          stackTrace: stackTrace,
-        ),
+        handleError?.call(commonException, stackTrace) ?? commonException,
       );
       return;
     }
   }
 
-  static Future<Result<DataType>> asRemoteFuture<ResponseType, DataType>({
+  static Future<Result<DataType>> asRemoteResultFuture<ResponseType, DataType>({
     required Future<ResponseType> Function() createCallFuture,
     FutureOr<DataType> Function(ResponseType response)? processResponse,
-    Exception Function(Object error, StackTrace? stacktrace)? handleError,
-  }) => asRemoteStream(
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
+    handleError,
+  }) => asRemoteResultStream(
     callRemoteFuture: createCallFuture,
     processResponse: processResponse,
     handleError: handleError,
@@ -205,12 +205,13 @@ class DatasourceBoundState<DataType, ResponseType> {
   ///   handleError: (error, stackTrace) => CustomException(error),
   /// );
   /// ```
-  static Stream<Result<DataType>> asStream<ResponseType, DataType>({
+  static Stream<Result<DataType>> asResultStream<ResponseType, DataType>({
     Future<DataType> Function()? loadFromDbFuture,
     bool Function(DataType? data)? shouldFetch,
     Future<ResponseType> Function()? callRemoteFuture,
     FutureOr<DataType> Function(ResponseType response)? processResponse,
-    Exception Function(Object error, StackTrace? stacktrace)? handleError,
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
+    handleError,
     bool log = false,
   }) async* {
     assert(
@@ -240,12 +241,12 @@ class DatasourceBoundState<DataType, ResponseType> {
             data = castData;
           }
           yield Result.success(data);
-        } on Exception catch (exception, stackTrace) {
-          if (log) {
-            print('Fetching failed: $exception');
-          }
-          final tmpException = handleError?.call(exception, stackTrace);
-          yield Result.failure((tmpException ?? exception).toException());
+        } catch (exception, stackTrace) {
+          if (log) print('Fetching failed: $exception');
+          final commonException = exception.toException(stackTrace: stackTrace);
+          yield Result.failure(
+            handleError?.call(commonException, stackTrace) ?? commonException,
+          );
         }
       }
       return;
@@ -255,11 +256,10 @@ class DatasourceBoundState<DataType, ResponseType> {
       try {
         return await loadFromDbFuture!.call();
       } on Exception catch (exception, stackTrace) {
-        if (log) {
-          print('Load from DB failed: $exception');
-        }
-        final tmpException = handleError?.call(exception, stackTrace);
-        throw tmpException ?? exception;
+        if (log) print('Load from DB failed: $exception');
+
+        final commonException = exception.toException(stackTrace: stackTrace);
+        throw handleError?.call(commonException, stackTrace) ?? commonException;
       }
     }
 
@@ -269,7 +269,7 @@ class DatasourceBoundState<DataType, ResponseType> {
       DataType dataFromDb;
       try {
         dataFromDb = await loadDbData();
-      } on Exception catch (exception, stackTrace) {
+      } catch (exception, stackTrace) {
         yield Result.failure(
           exception.toException(
             stackTrace: stackTrace,
@@ -293,7 +293,7 @@ class DatasourceBoundState<DataType, ResponseType> {
       DataType dataFromDb;
       try {
         dataFromDb = await loadDbData();
-      } on Exception catch (exception, stackTrace) {
+      } catch (exception, stackTrace) {
         yield Result.failure(
           exception.toException(
             stackTrace: stackTrace,
