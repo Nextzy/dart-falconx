@@ -12,8 +12,8 @@ extension FalconObjectExceptionExtensions on Object {
     }
 
     if (this is DioException) {
-      return _dioErrorToException(
-        err: this as DioException,
+      return _getExceptionFromResponse(
+        (this as DioException).response,
         userMessage: userMessage,
         developerMessage: developerMessage,
         stackTrace: stackTrace,
@@ -73,46 +73,19 @@ extension FalconObjectExceptionExtensions on Object {
     return ErrorType.unknown;
   }
 
-  CommonException<String> _dioErrorToException({
-    required DioException err,
-    String? userMessage,
-    String? developerMessage,
-    StackTrace? stackTrace,
-  }) {
-    if (err.type == DioExceptionType.connectionTimeout ||
-        err.type == DioExceptionType.receiveTimeout) {
-      final timeout = err.requestOptions.connectTimeout;
-      return NetworkTimeoutException(
-        timeout: timeout,
-        requestOptions: err.requestOptions,
-        response: err.response,
-        userMessage: userMessage ?? err.message,
-        developerMessage: developerMessage,
-        stackTrace: stackTrace ?? err.stackTrace,
-      );
-    }
-
-    return _getExceptionFromResponse(
-      err.response,
-      userMessage: userMessage,
-      developerMessage: developerMessage,
-      stacktrace: stackTrace,
-    );
-  }
-
   ///========================= PRIVATE METHOD =========================///
   CommonException<String> _getExceptionFromResponse(
     Response? response, {
     String? userMessage,
     String? developerMessage,
-    StackTrace? stacktrace,
+    StackTrace? stackTrace,
   }) {
     final statusCode = response?.statusCode ?? 0;
 
     String? type;
     String? finalUserMessage;
     String? finalDeveloperMessage;
-    final finalStackTrace = stacktrace ?? StackTrace.current;
+    final finalStackTrace = stackTrace ?? StackTrace.current;
     if (response?.data is String) {
       finalUserMessage = response?.data as String?;
     } else if (response?.data is Map) {
