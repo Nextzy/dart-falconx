@@ -1,27 +1,38 @@
 import 'package:dart_falmodel/lib.dart';
 
-extension FalconObjectExceptionExtensions on Object {
+extension FalconObjectExceptionExtensions on Object? {
   CommonException<Object> toException({
     Object? type,
     String? userMessage,
     String? developerMessage,
     StackTrace? stackTrace,
   }) {
-    if (this is CommonException<Object>) {
-      return this as CommonException<Object>;
+    final exception = this;
+
+    if (exception == null) {
+      return CommonException(
+        type: ErrorType.unknown,
+        userMessage: userMessage,
+        developerMessage: developerMessage ?? 'Null object.',
+        stackTrace: stackTrace ?? StackTrace.current,
+      );
     }
 
-    if (this is DioException) {
+    if (exception is CommonException<Object>) {
+      return exception;
+    }
+
+    if (exception is DioException) {
       return _getExceptionFromResponse(
-        (this as DioException).response,
+        exception.response,
         userMessage: userMessage,
         developerMessage: developerMessage,
         stackTrace: stackTrace,
       );
     }
 
-    final detectedType = type ?? _detectErrorType();
-    final trace = stackTrace ?? _getStackTrace();
+    final detectedType = type ?? _detectErrorType(exception);
+    final trace = stackTrace ?? _getStackTrace(exception);
     final message =
         userMessage ??
         (detectedType is ErrorType ? detectedType.defaultMessage : null);
@@ -34,16 +45,14 @@ extension FalconObjectExceptionExtensions on Object {
     );
   }
 
-  StackTrace _getStackTrace() {
-    if (this is Error) {
-      return (this as Error).stackTrace ?? StackTrace.current;
+  StackTrace _getStackTrace(Object? exception) {
+    if (exception is Error) {
+      return exception.stackTrace ?? StackTrace.current;
     }
     return StackTrace.current;
   }
 
-  Object _detectErrorType() {
-    final exception = this;
-
+  Object _detectErrorType(Object? exception) {
     // Network & Connection
     if (exception is SocketException) return ErrorType.noInternet;
     if (exception is HttpException) return ErrorType.network;
@@ -91,7 +100,9 @@ extension FalconObjectExceptionExtensions on Object {
       finalType = response?.data['type'] as String?;
       finalUserMessage = userMessage ?? response?.data['message'] as String?;
       finalDeveloperMessage =
-          developerMessage ?? response?.data['developerMessage'] as String?;
+          developerMessage ??
+          response?.data['developerMessage'] as String? ??
+          toString();
     }
 
     if (finalStatusCode >= 600) {

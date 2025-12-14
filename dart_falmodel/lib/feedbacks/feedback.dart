@@ -21,13 +21,9 @@ typedef VoidFailureCallback = void Function(Failure failure);
 /// ```
 sealed class UserFeedback<T> extends Equatable {
   const UserFeedback({
-    this.code,
     this.userMessage,
     this.data,
   });
-
-  /// An optional code identifying the feedback type.
-  final Object? code;
 
   /// A human-readable message describing the feedback.
   final String? userMessage;
@@ -36,24 +32,21 @@ sealed class UserFeedback<T> extends Equatable {
   final T? data;
 
   @override
-  List<Object?> get props => [code, userMessage, data];
+  List<Object?> get props => [userMessage, data];
 }
 
 /// Represents a successful operation.
 class Success<T> extends UserFeedback<T> {
   const Success({
-    super.code,
     super.userMessage,
     super.data,
   });
 
   /// Creates a copy of this Success with the given fields replaced.
   Success<T> copyWith({
-    Object? code,
     String? userMessage,
     T? data,
   }) => Success(
-    code: code ?? this.code,
     userMessage: userMessage ?? this.userMessage,
     data: data ?? this.data,
   );
@@ -62,18 +55,15 @@ class Success<T> extends UserFeedback<T> {
 /// Represents an informational message.
 class Information<T> extends UserFeedback<T> {
   const Information({
-    super.code,
     super.userMessage,
     super.data,
   });
 
   /// Creates a copy of this Information with the given fields replaced.
   Information<T> copyWith({
-    Object? code,
     String? userMessage,
     T? data,
   }) => Information(
-    code: code ?? this.code,
     userMessage: userMessage ?? this.userMessage,
     data: data ?? this.data,
   );
@@ -82,7 +72,6 @@ class Information<T> extends UserFeedback<T> {
 /// Represents a warning that doesn't prevent operation completion.
 class Warning<T> extends UserFeedback<T> {
   const Warning({
-    super.code,
     super.userMessage,
     super.data,
     this.developerMessage,
@@ -95,7 +84,6 @@ class Warning<T> extends UserFeedback<T> {
   /// Creates a Warning from an Error object.
   factory Warning.fromError(
     Error? error, {
-    String? code,
     String? userMessage,
     String? developerMessage,
     StackTrace? stackTrace,
@@ -103,7 +91,6 @@ class Warning<T> extends UserFeedback<T> {
     T? data,
     WarningSeverity severity = WarningSeverity.medium,
   }) => Warning(
-    code: code,
     userMessage: userMessage,
     developerMessage: developerMessage ?? error.toString(),
     exception: error,
@@ -116,7 +103,6 @@ class Warning<T> extends UserFeedback<T> {
   /// Creates a Warning from an Exception object.
   factory Warning.fromException(
     Object? exception, {
-    String? code,
     String? userMessage,
     String? developerMessage,
     StackTrace? stackTrace,
@@ -124,7 +110,6 @@ class Warning<T> extends UserFeedback<T> {
     T? data,
     WarningSeverity severity = WarningSeverity.medium,
   }) => Warning(
-    code: code,
     userMessage: userMessage,
     developerMessage: developerMessage ?? exception.toString(),
     exception: exception,
@@ -151,7 +136,6 @@ class Warning<T> extends UserFeedback<T> {
 
   /// Creates a copy of this Warning with the given fields replaced.
   Warning<T> copyWith({
-    Object? code,
     String? userMessage,
     String? developerMessage,
     Object? exception,
@@ -160,7 +144,6 @@ class Warning<T> extends UserFeedback<T> {
     T? data,
     WarningSeverity? severity,
   }) => Warning(
-    code: code ?? this.code,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
     exception: exception ?? this.exception,
@@ -184,7 +167,6 @@ class Warning<T> extends UserFeedback<T> {
 /// Represents a failure or error condition.
 class Failure<T> extends UserFeedback<T> {
   const Failure({
-    super.code,
     super.userMessage,
     super.data,
     this.developerMessage,
@@ -193,42 +175,22 @@ class Failure<T> extends UserFeedback<T> {
     this.failureList,
   });
 
-  /// Creates a Failure from an Error object.
-  factory Failure.fromError(
-    Error? error, {
-    String? code,
-    String? userMessage,
-    String? developerMessage,
-    StackTrace? stackTrace,
-    List<Failure>? failureList,
-    T? data,
-  }) => Failure(
-    code: code,
-    userMessage: userMessage,
-    developerMessage: developerMessage ?? error.toString(),
-    exception: error?.toException(stackTrace: stackTrace),
-    stackTrace: stackTrace ?? error?.stackTrace ?? StackTrace.current,
-    failureList: failureList,
-    data: data,
-  );
-
   /// Creates a Failure from an Exception object.
   factory Failure.fromException(
-    CommonException? exception, {
-    String? code,
+    CommonException<T>? exception, {
     String? userMessage,
     String? developerMessage,
     StackTrace? stackTrace,
     List<Failure>? failureList,
     T? data,
-  }) => Failure(
-    code: code,
-    userMessage: userMessage,
-    developerMessage: developerMessage ?? exception.toString(),
+  }) => Failure<T>(
+    userMessage: userMessage ?? exception?.userMessage,
+    developerMessage:
+        developerMessage ?? exception?.developerMessage ?? exception.toString(),
     exception: exception,
-    stackTrace: stackTrace ?? StackTrace.current,
+    stackTrace: stackTrace ?? exception?.stackTrace ?? StackTrace.current,
     failureList: failureList,
-    data: data,
+    data: data ?? exception?.type,
   );
 
   /// A technical message for developers (not shown to users).
@@ -245,7 +207,6 @@ class Failure<T> extends UserFeedback<T> {
 
   /// Creates a copy of this Failure with the given fields replaced.
   Failure<T> copyWith({
-    Object? code,
     String? userMessage,
     String? developerMessage,
     CommonException? exception,
@@ -253,7 +214,6 @@ class Failure<T> extends UserFeedback<T> {
     List<Failure>? failureList,
     T? data,
   }) => Failure(
-    code: code ?? this.code,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
     exception: exception ?? this.exception,
@@ -315,35 +275,29 @@ extension UserFeedbackX<T> on UserFeedback<T> {
   /// Maps the data contained in the feedback to a new type.
   UserFeedback<R> mapData<R>(R Function(T? data) mapper) {
     return switch (this) {
-      Success(:final code, userMessage: final message) => Success<R>(
-        code: code,
+      Success(userMessage: final message) => Success<R>(
         userMessage: userMessage,
         data: mapper(data),
       ),
-      Warning(:final code, userMessage: final message, :final severity) =>
-        Warning<R>(
-          code: code,
-          userMessage: userMessage,
-          data: mapper(data),
-          severity: severity,
-        ),
+      Warning(userMessage: final message, :final severity) => Warning<R>(
+        userMessage: userMessage,
+        data: mapper(data),
+        severity: severity,
+      ),
       Failure(
-        :final code,
         userMessage: final message,
         :final developerMessage,
         :final exception,
         :final stackTrace,
       ) =>
         Failure<R>(
-          code: code,
           userMessage: userMessage,
           data: mapper(data),
           developerMessage: developerMessage,
           exception: exception,
           stackTrace: stackTrace,
         ),
-      Information(:final code, userMessage: final message) => Information<R>(
-        code: code,
+      Information(userMessage: final message) => Information<R>(
         userMessage: userMessage,
         data: mapper(data),
       ),
