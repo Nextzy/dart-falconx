@@ -41,7 +41,8 @@ class Result<T> extends Equatable {
   T? get valueOrNull => _isSuccess ? _value : null;
 
   /// Gets the value or the provided default if failed.
-  T valueOr(T defaultValue) => _isSuccess ? _value as T : defaultValue;
+  T valueOr(T defaultValue) =>
+      _isSuccess ? _value ?? defaultValue : defaultValue;
 
   /// Gets the error if failed, throws if successful.
   CommonException get exception {
@@ -163,22 +164,6 @@ class Result<T> extends Equatable {
     }
   }
 
-  /// Converts this Result to a UserFeedback.
-  UserFeedback<T> toUserFeedback({
-    FeedbackLevel level = FeedbackLevel.medium,
-  }) {
-    if (_isSuccess) {
-      return Success<T>(
-        data: _value as T,
-        level: level,
-      );
-    }
-    return Failure<T>.fromException(
-      _exception as CommonException<T>?,
-      level: level,
-    );
-  }
-
   /// Swaps success and failure.
   ///
   /// Success becomes Failure with a new exception,
@@ -206,5 +191,3 @@ class Result<T> extends Equatable {
     return 'Result.failure($_exception)';
   }
 }
-
-

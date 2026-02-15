@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$JsonRpcResponse<T,E> {
 
- String? get jsonrpc; T? get result; E? get error; int get id;
+ String? get jsonrpc; int get id; T? get result; E? get error;
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $JsonRpcResponseCopyWith<T, E, JsonRpcResponse<T, E>> get copyWith => _$JsonRpcR
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcResponse<T, E>&&(identical(other.jsonrpc, jsonrpc) || other.jsonrpc == jsonrpc)&&const DeepCollectionEquality().equals(other.result, result)&&const DeepCollectionEquality().equals(other.error, error)&&(identical(other.id, id) || other.id == id));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcResponse<T, E>&&(identical(other.jsonrpc, jsonrpc) || other.jsonrpc == jsonrpc)&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.result, result)&&const DeepCollectionEquality().equals(other.error, error));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,jsonrpc,const DeepCollectionEquality().hash(result),const DeepCollectionEquality().hash(error),id);
+int get hashCode => Object.hash(runtimeType,jsonrpc,id,const DeepCollectionEquality().hash(result),const DeepCollectionEquality().hash(error));
 
 @override
 String toString() {
-  return 'JsonRpcResponse<$T, $E>(jsonrpc: $jsonrpc, result: $result, error: $error, id: $id)';
+  return 'JsonRpcResponse<$T, $E>(jsonrpc: $jsonrpc, id: $id, result: $result, error: $error)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $JsonRpcResponseCopyWith<T,E,$Res>  {
   factory $JsonRpcResponseCopyWith(JsonRpcResponse<T, E> value, $Res Function(JsonRpcResponse<T, E>) _then) = _$JsonRpcResponseCopyWithImpl;
 @useResult
 $Res call({
- String? jsonrpc, T? result, E? error, int id
+ String? jsonrpc, int id, T? result, E? error
 });
 
 
@@ -65,13 +65,13 @@ class _$JsonRpcResponseCopyWithImpl<T,E,$Res>
 
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? jsonrpc = freezed,Object? result = freezed,Object? error = freezed,Object? id = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? jsonrpc = freezed,Object? id = null,Object? result = freezed,Object? error = freezed,}) {
   return _then(_self.copyWith(
 jsonrpc: freezed == jsonrpc ? _self.jsonrpc : jsonrpc // ignore: cast_nullable_to_non_nullable
-as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
+as String?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as T?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as E?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as int,
+as E?,
   ));
 }
 
@@ -156,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? jsonrpc,  T? result,  E? error,  int id)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? jsonrpc,  int id,  T? result,  E? error)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse() when $default != null:
-return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
+return $default(_that.jsonrpc,_that.id,_that.result,_that.error);case _:
   return orElse();
 
 }
@@ -177,10 +177,10 @@ return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? jsonrpc,  T? result,  E? error,  int id)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? jsonrpc,  int id,  T? result,  E? error)  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse():
-return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
+return $default(_that.jsonrpc,_that.id,_that.result,_that.error);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +197,10 @@ return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? jsonrpc,  T? result,  E? error,  int id)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? jsonrpc,  int id,  T? result,  E? error)?  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse() when $default != null:
-return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
+return $default(_that.jsonrpc,_that.id,_that.result,_that.error);case _:
   return null;
 
 }
@@ -212,7 +212,7 @@ return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
 @JsonSerializable(genericArgumentFactories: true)
 
 class _JsonRpcResponse<T,E> extends JsonRpcResponse<T, E> {
-  const _JsonRpcResponse({required final  String? jsonrpc, this.result, this.error, required final  int id}): super._(jsonrpc: jsonrpc, id: id);
+  const _JsonRpcResponse({required final  String? jsonrpc, required final  int id, this.result, this.error}): super._(jsonrpc: jsonrpc, id: id);
   factory _JsonRpcResponse.fromJson(Map<String, dynamic> json,T Function(Object?) fromJsonT,E Function(Object?) fromJsonE) => _$JsonRpcResponseFromJson(json,fromJsonT,fromJsonE);
 
 @override final  T? result;
@@ -231,16 +231,16 @@ Map<String, dynamic> toJson(Object? Function(T) toJsonT,Object? Function(E) toJs
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcResponse<T, E>&&(identical(other.jsonrpc, jsonrpc) || other.jsonrpc == jsonrpc)&&const DeepCollectionEquality().equals(other.result, result)&&const DeepCollectionEquality().equals(other.error, error)&&(identical(other.id, id) || other.id == id));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcResponse<T, E>&&(identical(other.jsonrpc, jsonrpc) || other.jsonrpc == jsonrpc)&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.result, result)&&const DeepCollectionEquality().equals(other.error, error));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,jsonrpc,const DeepCollectionEquality().hash(result),const DeepCollectionEquality().hash(error),id);
+int get hashCode => Object.hash(runtimeType,jsonrpc,id,const DeepCollectionEquality().hash(result),const DeepCollectionEquality().hash(error));
 
 @override
 String toString() {
-  return 'JsonRpcResponse<$T, $E>(jsonrpc: $jsonrpc, result: $result, error: $error, id: $id)';
+  return 'JsonRpcResponse<$T, $E>(jsonrpc: $jsonrpc, id: $id, result: $result, error: $error)';
 }
 
 
@@ -251,7 +251,7 @@ abstract mixin class _$JsonRpcResponseCopyWith<T,E,$Res> implements $JsonRpcResp
   factory _$JsonRpcResponseCopyWith(_JsonRpcResponse<T, E> value, $Res Function(_JsonRpcResponse<T, E>) _then) = __$JsonRpcResponseCopyWithImpl;
 @override @useResult
 $Res call({
- String? jsonrpc, T? result, E? error, int id
+ String? jsonrpc, int id, T? result, E? error
 });
 
 
@@ -268,13 +268,13 @@ class __$JsonRpcResponseCopyWithImpl<T,E,$Res>
 
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? jsonrpc = freezed,Object? result = freezed,Object? error = freezed,Object? id = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? jsonrpc = freezed,Object? id = null,Object? result = freezed,Object? error = freezed,}) {
   return _then(_JsonRpcResponse<T, E>(
 jsonrpc: freezed == jsonrpc ? _self.jsonrpc : jsonrpc // ignore: cast_nullable_to_non_nullable
-as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
+as String?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as T?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as E?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as int,
+as E?,
   ));
 }
 

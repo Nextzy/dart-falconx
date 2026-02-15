@@ -12,9 +12,9 @@ _JsonRpcResponse<T, E> _$JsonRpcResponseFromJson<T, E>(
   E Function(Object? json) fromJsonE,
 ) => _JsonRpcResponse<T, E>(
   jsonrpc: json['jsonrpc'] as String?,
+  id: (json['id'] as num).toInt(),
   result: _$nullableGenericFromJson(json['result'], fromJsonT),
   error: _$nullableGenericFromJson(json['error'], fromJsonE),
-  id: (json['id'] as num).toInt(),
 );
 
 Map<String, dynamic> _$JsonRpcResponseToJson<T, E>(
