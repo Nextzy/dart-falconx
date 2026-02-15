@@ -11,7 +11,7 @@ class NetworkException extends CommonException<String> {
     this.requestOptions,
     super.stackTrace,
     this.errors,
-  }) : super(type: type ?? 'UNKNOWN');
+  }) : super(code: type ?? 'UNKNOWN');
 
   final int statusCode;
   final Response? response;
@@ -37,7 +37,7 @@ class NetworkException extends CommonException<String> {
   String toString() {
     var msg = '';
     if (statusCode != 0) msg += '>>Status code: $statusCode\n';
-    msg += '>>Type: $type\n';
+    msg += '>>Type: $code\n';
     if (userMessage != null && userMessage!.isNotEmpty) {
       msg += '>>User message: $userMessage\n';
     }

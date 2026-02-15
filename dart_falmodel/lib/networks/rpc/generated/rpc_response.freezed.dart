@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$JsonRpcResponse<T,E> {
 
- String? get jsonrpc; T? get result; E? get error; String? get id;
+ String? get jsonrpc; T? get result; E? get error; int get id;
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $JsonRpcResponseCopyWith<T,E,$Res>  {
   factory $JsonRpcResponseCopyWith(JsonRpcResponse<T, E> value, $Res Function(JsonRpcResponse<T, E>) _then) = _$JsonRpcResponseCopyWithImpl;
 @useResult
 $Res call({
- String? jsonrpc, T? result, E? error, String? id
+ String? jsonrpc, T? result, E? error, int id
 });
 
 
@@ -65,13 +65,13 @@ class _$JsonRpcResponseCopyWithImpl<T,E,$Res>
 
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? jsonrpc = freezed,Object? result = freezed,Object? error = freezed,Object? id = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? jsonrpc = freezed,Object? result = freezed,Object? error = freezed,Object? id = null,}) {
   return _then(_self.copyWith(
 jsonrpc: freezed == jsonrpc ? _self.jsonrpc : jsonrpc // ignore: cast_nullable_to_non_nullable
 as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as T?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as E?,id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String?,
+as E?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -156,7 +156,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? jsonrpc,  T? result,  E? error,  String? id)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? jsonrpc,  T? result,  E? error,  int id)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse() when $default != null:
 return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
@@ -177,7 +177,7 @@ return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? jsonrpc,  T? result,  E? error,  String? id)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? jsonrpc,  T? result,  E? error,  int id)  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse():
 return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
@@ -197,7 +197,7 @@ return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? jsonrpc,  T? result,  E? error,  String? id)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? jsonrpc,  T? result,  E? error,  int id)?  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse() when $default != null:
 return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
@@ -212,7 +212,7 @@ return $default(_that.jsonrpc,_that.result,_that.error,_that.id);case _:
 @JsonSerializable(genericArgumentFactories: true)
 
 class _JsonRpcResponse<T,E> extends JsonRpcResponse<T, E> {
-  const _JsonRpcResponse({required final  String? jsonrpc, this.result, this.error, final  String? id}): super._(jsonrpc: jsonrpc, id: id);
+  const _JsonRpcResponse({required final  String? jsonrpc, this.result, this.error, required final  int id}): super._(jsonrpc: jsonrpc, id: id);
   factory _JsonRpcResponse.fromJson(Map<String, dynamic> json,T Function(Object?) fromJsonT,E Function(Object?) fromJsonE) => _$JsonRpcResponseFromJson(json,fromJsonT,fromJsonE);
 
 @override final  T? result;
@@ -251,7 +251,7 @@ abstract mixin class _$JsonRpcResponseCopyWith<T,E,$Res> implements $JsonRpcResp
   factory _$JsonRpcResponseCopyWith(_JsonRpcResponse<T, E> value, $Res Function(_JsonRpcResponse<T, E>) _then) = __$JsonRpcResponseCopyWithImpl;
 @override @useResult
 $Res call({
- String? jsonrpc, T? result, E? error, String? id
+ String? jsonrpc, T? result, E? error, int id
 });
 
 
@@ -268,13 +268,13 @@ class __$JsonRpcResponseCopyWithImpl<T,E,$Res>
 
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? jsonrpc = freezed,Object? result = freezed,Object? error = freezed,Object? id = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? jsonrpc = freezed,Object? result = freezed,Object? error = freezed,Object? id = null,}) {
   return _then(_JsonRpcResponse<T, E>(
 jsonrpc: freezed == jsonrpc ? _self.jsonrpc : jsonrpc // ignore: cast_nullable_to_non_nullable
 as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as T?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as E?,id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String?,
+as E?,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

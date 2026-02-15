@@ -7,10 +7,10 @@ part 'generated/rpc_request.g.dart';
 @freezed
 abstract class JsonRpcRequest extends JsonRpc with _$JsonRpcRequest {
   const factory JsonRpcRequest({
-    required String? jsonrpc,
-    required String? method,
+    required String jsonrpc,
+    required String method,
     Map<String, dynamic>? params,
-    String? id,
+    int? id,
   }) = _JsonRpcRequest;
 
   const JsonRpcRequest._({

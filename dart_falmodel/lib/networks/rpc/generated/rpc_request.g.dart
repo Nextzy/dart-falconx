@@ -8,10 +8,10 @@ part of '../rpc_request.dart';
 
 _JsonRpcRequest _$JsonRpcRequestFromJson(Map<String, dynamic> json) =>
     _JsonRpcRequest(
-      jsonrpc: json['jsonrpc'] as String?,
-      method: json['method'] as String?,
+      jsonrpc: json['jsonrpc'] as String,
+      method: json['method'] as String,
       params: json['params'] as Map<String, dynamic>?,
-      id: json['id'] as String?,
+      id: (json['id'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$JsonRpcRequestToJson(_JsonRpcRequest instance) =>

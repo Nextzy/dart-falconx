@@ -11,7 +11,7 @@ extension FalconObjectExceptionExtensions on Object? {
 
     if (exception == null) {
       return CommonException(
-        type: ErrorType.unknown,
+        code: ErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage ?? 'Null object.',
         stackTrace: stackTrace ?? StackTrace.current,
@@ -38,7 +38,7 @@ extension FalconObjectExceptionExtensions on Object? {
         (detectedType is ErrorType ? detectedType.defaultMessage : null);
 
     return CommonException(
-      type: detectedType,
+      code: detectedType,
       userMessage: message,
       developerMessage: developerMessage ?? toString(),
       stackTrace: trace,
