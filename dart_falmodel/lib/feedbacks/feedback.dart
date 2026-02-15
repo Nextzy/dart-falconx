@@ -105,7 +105,7 @@ class Warning<T> extends UserFeedback<T> {
     FeedbackLevel level = FeedbackLevel.medium,
   }) => Warning<T>(
     message: exception?.userMessage,
-    data: data ?? exception?.type,
+    data: data ?? exception?.code,
     level: level,
   );
 
@@ -141,7 +141,7 @@ class Failure<T> extends UserFeedback<T> {
     FeedbackLevel level = FeedbackLevel.medium,
   }) => Failure<T>(
     message: exception?.userMessage,
-    data: data ?? exception?.type,
+    data: data ?? exception?.code,
     level: level,
   );
 

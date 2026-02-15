@@ -9,9 +9,9 @@ abstract class JsonRpcResponse<T, E> extends JsonRpc
     with _$JsonRpcResponse<T, E> {
   const factory JsonRpcResponse({
     required String? jsonrpc,
+    required int id,
     T? result,
     E? error,
-    String? id,
   }) = _JsonRpcResponse<T, E>;
 
   const JsonRpcResponse._({

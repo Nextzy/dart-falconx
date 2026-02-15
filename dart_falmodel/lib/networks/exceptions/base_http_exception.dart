@@ -133,7 +133,7 @@ abstract class BaseHttpException extends NetworkException {
       );
     }
 
-    buffer.writeln('Type: $type');
+    buffer.writeln('Type: $code');
     if (userMessage != null) buffer.writeln('Error: $userMessage');
     if (developerMessage != null) {
       buffer.writeln('Developer Message: $developerMessage');

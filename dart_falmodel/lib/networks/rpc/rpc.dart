@@ -9,5 +9,5 @@ abstract class JsonRpc {
   });
 
   final String? jsonrpc;
-  final String? id;
+  final int? id;
 }

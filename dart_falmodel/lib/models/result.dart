@@ -187,7 +187,7 @@ class Result<T> extends Equatable {
     if (_isSuccess) {
       return Result.failure(
         CommonException(
-          type: ErrorType.unexpected,
+          code: ErrorType.unexpected,
           userMessage: message ?? 'Unexpected success',
         ),
       );

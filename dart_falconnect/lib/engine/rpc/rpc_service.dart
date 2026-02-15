@@ -61,7 +61,7 @@ abstract class RpcService {
     try {
       value = JsonRpcResponse(
         jsonrpc: data?['jsonrpc'] as String?,
-        id: data?['id'] as String?,
+        id: data?['id'] as int,
         result: result is Map<String, dynamic>
             ? fromResponseJson!(result)
             : result != null
@@ -166,7 +166,7 @@ abstract class RpcService {
 
           return JsonRpcResponse(
             jsonrpc: iMap['jsonrpc'] as String?,
-            id: id as String?,
+            id: id as int,
             result: result is Map<String, dynamic>
                 ? fromResponseJson!(result)
                 : result != null

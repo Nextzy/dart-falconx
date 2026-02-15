@@ -91,13 +91,13 @@ enum ErrorType {
 
 class CommonException<T> implements Exception {
   const CommonException({
-    required this.type,
+    required this.code,
     this.userMessage,
     this.developerMessage,
     this.stackTrace,
   });
 
-  final T type;
+  final T code;
   final String? userMessage;
   final String? developerMessage;
 
@@ -110,12 +110,12 @@ class CommonException<T> implements Exception {
 
   /// Creates a copy of this CommonException with the given fields replaced.
   CommonException<T> copyWith({
-    T? type,
+    T? code,
     String? userMessage,
     String? developerMessage,
     StackTrace? stackTrace,
   }) => CommonException(
-    type: type ?? this.type,
+    code: code ?? this.code,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
     stackTrace: stackTrace ?? this.stackTrace,
@@ -123,7 +123,7 @@ class CommonException<T> implements Exception {
 
   @override
   String toString() {
-    final buffer = StringBuffer('[$type]');
+    final buffer = StringBuffer('[$code]');
     if (userMessage != null && userMessage!.isNotEmpty) {
       buffer.write('\n | User: $userMessage');
     }

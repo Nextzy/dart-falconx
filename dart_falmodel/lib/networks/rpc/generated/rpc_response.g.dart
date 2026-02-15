@@ -14,7 +14,7 @@ _JsonRpcResponse<T, E> _$JsonRpcResponseFromJson<T, E>(
   jsonrpc: json['jsonrpc'] as String?,
   result: _$nullableGenericFromJson(json['result'], fromJsonT),
   error: _$nullableGenericFromJson(json['error'], fromJsonE),
-  id: json['id'] as String?,
+  id: (json['id'] as num).toInt(),
 );
 
 Map<String, dynamic> _$JsonRpcResponseToJson<T, E>(
