@@ -65,3 +65,6 @@ hosting.*
 
 # Java class files
 *.class
+
+# Claude Code
+.serena/

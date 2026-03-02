@@ -1,1 +1,0 @@
-//sc:git commit without footer

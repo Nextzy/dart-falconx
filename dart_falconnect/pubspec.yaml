@@ -16,7 +16,7 @@ dependencies:
 
   #PLATFORM: All
   ansicolor: ^2.0.3
-  dio: ^5.9.1
+  dio: ^5.9.2
   retrofit: ^4.9.2
   web_socket_channel: ^3.0.3
   dio_cache_interceptor: ^4.0.5
@@ -25,8 +25,8 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.11.1
   lints: ^6.1.0
-  test: ^1.29.0
-  json_serializable: ^6.12.0
+  test: ^1.30.0
+  json_serializable: ^6.13.0
   freezed: ^3.2.5
-  retrofit_generator: ^10.0.6
-  very_good_analysis: ^10.1.0
+  retrofit_generator: ^10.2.3
+  very_good_analysis: ^10.2.0
