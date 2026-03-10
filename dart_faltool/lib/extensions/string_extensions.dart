@@ -25,7 +25,7 @@ extension FalconToolStringExtension on String {
     return int.tryParse(cleaned) ?? 0;
   }
 
-  String hashStr({int? length}) {
+  String hashSha256({int? length}) {
     // Generate hash
     final bytes = utf8.encode(this);
     final digest = sha256.convert(bytes);
@@ -104,6 +104,8 @@ extension FalconToolStringExtension on String {
     try {
       final decoded = json.decode(this);
       return decoded is Map<String, dynamic> ? decoded : null;
+      // Generic catch needed to return null on any parse failure.
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       return null;
     }
@@ -145,7 +147,7 @@ extension FalconToolStringExtension on String {
   /// ```
   String toCamelCase() {
     // Handle camelCase strings by inserting underscores before capitals
-    var normalized = replaceAllMapped(
+    final normalized = replaceAllMapped(
       RegExp('([a-z])([A-Z])'),
       (match) => '${match[1]}_${match[2]}',
     );
@@ -180,7 +182,7 @@ extension FalconToolStringExtension on String {
   /// ```
   String toPascalCase() {
     // Handle camelCase strings by inserting underscores before capitals
-    var normalized = replaceAllMapped(
+    final normalized = replaceAllMapped(
       RegExp('([a-z])([A-Z])'),
       (match) => '${match[1]}_${match[2]}',
     );

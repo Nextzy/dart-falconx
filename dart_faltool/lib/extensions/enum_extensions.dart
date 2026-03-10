@@ -34,6 +34,8 @@ extension FalconToolEnumStringExtension on String {
               e.toString().toLowerCase() == lowerThis,
         );
       }
+      // Generic catch needed to handle any exception from enum parsing.
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       if (defaultValue != null) {
         return defaultValue;

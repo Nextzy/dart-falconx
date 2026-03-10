@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 class NetworkInternalServerException extends NetworkServerException {
   const NetworkInternalServerException({
     super.statusCode = 500,
-    super.type,
+    super.type = NetworkErrorType.internalServerError,
     super.userMessage,
     super.developerMessage,
     super.response,

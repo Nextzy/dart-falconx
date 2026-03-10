@@ -45,20 +45,32 @@ extension FalconToolDateTimeExtensions on DateTime {
     final daysToThursday = (4 - jan1.weekday + 7) % 7;
     final firstThursday = jan1.add(Duration(days: daysToThursday));
     
-    // If this date is before the first Thursday, it belongs to the previous year's last week
+    // If this date is before the first Thursday, it belongs to the
+    // previous year's last week
     if (isBefore(firstThursday.subtract(const Duration(days: 3)))) {
       // This is week 52 or 53 of the previous year
       final prevYearJan1 = DateTime(year - 1, 1, 1);
-      final prevDaysToThursday = (4 - prevYearJan1.weekday + 7) % 7;
-      final prevFirstThursday = prevYearJan1.add(Duration(days: prevDaysToThursday));
-      final lastWeekStart = DateTime(year - 1, 12, 31).subtract(
-        Duration(days: (DateTime(year - 1, 12, 31).weekday - 1 + 7) % 7),
+      final prevDaysToThursday =
+          (4 - prevYearJan1.weekday + 7) % 7;
+      final prevFirstThursday =
+          prevYearJan1.add(Duration(days: prevDaysToThursday));
+      final lastWeekStart =
+          DateTime(year - 1, 12, 31).subtract(
+        Duration(
+          days: (DateTime(year - 1, 12, 31).weekday - 1 + 7)
+              % 7,
+        ),
       );
-      return 1 + lastWeekStart.difference(prevFirstThursday).inDays ~/ 7;
+      return 1 +
+          lastWeekStart
+              .difference(prevFirstThursday)
+              .inDays ~/
+              7;
     }
     
     // Calculate the Monday of the week containing the first Thursday
-    final firstWeekMonday = firstThursday.subtract(Duration(days: 3));
+    final firstWeekMonday =
+        firstThursday.subtract(const Duration(days: 3));
     
     // Calculate weeks from the first week's Monday
     final daysSinceFirstWeek = difference(firstWeekMonday).inDays;
@@ -80,7 +92,8 @@ extension FalconToolDateTimeExtensions on DateTime {
   bool get isFuture => isAfter(DateTime.now());
 
   /// Checks if this date is on a weekday.
-  bool get isWeekday => weekday != DateTime.saturday && weekday != DateTime.sunday;
+  bool get isWeekday =>
+      weekday != DateTime.saturday && weekday != DateTime.sunday;
 
   /// Checks if this date is in the same day as another date.
   bool isSameDay(DateTime other) =>

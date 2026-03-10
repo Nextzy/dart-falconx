@@ -1,16 +1,20 @@
 import 'package:dart_falconnect/lib.dart';
 
-extension DartFalconnectHttpFutureDynamicExtensions on Future<Response<dynamic>> {
+extension DartFalconnectHttpFutureDynamicExtensions
+    on Future<Response<dynamic>> {
   Future<Response<T>> mapJson<T>(
-      FutureOr<T> Function(Map<String, Object?> response) f) {
-    return then((Response<dynamic> response) async {
+    FutureOr<T> Function(Map<String, Object?> response) f,
+  ) {
+    return then((response) async {
       T data;
       if (response.data is String) {
         final map = <String, dynamic>{};
         map['result'] = response.data;
         data = await f(map);
       } else {
-        data = await f(response.data as Map<String, Object?>);
+        data = await f(
+          response.data as Map<String, Object?>,
+        );
       }
 
       return response.copyWith(data: data);
@@ -18,23 +22,32 @@ extension DartFalconnectHttpFutureDynamicExtensions on Future<Response<dynamic>>
   }
 }
 
-extension DartFalconnectFutureResponseExtensions<T> on Future<Response<T>> {
+extension DartFalconnectFutureResponseExtensions<T>
+    on Future<Response<T>> {
   Future<T> unwrapResponse() {
-    return then<T>((Response<T> response) {
+    return then<T>((response) {
       return Future.value(response.data);
     });
   }
 
   Future<Response<T>> catchWhenError(
-      T? Function(DioException exception, StackTrace? stackTrace)? f) {
+    T? Function(
+      DioException exception,
+      StackTrace? stackTrace,
+    )?
+        f,
+  ) {
     return then(
       (value) => value,
       onError: (Object error, StackTrace stackTrace) {
         if (f != null && error is DioException) {
           final resolve = f(error, error.stackTrace);
-          final response = error.response.transformData(data: resolve);
+          final response =
+              error.response.transformData(data: resolve);
           return Future.value(response);
         }
+        // Error is rethrown as-is to preserve the original type.
+        // ignore: only_throw_errors
         throw error;
       },
     );
@@ -44,51 +57,68 @@ extension DartFalconnectFutureResponseExtensions<T> on Future<Response<T>> {
 extension DartFalconnectHttpFutureRpcResponseExtensions<T, E>
     on Future<JsonRpcResponse<T, E>> {
   Future<T> unwrapResponse() {
-    return then<T>((JsonRpcResponse<T, E> response) {
+    return then<T>((response) {
       return Future.value(response.result);
     });
   }
 
   Future<JsonRpcResponse<T, E>> catchWhenError(
-      T? Function(DioException exception, StackTrace? stackTrace)? f) {
+    T? Function(
+      DioException exception,
+      StackTrace? stackTrace,
+    )?
+        f,
+  ) {
     return then(
       (value) => value,
       onError: (Object error, StackTrace stackTrace) {
         if (f != null && error is DioException) {
           final resolve = f(error, error.stackTrace);
-          final response = error.response.transformData(data: resolve);
+          final response =
+              error.response.transformData(data: resolve);
           return Future.value(response);
         }
+        // Error is rethrown as-is to preserve the original type.
+        // ignore: only_throw_errors
         throw error;
       },
     );
   }
 }
 
-extension DartFalconnectHttpFutureResponseExtensions<T> on Future<HttpResponse<T>> {
+extension DartFalconnectHttpFutureResponseExtensions<T>
+    on Future<HttpResponse<T>> {
   Future<T> unwrapResponse() {
-    return then<T>((HttpResponse<T> response) {
+    return then<T>((response) {
       return Future.value(response.data);
     });
   }
 
   Future<HttpResponse<T>> catchWhenError(
-      T? Function(DioException exception, StackTrace? stackTrace)? f) {
+    T? Function(
+      DioException exception,
+      StackTrace? stackTrace,
+    )?
+        f,
+  ) {
     return then(
       (value) => value,
       onError: (Object error, StackTrace stackTrace) {
         if (f != null && error is DioException) {
           final resolve = f(error, error.stackTrace);
-          final response = error.response.transformData(data: resolve);
+          final response =
+              error.response.transformData(data: resolve);
           return Future.value(response);
         }
+        // Error is rethrown as-is to preserve the original type.
+        // ignore: only_throw_errors
         throw error;
       },
     );
   }
 }
 
-extension DartFalconnectResponseExtensions on Response? {
+extension DartFalconnectResponseExtensions on Response<dynamic>? {
   Response<T> copyWith<T>({
     T? data,
     Headers? headers,
@@ -102,10 +132,13 @@ extension DartFalconnectResponseExtensions on Response? {
     return Response<T>(
       data: (data ?? this?.data) as T?,
       headers: headers ?? this?.headers,
-      requestOptions: requestOptions ?? this!.requestOptions,
-      isRedirect: isRedirect ?? this?.isRedirect ?? false,
+      requestOptions:
+          requestOptions ?? this!.requestOptions,
+      isRedirect:
+          isRedirect ?? this?.isRedirect ?? false,
       statusCode: statusCode ?? this?.statusCode,
-      statusMessage: statusMessage ?? this?.statusMessage,
+      statusMessage:
+          statusMessage ?? this?.statusMessage,
       redirects: redirects ?? this?.redirects ?? [],
       extra: extra ?? this?.extra ?? {},
     );
@@ -128,10 +161,13 @@ extension DartFalconnectResponseExtensions on Response? {
     return Response<T>(
       data: data,
       headers: headers ?? this?.headers,
-      requestOptions: requestOptions ?? this!.requestOptions,
-      isRedirect: isRedirect ?? this?.isRedirect ?? false,
+      requestOptions:
+          requestOptions ?? this!.requestOptions,
+      isRedirect:
+          isRedirect ?? this?.isRedirect ?? false,
       statusCode: statusCode ?? this?.statusCode,
-      statusMessage: statusMessage ?? this?.statusMessage,
+      statusMessage:
+          statusMessage ?? this?.statusMessage,
       redirects: redirects ?? this?.redirects ?? [],
       extra: extra ?? this?.extra ?? {},
     );

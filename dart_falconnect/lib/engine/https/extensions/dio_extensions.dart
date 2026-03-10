@@ -1,11 +1,12 @@
 import 'package:dart_falconnect/lib.dart';
 
-extension DartFalconnectRequestOptionExtensions on RequestOptions {
+extension DartFalconnectRequestOptionExtensions
+    on RequestOptions {
   void setHeaderTokenBearer(String token) {
     headers[HttpHeader.AUTHORIZE] = 'Bearer $token';
   }
 
-  void removeHeaderToken() async {
+  Future<void> removeHeaderToken() async {
     headers.remove(HttpHeader.AUTHORIZE);
   }
 }

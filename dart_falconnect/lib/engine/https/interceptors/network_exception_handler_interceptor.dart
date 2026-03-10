@@ -1,6 +1,3 @@
-// Ignore because is not necessary
-// ignore_for_file: avoid_dynamic_calls
-
 import 'package:dart_falconnect/lib.dart';
 
 /// Support Error Response:
@@ -16,7 +13,10 @@ abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
   NetworkExceptionHandlerInterceptor();
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) {
     final response = err.response;
     final exception = err.toException();
     if (err.type == DioExceptionType.connectionTimeout ||
@@ -36,28 +36,43 @@ abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
         ),
       );
     } else if (_isServerError(response)) {
-      onServerError(err.copyWith(error: exception), handler);
+      onServerError(
+        err.copyWith(error: exception),
+        handler,
+      );
     } else if (_isClientError(response)) {
-      onClientError(err.copyWith(error: exception), handler);
+      onClientError(
+        err.copyWith(error: exception),
+        handler,
+      );
     } else {
       onNonStandardError(err, handler);
     }
   }
 
-  void onClientError(DioException err, ErrorInterceptorHandler handler);
+  void onClientError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  );
 
-  void onServerError(DioException err, ErrorInterceptorHandler handler);
+  void onServerError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  );
 
-  void onNonStandardError(DioException err, ErrorInterceptorHandler handler) {
+  void onNonStandardError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) {
     handler.next(err);
   }
 
-  bool _isClientError(Response? response) =>
+  bool _isClientError(Response<dynamic>? response) =>
       response != null &&
       (response.statusCode ?? 0) >= 400 &&
       (response.statusCode ?? 0) < 500;
 
-  bool _isServerError(Response? response) =>
+  bool _isServerError(Response<dynamic>? response) =>
       response != null &&
       (response.statusCode ?? 0) >= 500 &&
       (response.statusCode ?? 0) < 600;

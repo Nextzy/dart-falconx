@@ -107,6 +107,8 @@ extension FalconToolStringValidatorExtension on String {
     try {
       json.decode(this);
       return true;
+      // Generic catch needed to return false on any JSON parse failure.
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       return false;
     }

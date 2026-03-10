@@ -38,6 +38,7 @@ abstract class BaseModel<T> with EquatableMixin {
   /// Creates a copy of this model with updated fields.
   /// 
   /// Subclasses should implement this method to support immutable updates.
-  /// The method should accept optional parameters for each field that can be updated.
+  /// The method should accept optional parameters for each
+  /// field that can be updated.
   T copyWith();
 }

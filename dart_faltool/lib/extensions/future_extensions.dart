@@ -67,7 +67,7 @@ extension FalconToolFutureExtensions<T> on Future<T> {
           rethrow;
         }
 
-        await Future.delayed(currentDelay);
+        await Future<void>.delayed(currentDelay);
 
         // Exponential backoff with max delay
         currentDelay = Duration(
@@ -87,6 +87,8 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   Future<void> ignoreErrors() async {
     try {
       await this;
+      // Generic catch needed to suppress all error types.
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       // Errors are intentionally ignored
     }
@@ -168,7 +170,7 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   ///     .delayed(Duration(seconds: 2));
   /// ```
   Future<T> delayed(Duration duration) {
-    return Future.delayed(duration).then((_) => this);
+    return Future<void>.delayed(duration).then((_) => this);
   }
 
   /// Cancels the future if it takes longer than the specified duration.
@@ -231,6 +233,8 @@ extension FalconToolEitherFutureExtensions<L, R> on Future<R> {
     try {
       final value = await this;
       return Right(value);
+      // Generic catch needed to convert any error into Either.Left.
+      // ignore: avoid_catches_without_on_clauses
     } catch (error) {
       return Left(onError(error));
     }

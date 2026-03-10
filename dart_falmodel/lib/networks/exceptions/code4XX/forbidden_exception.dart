@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 class NetworkForbiddenException extends NetworkClientException {
   const NetworkForbiddenException({
     super.statusCode = 403,
-    super.type,
+    super.type = NetworkErrorType.forbidden,
     super.userMessage,
     super.developerMessage,
     super.response,

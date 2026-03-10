@@ -58,7 +58,7 @@ void main() {
       test('should handle empty map', () {
         final map = <String, dynamic>{};
         final cleaned = map.removeNullOrEmptyString();
-        expect(cleaned, {});
+        expect(cleaned, <String, dynamic>{});
       });
 
       test('should handle deeply nested structures', () {
@@ -109,7 +109,12 @@ void main() {
       });
 
       test('should filter by key', () {
-        final data = {'name': 'John', '_id': '123', '_temp': 'value', 'age': '30'};
+        final data = {
+          'name': 'John',
+          '_id': '123',
+          '_temp': 'value',
+          'age': '30',
+        };
         final public = data.where((k, v) => !k.startsWith('_'));
         expect(public, {'name': 'John', 'age': '30'});
       });
@@ -117,13 +122,13 @@ void main() {
       test('should handle empty map', () {
         final empty = <String, int>{};
         final filtered = empty.where((k, v) => v > 0);
-        expect(filtered, {});
+        expect(filtered, <String, int>{});
       });
 
       test('should return empty map when no matches', () {
         final scores = {'alice': 95, 'bob': 87, 'charlie': 92};
         final filtered = scores.where((k, v) => v > 100);
-        expect(filtered, {});
+        expect(filtered, <String, int>{});
       });
     });
 
@@ -181,7 +186,7 @@ void main() {
       test('should handle empty map', () {
         final empty = <String, int>{};
         final inverted = empty.invert();
-        expect(inverted, {});
+        expect(inverted, <int, String>{});
       });
     });
 
@@ -207,7 +212,7 @@ void main() {
       test('should handle empty map', () {
         final empty = <String, int>{};
         final grouped = empty.groupByKey((k, v) => k);
-        expect(grouped, {});
+        expect(grouped, <String, List<int>>{});
       });
     });
 
@@ -227,7 +232,7 @@ void main() {
       test('should handle empty map', () {
         final empty = <String, int>{};
         final sorted = empty.sortByKey();
-        expect(sorted, {});
+        expect(sorted, <String, int>{});
       });
 
       test('should maintain values after sorting', () {
@@ -255,7 +260,7 @@ void main() {
 
       test('should throw for non-comparable values without comparator', () {
         final map = {'a': Object(), 'b': Object()};
-        expect(() => map.sortByValue(), throwsArgumentError);
+        expect(map.sortByValue, throwsArgumentError);
       });
     });
 
@@ -281,7 +286,7 @@ void main() {
       test('should handle empty key list', () {
         final map = {'a': 1, 'b': 2, 'c': 3};
         final picked = map.pick([]);
-        expect(picked, {});
+        expect(picked, <String, int>{});
       });
     });
 
@@ -312,42 +317,41 @@ void main() {
 
     group('setPath', () {
       test('should set value at nested path', () {
-        final config = <String, dynamic>{};
-        config.setPath(['database', 'host'], 'localhost');
+        final config = <String, dynamic>{}
+          ..setPath(['database', 'host'], 'localhost');
         expect(config, {
-          'database': {'host': 'localhost'}
+          'database': {'host': 'localhost'},
         });
       });
 
       test('should create multiple nested levels', () {
-        final config = <String, dynamic>{};
-        config.setPath(['a', 'b', 'c'], 'value');
+        final config = <String, dynamic>{}
+          ..setPath(['a', 'b', 'c'], 'value');
         expect(config, {
           'a': {
-            'b': {'c': 'value'}
-          }
+            'b': {'c': 'value'},
+          },
         });
       });
 
       test('should overwrite existing values', () {
         final config = <String, dynamic>{
-          'database': {'host': 'oldhost', 'port': 5432}
-        };
-        config.setPath(['database', 'host'], 'newhost');
+          'database': {'host': 'oldhost', 'port': 5432},
+        }..setPath(['database', 'host'], 'newhost');
         expect(config, {
-          'database': {'host': 'newhost', 'port': 5432}
+          'database': {'host': 'newhost', 'port': 5432},
         });
       });
 
       test('should handle single-level path', () {
-        final config = <String, dynamic>{};
-        config.setPath(['key'], 'value');
+        final config = <String, dynamic>{}
+          ..setPath(['key'], 'value');
         expect(config, {'key': 'value'});
       });
 
       test('should handle empty path', () {
-        final config = <String, dynamic>{'existing': 'value'};
-        config.setPath([], 'newvalue');
+        final config = <String, dynamic>{'existing': 'value'}
+          ..setPath([], 'newvalue');
         expect(config, {'existing': 'value'});
       });
     });
@@ -385,7 +389,7 @@ void main() {
 
       test('should handle empty path', () {
         final config = {'key': 'value'};
-        final value = config.getPath<Map>([]);
+        final value = config.getPath<Map<String, dynamic>>([]);
         expect(value, config);
       });
 
@@ -412,12 +416,12 @@ void main() {
       });
 
       test('should return true for empty map', () {
-        Map<String, int>? map = {};
+        final map = <String, int>{};
         expect(map.isNullOrEmpty, true);
       });
 
       test('should return false for non-empty map', () {
-        Map<String, int>? map = {'a': 1};
+        final map = {'a': 1};
         expect(map.isNullOrEmpty, false);
       });
     });
@@ -429,25 +433,25 @@ void main() {
       });
 
       test('should return false for empty map', () {
-        Map<String, int>? map = {};
+        final map = <String, int>{};
         expect(map.isNotNullOrEmpty, false);
       });
 
       test('should return true for non-empty map', () {
-        Map<String, int>? map = {'a': 1};
+        final map = {'a': 1};
         expect(map.isNotNullOrEmpty, true);
       });
     });
 
     group('orEmptyMap', () {
       test('should return map when not null', () {
-        Map<String, int>? map = {'a': 1, 'b': 2};
+        final map = {'a': 1, 'b': 2};
         expect(map.orEmpty, {'a': 1, 'b': 2});
       });
 
       test('should return empty map when null', () {
         Map<String, int>? map;
-        expect(map.orEmpty, {});
+        expect(map.orEmpty, <String, int>{});
       });
     });
 
@@ -455,36 +459,32 @@ void main() {
       test('should execute action for non-empty map', () {
         var executed = false;
         Map<String, int>? receivedMap;
-        Map<String, int>? map = {'a': 1, 'b': 2};
-        
-        map.ifNotEmpty((m) {
-          executed = true;
-          receivedMap = m;
-        });
-        
+        final map = {'a': 1, 'b': 2}
+          ..ifNotEmpty((m) {
+            executed = true;
+            receivedMap = m;
+          });
+
         expect(executed, true);
+        expect(map, {'a': 1, 'b': 2});
         expect(receivedMap, {'a': 1, 'b': 2});
       });
 
       test('should not execute action for null', () {
         var executed = false;
-        Map<String, int>? map;
-        
-        map.ifNotEmpty((m) {
+        (null as Map<String, int>?).ifNotEmpty((m) {
           executed = true;
         });
-        
+
         expect(executed, false);
       });
 
       test('should not execute action for empty map', () {
         var executed = false;
-        Map<String, int>? map = {};
-        
-        map.ifNotEmpty((m) {
+        <String, int>{}.ifNotEmpty((m) {
           executed = true;
         });
-        
+
         expect(executed, false);
       });
     });

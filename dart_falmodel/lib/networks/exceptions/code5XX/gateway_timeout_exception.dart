@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 class NetworkGatewayTimeoutException extends NetworkServerException {
   const NetworkGatewayTimeoutException({
     super.statusCode = 504,
-    super.type,
+    super.type = NetworkErrorType.gatewayTimeout,
     super.userMessage,
     super.developerMessage,
     super.response,
