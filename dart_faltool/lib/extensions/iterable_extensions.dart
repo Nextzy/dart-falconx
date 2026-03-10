@@ -1,6 +1,4 @@
 import 'dart:math' as math;
-import 'package:dart_faltool/lib.dart';
-
 
 /// Extension methods for Iterable type with enhanced functionality.
 /// 

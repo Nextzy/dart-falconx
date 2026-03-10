@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 class NoInternetConnectException extends NetworkException {
   const NoInternetConnectException({
     super.statusCode = 0,
-    super.type,
+    super.type = NetworkErrorType.noInternet,
     super.userMessage,
     super.developerMessage,
     super.response,

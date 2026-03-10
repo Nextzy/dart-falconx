@@ -6,12 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Dart/Flutter monorepo managed with Melos, containing packages for network operations and utilities:
 
+- **dart_falconx**: Umbrella package that re-exports all packages below (single import for consumers)
 - **dart_falconnect**: Network connectivity (HTTP client, WebSocket, RPC implementations)
-- **dart_falmodel**: Data models, exceptions, and network abstractions  
+- **dart_falmodel**: Data models, exceptions, and network abstractions
 - **dart_faltool**: Utility extensions and helper functions
 
 ### Package Architecture
 ```
+dart_falconx (umbrella: re-exports all packages)
+    ↑
 dart_faltool (base layer: utilities, extensions)
     ↑
 dart_falmodel (middle layer: models, exceptions, abstractions)
@@ -45,15 +48,15 @@ melos build_runner
 
 # Generate in specific package with conflict resolution
 cd dart_falconnect
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build -d
 
 # Watch mode for continuous generation
-flutter pub run build_runner watch --delete-conflicting-outputs
+dart run build_runner watch --delete-conflicting-outputs
 ```
 
 ### Testing
 ```bash
-# Run all tests in a package
+# Run all tests in a package (dart_faltool has real tests; other packages have stubs)
 cd dart_faltool
 dart test
 
@@ -132,7 +135,7 @@ Comprehensive exception hierarchy in `dart_falmodel/lib/exceptions/`:
 3. **Extension Methods**
    - Heavy use throughout dart_faltool
    - Type conversions, null safety, collection utilities
-   - String, DateTime, Number, Future, Stream extensions
+   - String, StringValidator, DateTime, Number, Future, Stream, Iterable, List, Map, Enum, Object extensions
 
 4. **Stream-Based Communication**
    - WebSocket responses as filtered streams
@@ -144,12 +147,15 @@ Comprehensive exception hierarchy in `dart_falmodel/lib/exceptions/`:
 ### Linting Rules
 - Base: `very_good_analysis` package
 - Customizations in each `analysis_options.yaml`
-- Key relaxed rules: `public_member_api_docs`, `file_names`
+- Enforced: `prefer_single_quotes`, `avoid_print`, `avoid_relative_lib_imports`
+- Key relaxed rules: `public_member_api_docs`, `file_names`, `constant_identifier_names`, `avoid_catches_without_on_clauses`, `avoid_positional_boolean_parameters`, and others
+- Generated files excluded from analysis in `dart_falmodel` and `dart_faltool` (`**/generated/**`, `*.g.dart`, `*.freezed.dart`)
 
 ### Build Configuration
-- See `build.yaml` in each package
+- See `build.yaml` in `dart_falconnect` and `dart_falmodel` (no build.yaml in other packages)
 - Generated files in subdirectories to maintain clean structure
 - Retrofit generator enabled for API clients
+- Melos scripts defined in root `pubspec.yaml` under `melos:` key (not in `melos.yaml`)
 
 ### Environment Requirements
 - Dart SDK: `>=3.9.0 <4.0.0`

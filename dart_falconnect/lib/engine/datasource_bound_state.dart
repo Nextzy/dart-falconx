@@ -5,17 +5,17 @@ class DatasourceBoundState<DataType, ResponseType> {
 
   static const String TAG = 'DatasourceBoundState';
 
-  /// Converts a local database operation into a Stream that handles local data
-  /// fetching only.
-  /// Returns a Stream of Result<DataType> to handle success and
+  /// Converts a local database operation into a Stream that handles
+  /// local data fetching only.
+  /// Returns a Stream of `Result<DataType>` to handle success and
   /// exception cases.
   ///
   /// This is a local-only version focused solely on database operations,
   /// without any remote API calls.
   ///
   /// Parameters:
-  /// * [loadFromDbFuture] - Required function to load data from local database.
-  ///   Returns Future<DataType>.
+  /// * [loadFromDbFuture] - Required function to load data from local
+  ///   database. Returns `Future<DataType>`.
   ///
   /// * [handleError] - Optional custom error handler.
   ///   Takes (error, stackTrace) and returns custom Exception.
@@ -23,12 +23,13 @@ class DatasourceBoundState<DataType, ResponseType> {
   ///
   /// Flow:
   /// 1. Executes [loadFromDbFuture] to fetch local data
-  /// 2. Emits local data as Result.Right<DataType>
+  /// 2. Emits local data as `Result.Right<DataType>`
   ///
   /// Error Handling:
-  /// - All database errors are wrapped in Result.Left<Exception>
+  /// - All database errors are wrapped in `Result.Left<Exception>`
   /// - Custom error handling can be implemented via [handleError]
-  /// - Default Exception includes error message, exception, and stack trace
+  /// - Default Exception includes error message, exception, and
+  ///   stack trace
   ///
   /// Example:
   /// ```dart
@@ -39,20 +40,36 @@ class DatasourceBoundState<DataType, ResponseType> {
   /// ```
   static Stream<Result<DataType>> asLocalResultStream<DataType>({
     required Future<DataType> Function() loadFromDbFuture,
-    CommonException Function(CommonException error, StackTrace? stacktrace)?
-    handleError,
+    CommonException<Object> Function(
+      CommonException<Object> error,
+      StackTrace? stacktrace,
+    )?
+        handleError,
     bool log = false,
   }) async* {
     try {
       final dataFromDb = await loadFromDbFuture();
-      if (log) print('Success load data from database');
+      if (log) {
+        // Intentional debug logging for datasource operations.
+        // ignore: avoid_print
+        print('Success load data from database');
+      }
       yield Result.success(dataFromDb);
       return;
+      // Catches all exceptions including non-Exception types
+      // from external code.
+      // ignore: avoid_catches_without_on_clauses
     } catch (exception, stackTrace) {
-      if (log) print('Load from DB failed: $exception');
-      final commonException = exception.toException(stackTrace: stackTrace);
+      if (log) {
+        // Intentional debug logging for datasource operations.
+        // ignore: avoid_print
+        print('Load from DB failed: $exception');
+      }
+      final commonException =
+          exception.toException(stackTrace: stackTrace);
       yield Result.failure(
-        handleError?.call(commonException, stackTrace) ?? commonException,
+        handleError?.call(commonException, stackTrace) ??
+            commonException,
       );
       return;
     }
@@ -60,28 +77,35 @@ class DatasourceBoundState<DataType, ResponseType> {
 
   static Future<Result<DataType>> asLocalResultFuture<DataType>({
     required Future<DataType> Function() loadFromDbFuture,
-    CommonException Function(CommonException error, StackTrace? stacktrace)?
-    handleError,
+    CommonException<Object> Function(
+      CommonException<Object> error,
+      StackTrace? stacktrace,
+    )?
+        handleError,
     bool log = false,
-  }) => asLocalResultStream(
-    loadFromDbFuture: loadFromDbFuture,
-    handleError: handleError,
-    log: log,
-  ).first;
+  }) =>
+      asLocalResultStream(
+        loadFromDbFuture: loadFromDbFuture,
+        handleError: handleError,
+        log: log,
+      ).first;
 
-  /// Converts a remote API call into a Stream that handles remote operations only.
-  /// Returns a Stream of Result<DataType> to handle success and exception cases.
+  /// Converts a remote API call into a Stream that handles remote
+  /// operations only.
+  /// Returns a Stream of `Result<DataType>` to handle success and
+  /// exception cases.
   ///
-  /// This is a simplified version of asStream() that only handles remote data fetching,
-  /// without local database operations.
+  /// This is a simplified version of asStream() that only handles
+  /// remote data fetching, without local database operations.
   ///
   /// Parameters:
-  /// * [callRemoteFuture] - Required function to fetch data from remote source.
-  ///   Returns Future<ResponseType>.
+  /// * [callRemoteFuture] - Required function to fetch data from
+  ///   remote source. Returns `Future<ResponseType>`.
   ///
-  /// * [processResponse] - Required when ResponseType differs from DataType.
-  ///   Converts ResponseType to DataType.
-  ///   If not provided, ResponseType must be the same as DataType for direct casting.
+  /// * [processResponse] - Required when ResponseType differs from
+  ///   DataType. Converts ResponseType to DataType.
+  ///   If not provided, ResponseType must be the same as DataType
+  ///   for direct casting.
   ///
   /// * [handleError] - Optional custom error handler.
   ///   Takes (error, stackTrace) and returns custom Exception.
@@ -89,38 +113,53 @@ class DatasourceBoundState<DataType, ResponseType> {
   ///
   /// Flow:
   /// 1. Executes [callRemoteFuture] to fetch remote data
-  /// 2. If [processResponse] exists, converts ResponseType to DataType
-  /// 3. If no [processResponse], attempts direct cast from ResponseType to DataType
-  /// 4. Emits processed data as Result.Right<DataType>
+  /// 2. If [processResponse] exists, converts ResponseType to
+  ///    DataType
+  /// 3. If no [processResponse], attempts direct cast from
+  ///    ResponseType to DataType
+  /// 4. Emits processed data as `Result.Right<DataType>`
   ///
   /// Error Handling:
-  /// - All errors are wrapped in Result.Left<Exception>
+  /// - All errors are wrapped in `Result.Left<Exception>`
   /// - Custom error handling can be implemented via [handleError]
-  /// - Default Exception includes error message, exception, and stack trace
+  /// - Default Exception includes error message, exception, and
+  ///   stack trace
   ///
   /// Example:
   /// ```dart
-  /// final stream = NetworkBoundResource.asRemoteStream<ApiResponse, DomainModel>(
+  /// final stream =
+  ///     NetworkBoundResource.asRemoteStream<ApiResponse, DomainModel>(
   ///   createCallFuture: () => api.fetchData(),
   ///   processResponse: (response) => response.toDomainModel(),
   ///   handleError: (error, stackTrace) => CustomException(error),
   /// );
   /// ```
-  static Stream<Result<DataType>> asRemoteResultStream<ResponseType, DataType>({
+  static Stream<Result<DataType>>
+      asRemoteResultStream<ResponseType, DataType>({
     required Future<ResponseType> Function() callRemoteFuture,
-    FutureOr<DataType> Function(ResponseType response)? processResponse,
-    CommonException Function(CommonException error, StackTrace? stacktrace)?
-    handleError,
+    FutureOr<DataType> Function(ResponseType response)?
+        processResponse,
+    CommonException<Object> Function(
+      CommonException<Object> error,
+      StackTrace? stacktrace,
+    )?
+        handleError,
     bool log = false,
   }) async* {
     assert(
       ResponseType == DataType ||
-          (!(ResponseType == DataType) && processResponse != null),
-      'You need to specify the `processResponse` when the DataType and ResponseType types are different',
+          (!(ResponseType == DataType) &&
+              processResponse != null),
+      'You need to specify the `processResponse` when the '
+      'DataType and ResponseType types are different',
     );
     try {
       final response = await callRemoteFuture();
-      if (log) print('Success fetch data');
+      if (log) {
+        // Intentional debug logging for datasource operations.
+        // ignore: avoid_print
+        print('Success fetch data');
+      }
 
       late DataType data;
       if (processResponse != null) {
@@ -133,46 +172,64 @@ class DatasourceBoundState<DataType, ResponseType> {
 
       yield Result.success(data);
       return;
+      // Catches all exceptions including non-Exception types
+      // from external code.
+      // ignore: avoid_catches_without_on_clauses
     } catch (exception, stackTrace) {
-      if (log) print('Fetching failed: $exception');
-      final commonException = exception.toException(stackTrace: stackTrace);
+      if (log) {
+        // Intentional debug logging for datasource operations.
+        // ignore: avoid_print
+        print('Fetching failed: $exception');
+      }
+      final commonException =
+          exception.toException(stackTrace: stackTrace);
       yield Result.failure(
-        handleError?.call(commonException, stackTrace) ?? commonException,
+        handleError?.call(commonException, stackTrace) ??
+            commonException,
       );
       return;
     }
   }
 
-  static Future<Result<DataType>> asRemoteResultFuture<ResponseType, DataType>({
+  static Future<Result<DataType>>
+      asRemoteResultFuture<ResponseType, DataType>({
     required Future<ResponseType> Function() createCallFuture,
-    FutureOr<DataType> Function(ResponseType response)? processResponse,
-    CommonException Function(CommonException error, StackTrace? stacktrace)?
-    handleError,
-  }) => asRemoteResultStream(
-    callRemoteFuture: createCallFuture,
-    processResponse: processResponse,
-    handleError: handleError,
-  ).first;
+    FutureOr<DataType> Function(ResponseType response)?
+        processResponse,
+    CommonException<Object> Function(
+      CommonException<Object> error,
+      StackTrace? stacktrace,
+    )?
+        handleError,
+  }) =>
+      asRemoteResultStream(
+        callRemoteFuture: createCallFuture,
+        processResponse: processResponse,
+        handleError: handleError,
+      ).first;
 
-  /// Converts asynchronous operations into a Stream that handles both local database and remote API operations.
-  /// Returns a Stream of Result<DataType> to handle success and exception cases.
+  /// Converts asynchronous operations into a Stream that handles
+  /// both local database and remote API operations.
+  /// Returns a Stream of `Result<DataType>` to handle success and
+  /// exception cases.
   ///
-  /// This method implements a Repository Pattern with offline-first capability and provides
-  /// a structured flow for data operations.
+  /// This method implements a Repository Pattern with offline-first
+  /// capability and provides a structured flow for data operations.
   ///
   /// Parameters:
-  /// * [loadFromDbFuture] - Optional function to load data from local database.
-  ///   Returns Future<DataType>.
+  /// * [loadFromDbFuture] - Optional function to load data from
+  ///   local database. Returns `Future<DataType>`.
   ///
-  /// * [shouldFetch] - Optional function to determine if remote fetch is needed.
-  ///   Takes current local data as parameter and returns bool.
-  ///   If true, remote fetch will be executed even if local data exists.
+  /// * [shouldFetch] - Optional function to determine if remote
+  ///   fetch is needed. Takes current local data as parameter and
+  ///   returns bool. If true, remote fetch will be executed even if
+  ///   local data exists.
   ///
-  /// * [callRemoteFuture] - Optional function to fetch data from remote source.
-  ///   Returns Future<ResponseType>.
+  /// * [callRemoteFuture] - Optional function to fetch data from
+  ///   remote source. Returns `Future<ResponseType>`.
   ///
-  /// * [processResponse] - Required when ResponseType differs from DataType.
-  ///   Converts ResponseType to DataType.
+  /// * [processResponse] - Required when ResponseType differs from
+  ///   DataType. Converts ResponseType to DataType.
   ///
   /// * [handleError] - Optional custom error handler.
   ///   Takes (error, stackTrace) and returns custom Exception.
@@ -182,7 +239,8 @@ class DatasourceBoundState<DataType, ResponseType> {
   /// 1. If [loadFromDbFuture] exists:
   ///    - Loads local data first
   ///    - Emits local data if successful
-  ///    - If [shouldFetch] returns true, proceeds to fetch remote data
+  ///    - If [shouldFetch] returns true, proceeds to fetch remote
+  ///      data
   ///
   /// 2. If [callRemoteFuture] exists:
   ///    - Fetches remote data
@@ -190,49 +248,63 @@ class DatasourceBoundState<DataType, ResponseType> {
   ///    - Emits processed data
   ///
   /// Error Handling:
-  /// - All errors are wrapped in Result.Left<Exception>
+  /// - All errors are wrapped in `Result.Left<Exception>`
   /// - Custom error handling can be implemented via [handleError]
-  /// - Default Exception includes error message, exception, and stack trace
+  /// - Default Exception includes error message, exception, and
+  ///   stack trace
   ///
   /// Example:
   /// ```dart
-  /// final stream = NetworkBoundResource.asStream<ApiResponse, DomainModel>(
+  /// final stream =
+  ///     NetworkBoundResource.asStream<ApiResponse, DomainModel>(
   ///   loadFromDbFuture: () => database.loadData(),
   ///   shouldFetch: (data) => data == null || data.isStale,
   ///   createCallFuture: () => api.fetchData(),
   ///   saveCallResult: (response) => database.saveData(response),
   ///   processResponse: (response) => response.toDomainModel(),
-  ///   handleError: (error, stackTrace) => CustomException(error),
+  ///   handleError: (error, st) => CustomException(error),
   /// );
   /// ```
-  static Stream<Result<DataType>> asResultStream<ResponseType, DataType>({
+  static Stream<Result<DataType>>
+      asResultStream<ResponseType, DataType>({
     Future<DataType> Function()? loadFromDbFuture,
     bool Function(DataType? data)? shouldFetch,
     Future<ResponseType> Function()? callRemoteFuture,
-    FutureOr<DataType> Function(ResponseType response)? processResponse,
-    CommonException Function(CommonException error, StackTrace? stacktrace)?
-    handleError,
+    FutureOr<DataType> Function(ResponseType response)?
+        processResponse,
+    CommonException<Object> Function(
+      CommonException<Object> error,
+      StackTrace? stacktrace,
+    )?
+        handleError,
     bool log = false,
   }) async* {
     assert(
       ResponseType == DataType ||
-          (!(ResponseType == DataType) && processResponse != null),
-      'You need to specify the `processResponse` when the DataType and ResponseType types are different',
+          (!(ResponseType == DataType) &&
+              processResponse != null),
+      'You need to specify the `processResponse` when the '
+      'DataType and ResponseType types are different',
     );
 
-    ///========================= INNER METHOD =========================///
+    ///================ INNER METHOD ================///
     Stream<Result<DataType>> fetchRemoteData() async* {
       if (callRemoteFuture != null) {
         try {
           final response = await callRemoteFuture();
           if (log) {
+            // Intentional debug logging for datasource operations.
+            // ignore: avoid_print
             print('Success fetch data');
           }
 
           late DataType data;
           if (processResponse != null) {
-            final processedData = await processResponse(response);
+            final processedData =
+                await processResponse(response);
             if (log) {
+              // Intentional debug logging for datasource operations.
+              // ignore: avoid_print
               print('Success process response data');
             }
             data = processedData;
@@ -241,11 +313,20 @@ class DatasourceBoundState<DataType, ResponseType> {
             data = castData;
           }
           yield Result.success(data);
+          // Catches all exceptions including non-Exception types
+          // from external code.
+          // ignore: avoid_catches_without_on_clauses
         } catch (exception, stackTrace) {
-          if (log) print('Fetching failed: $exception');
-          final commonException = exception.toException(stackTrace: stackTrace);
+          if (log) {
+            // Intentional debug logging for datasource operations.
+            // ignore: avoid_print
+            print('Fetching failed: $exception');
+          }
+          final commonException =
+              exception.toException(stackTrace: stackTrace);
           yield Result.failure(
-            handleError?.call(commonException, stackTrace) ?? commonException,
+            handleError?.call(commonException, stackTrace) ??
+                commonException,
           );
         }
       }
@@ -256,19 +337,28 @@ class DatasourceBoundState<DataType, ResponseType> {
       try {
         return await loadFromDbFuture!.call();
       } on Exception catch (exception, stackTrace) {
-        if (log) print('Load from DB failed: $exception');
+        if (log) {
+          // Intentional debug logging for datasource operations.
+          // ignore: avoid_print
+          print('Load from DB failed: $exception');
+        }
 
-        final commonException = exception.toException(stackTrace: stackTrace);
-        throw handleError?.call(commonException, stackTrace) ?? commonException;
+        final commonException =
+            exception.toException(stackTrace: stackTrace);
+        throw handleError?.call(commonException, stackTrace) ??
+            commonException;
       }
     }
 
-    ///========================= END INNER =========================///
+    ///================ END INNER ================///
 
     if (loadFromDbFuture != null && callRemoteFuture != null) {
       DataType dataFromDb;
       try {
         dataFromDb = await loadDbData();
+        // Catches all exceptions including non-Exception types
+        // from external code.
+        // ignore: avoid_catches_without_on_clauses
       } catch (exception, stackTrace) {
         yield Result.failure(
           exception.toException(
@@ -277,15 +367,27 @@ class DatasourceBoundState<DataType, ResponseType> {
         );
         return;
       }
-      if (log) print('Success load data from database');
+      if (log) {
+        // Intentional debug logging for datasource operations.
+        // ignore: avoid_print
+        print('Success load data from database');
+      }
 
       if (shouldFetch != null && shouldFetch(dataFromDb)) {
-        if (log) print('Loading... data from network');
+        if (log) {
+          // Intentional debug logging for datasource operations.
+          // ignore: avoid_print
+          print('Loading... data from network');
+        }
         yield Result.success(dataFromDb);
         yield* fetchRemoteData();
         return;
       } else {
-        if (log) print('Fetching data its not necessary');
+        if (log) {
+          // Intentional debug logging for datasource operations.
+          // ignore: avoid_print
+          print('Fetching data its not necessary');
+        }
         yield Result.success(dataFromDb);
         return;
       }
@@ -293,6 +395,9 @@ class DatasourceBoundState<DataType, ResponseType> {
       DataType dataFromDb;
       try {
         dataFromDb = await loadDbData();
+        // Catches all exceptions including non-Exception types
+        // from external code.
+        // ignore: avoid_catches_without_on_clauses
       } catch (exception, stackTrace) {
         yield Result.failure(
           exception.toException(
@@ -301,11 +406,19 @@ class DatasourceBoundState<DataType, ResponseType> {
         );
         return;
       }
-      if (log) print('Success load data from database');
+      if (log) {
+        // Intentional debug logging for datasource operations.
+        // ignore: avoid_print
+        print('Success load data from database');
+      }
       yield Result.success(dataFromDb);
       return;
     } else if (callRemoteFuture != null) {
-      if (log) print('Loading... data from network');
+      if (log) {
+        // Intentional debug logging for datasource operations.
+        // ignore: avoid_print
+        print('Loading... data from network');
+      }
       yield* fetchRemoteData();
       return;
     } else {

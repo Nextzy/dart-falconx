@@ -53,7 +53,7 @@ extension FalconToolIntExtensions on int {
   /// ```
   bool inRange(int min, int max) => this >= min && this <= max;
 
-  /// Executes the given function [n] times.
+  /// Executes the given function `n` times.
   /// 
   /// Example:
   /// ```dart
@@ -63,12 +63,12 @@ extension FalconToolIntExtensions on int {
   /// // Count: 2
   /// ```
   void times(void Function(int index) action) {
-    for (int i = 0; i < this; i++) {
+    for (var i = 0; i < this; i++) {
       action(i);
     }
   }
 
-  /// Creates a list by executing the given function [n] times.
+  /// Creates a list by executing the given function `n` times.
   /// 
   /// Example:
   /// ```dart

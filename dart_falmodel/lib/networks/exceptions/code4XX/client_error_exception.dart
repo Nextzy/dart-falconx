@@ -9,7 +9,7 @@ import 'package:dart_falmodel/lib.dart';
 class NetworkClientException extends BaseHttpException {
   const NetworkClientException({
     required super.statusCode,
-    super.type,
+    super.type = NetworkErrorType.clientError,
     super.userMessage,
     super.developerMessage,
     super.response,
@@ -34,22 +34,61 @@ class NetworkClientException extends BaseHttpException {
         return 'Invalid request. Please check your input.';
       case 401:
         return 'Authentication required. Please log in.';
+      case 402:
+        return 'Payment required.';
       case 403:
         return "Access denied. You don't have permission.";
       case 404:
         return 'The requested resource was not found.';
       case 405:
         return 'This operation is not allowed.';
+      case 406:
+        return 'Not acceptable.';
+      case 407:
+        return 'Proxy authentication required.';
       case 408:
         return 'Request timed out. Please try again.';
       case 409:
         return 'A conflict occurred. Please try again.';
+      case 410:
+        return 'The requested resource is no longer available.';
+      case 411:
+        return 'Content length required.';
+      case 412:
+        return 'Precondition failed.';
+      case 413:
+        return 'Content too large.';
+      case 414:
+        return 'URI too long.';
+      case 415:
+        return 'Unsupported media type.';
+      case 416:
+        return 'Range not satisfiable.';
+      case 417:
+        return 'Expectation failed.';
+      case 421:
+        return 'Misdirected request.';
       case 422:
         return 'Invalid input. Please check your data.';
+      case 423:
+        return 'Resource is locked.';
+      case 424:
+        return 'Failed dependency.';
+      case 425:
+        return 'Too early.';
+      case 426:
+        return 'Upgrade required.';
+      case 428:
+        return 'Precondition required.';
       case 429:
         return 'Too many requests. Please wait and try again.';
+      case 431:
+        return 'Request header fields too large.';
+      case 451:
+        return 'Unavailable for legal reasons.';
       default:
-        return 'The request could not be processed. Please check your input and try again.';
+        return 'The request could not be processed. '
+            'Please check your input and try again.';
     }
   }
 }

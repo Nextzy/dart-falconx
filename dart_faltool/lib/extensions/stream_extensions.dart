@@ -59,7 +59,8 @@ extension FalconToolStreamExtension<T> on Stream<T> {
   }
 
   // Note: retryWhen method is provided by RxDart
-  // Use: stream.retryWhen((error, attempt) => Stream.value(null).delay(Duration(seconds: attempt)))
+  // Use: stream.retryWhen((error, attempt) =>
+  //   Stream.value(null).delay(Duration(seconds: attempt)))
 
   /// Combines the latest values from two streams.
   ///
@@ -109,8 +110,8 @@ extension FalconToolStreamExtension<T> on Stream<T> {
     );
 
     controller.onCancel = () {
-      subscription1.cancel();
-      subscription2.cancel();
+      unawaited(subscription1.cancel());
+      unawaited(subscription2.cancel());
     };
 
     return controller.stream;
@@ -169,7 +170,7 @@ extension FalconToolStreamExtension<T> on Stream<T> {
   // doOnDone, startWith, endWith methods are provided by RxDart
 }
 
-/// Extension methods for Stream<T>? (nullable stream).
+/// Extension methods for `Stream<T>?` (nullable stream).
 extension FalconToolStreamNullExtension<T> on Stream<T>? {
   /// Returns true if the stream is null.
   bool get isNull => this == null;

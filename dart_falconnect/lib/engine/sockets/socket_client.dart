@@ -18,7 +18,7 @@ abstract class SocketClient implements RequestSocketService {
 
   WebSocketChannel? _channel;
   bool _isClose = true;
-  StreamSubscription? _subscription;
+  StreamSubscription<dynamic>? _subscription;
 
   bool get isClose => _isClose;
 
@@ -28,7 +28,9 @@ abstract class SocketClient implements RequestSocketService {
 
   void setupConfig(SocketOptions configs);
 
-  void setupInterceptors(SocketInterceptors interceptors) {}
+  void setupInterceptors(
+    SocketInterceptors interceptors,
+  ) {}
 
   @override
   Future<void> createChannel() async {
@@ -37,7 +39,9 @@ abstract class SocketClient implements RequestSocketService {
       _isClose = true;
     }
 
-    _channel = WebSocketChannel.connect(Uri.parse(_tmpOptions.uri));
+    _channel = WebSocketChannel.connect(
+      Uri.parse(_tmpOptions.uri),
+    );
     _subscription = _channel?.stream.listen(
       _onResponse,
       onError: _onError,
@@ -51,15 +55,19 @@ abstract class SocketClient implements RequestSocketService {
     await closeChannel();
   }
 
-  void _onError(Exception? error, StackTrace? stackTrace) async {
+  Future<void> _onError(
+    Exception? error,
+    StackTrace? stackTrace,
+  ) async {
     if (_retryLimitCounter > 0) {
       _executeInterceptorOnError(
-          exception: SocketRetryException(
-            retryCount: _retryLimitCounter,
-            exception: error,
-            stackTrace: stackTrace,
-          ),
-          options: _tmpOptions.copyWith());
+        exception: SocketRetryException(
+          retryCount: _retryLimitCounter,
+          exception: error,
+          stackTrace: stackTrace,
+        ),
+        options: _tmpOptions.copyWith(),
+      );
       _isClose = false;
       _retryLimitCounter--;
       if (_tmpOptions.data != null) {
@@ -67,20 +75,24 @@ abstract class SocketClient implements RequestSocketService {
       }
     } else {
       _executeInterceptorOnError(
-          exception: SocketException(
-            exception: error,
-            stackTrace: stackTrace,
-          ),
-          options: _tmpOptions.copyWith());
+        exception: SocketException(
+          exception: error,
+          stackTrace: stackTrace,
+        ),
+        options: _tmpOptions.copyWith(),
+      );
       _isClose = true;
-      _replaySubject.addError(error as Object, stackTrace);
+      _replaySubject.addError(
+        error!,
+        stackTrace,
+      );
       await _subscription?.cancel();
     }
   }
 
   @override
   Future<void> closeChannel() async {
-    if (_isClose == false) {
+    if (!_isClose) {
       await _channel?.sink.close();
       await _subscription?.cancel();
       _isClose = true;
@@ -88,39 +100,44 @@ abstract class SocketClient implements RequestSocketService {
     }
   }
 
-  /// Create channel automatically when first call request.
+  /// Create channel automatically when first call
+  /// request.
   @override
-  void request(String data) async {
-    if (_channel == null || isClose == true) {
+  Future<void> request(String data) async {
+    if (_channel == null || isClose) {
       await createChannel();
     }
     _tmpOptions = _tmpOptions.copyWith(
       protocol: _channel?.protocol,
       data: data,
     );
-    _executeInterceptorOnRequest(options: _tmpOptions);
+    _executeInterceptorOnRequest(
+      options: _tmpOptions,
+    );
     _channel?.sink.add(_tmpOptions.data);
   }
 
   @override
   Stream<T> getResponseStream<T>({
     bool Function(SocketResponse response)? filter,
-    required T Function(SocketResponse response) converter,
+    required T Function(SocketResponse response)
+        converter,
   }) =>
       _replaySubject.stream
           .where(filter ?? (data) => true)
-          .asyncMap((response) => converter(response));
+          .asyncMap(converter);
 
   @override
   Stream<SocketResponse> getRawStream({
     bool Function(SocketResponse response)? filter,
   }) =>
-      _replaySubject.stream.where(filter ?? (data) => true);
+      _replaySubject.stream
+          .where(filter ?? (data) => true);
 
   Future<void> checkConnection() async {
     try {
       _channel?.sink.add('ping');
-    } on StateError catch (error, stackTrace) {
+    } on Exception catch (_) {
       await createChannel();
     }
   }
@@ -131,14 +148,16 @@ abstract class SocketClient implements RequestSocketService {
       data: response as String,
       requestOptions: _tmpOptions.copyWith(),
     );
-    _executeInterceptorOnResponse(response: responseWrap);
+    _executeInterceptorOnResponse(
+      response: responseWrap,
+    );
     _replaySubject.add(responseWrap);
   }
 
   void _executeInterceptorOnRequest({
     required SocketOptions options,
   }) {
-    for (var interceptor in interceptors) {
+    for (final interceptor in interceptors) {
       interceptor.onRequest(options);
     }
   }
@@ -146,7 +165,7 @@ abstract class SocketClient implements RequestSocketService {
   void _executeInterceptorOnResponse({
     required SocketResponse response,
   }) {
-    for (var interceptor in interceptors) {
+    for (final interceptor in interceptors) {
       interceptor.onResponse(response);
     }
   }
@@ -155,14 +174,15 @@ abstract class SocketClient implements RequestSocketService {
     required SocketException exception,
     required SocketOptions options,
   }) {
-    for (var interceptor in interceptors) {
+    for (final interceptor in interceptors) {
       interceptor.onError(exception, options);
     }
   }
 
   void _logCloseReason() {
-    final protocol = _channel?.protocol;
-    final closeCode = _channel?.closeCode;
-    final closeReason = _channel?.closeReason;
+    // Close reason info available via:
+    // _channel?.protocol
+    // _channel?.closeCode
+    // _channel?.closeReason
   }
 }

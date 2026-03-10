@@ -493,7 +493,7 @@ void main() {
         ];
 
         for (final testCase in monthTestCases) {
-          given('${testCase.description}', () {
+          given(testCase.description, () {
             when('adding ${testCase.monthsToAdd} months to ${testCase.start}',
                 () {
               final result = testCase.start.addMonths(testCase.monthsToAdd);

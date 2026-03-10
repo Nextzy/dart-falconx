@@ -73,13 +73,22 @@ class BaseResponse<T> extends Response<T> {
   }
 
   /// Whether the response was successful (2xx status code).
-  bool get isSuccessful => statusCode != null && statusCode! >= 200 && statusCode! < 300;
+  bool get isSuccessful =>
+      statusCode != null &&
+      statusCode! >= 200 &&
+      statusCode! < 300;
 
   /// Whether the response was a client error (4xx status code).
-  bool get isClientError => statusCode != null && statusCode! >= 400 && statusCode! < 500;
+  bool get isClientError =>
+      statusCode != null &&
+      statusCode! >= 400 &&
+      statusCode! < 500;
 
   /// Whether the response was a server error (5xx status code).
-  bool get isServerError => statusCode != null && statusCode! >= 500 && statusCode! < 600;
+  bool get isServerError =>
+      statusCode != null &&
+      statusCode! >= 500 &&
+      statusCode! < 600;
 }
 
 /// Type aliases for common response types to maintain backward compatibility

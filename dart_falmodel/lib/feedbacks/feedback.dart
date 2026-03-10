@@ -68,7 +68,7 @@ sealed class UserFeedback with _$UserFeedback {
 
   /// Creates a Warning from an Exception object.
   static UserFeedback warningFromException(
-    CommonException? exception, {
+    CommonException<Object>? exception, {
     FeedbackLevel level = FeedbackLevel.medium,
   }) => UserFeedback.warning(
     message: exception?.userMessage,
@@ -77,7 +77,7 @@ sealed class UserFeedback with _$UserFeedback {
 
   /// Creates a Failure from an Exception object.
   static UserFeedback failureFromException(
-    CommonException? exception, {
+    CommonException<Object>? exception, {
     FeedbackLevel level = FeedbackLevel.medium,
   }) => UserFeedback.failure(
     message: exception?.userMessage,
@@ -124,4 +124,3 @@ sealed class UserFeedback with _$UserFeedback {
     };
   }
 }
-

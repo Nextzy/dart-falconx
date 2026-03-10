@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 class NetworkLimitExceededException extends NetworkClientException {
   const NetworkLimitExceededException({
     super.statusCode = 429,
-    super.type,
+    super.type = NetworkErrorType.tooManyRequests,
     super.userMessage,
     super.developerMessage,
     super.response,

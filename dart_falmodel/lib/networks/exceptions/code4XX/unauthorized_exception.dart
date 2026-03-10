@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 class UnauthorizedException extends NetworkClientException {
   const UnauthorizedException({
     super.statusCode = 401,
-    super.type,
+    super.type = NetworkErrorType.unauthorized,
     super.userMessage,
     super.developerMessage,
     super.response,

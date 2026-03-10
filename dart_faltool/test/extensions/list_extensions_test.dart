@@ -1,4 +1,3 @@
-import 'package:dartx/dartx.dart';
 import 'package:dart_faltool/lib.dart';
 import 'package:test/test.dart';
 
@@ -19,7 +18,7 @@ void main() {
     test('mapAsync maps elements to futures', () async {
       final numbers = [1, 2, 3];
       final results = await numbers.mapAsync((n) async {
-        await Future.delayed(Duration(milliseconds: 10));
+        await Future<void>.delayed(const Duration(milliseconds: 10));
         return n * 2;
       });
       expect(results, [2, 4, 6]);
@@ -43,7 +42,7 @@ void main() {
         {'name': 'Bob', 'age': 30},
       ];
       
-      final deepCopy = users.deepCopy((user) => Map<String, Object>.from(user));
+      final deepCopy = users.deepCopy(Map<String, Object>.from);
       
       expect(deepCopy, users);
       expect(identical(users[0], deepCopy[0]), false);
@@ -103,7 +102,7 @@ void main() {
 
     test('removeAll removes all matching elements', () {
       final numbers = [1, 2, 3, 4, 5, 6];
-      final count = numbers.removeAll((n) => n % 2 == 0);
+      final count = numbers.removeAll((n) => n.isEven);
       
       expect(count, 3);
       expect(numbers, [1, 3, 5]);
@@ -136,17 +135,17 @@ void main() {
     });
 
     test('move moves element from one index to another', () {
-      final list = ['a', 'b', 'c', 'd'];
-      list.move(0, 2);
+      final list = ['a', 'b', 'c', 'd']
+        ..move(0, 2);
       expect(list, ['b', 'c', 'a', 'd']);
-      
-      final list2 = ['a', 'b', 'c', 'd'];
-      list2.move(3, 1);
+
+      final list2 = ['a', 'b', 'c', 'd']
+        ..move(3, 1);
       expect(list2, ['a', 'd', 'b', 'c']);
-      
+
       // Same index should not change
-      final list3 = ['a', 'b', 'c'];
-      list3.move(1, 1);
+      final list3 = ['a', 'b', 'c']
+        ..move(1, 1);
       expect(list3, ['a', 'b', 'c']);
       
       // Out of bounds should throw
@@ -220,21 +219,37 @@ void main() {
 
     test('binarySearch finds element in sorted list', () {
       final sorted = [1, 3, 5, 7, 9, 11];
-      
+      int cmp(int a, int b) => a.compareTo(b);
+
       // Using dartx's binarySearch
-      expect(sorted.binarySearch(5, compare: (a, b) => a.compareTo(b)), 2);
-      expect(sorted.binarySearch(1, compare: (a, b) => a.compareTo(b)), 0);
-      expect(sorted.binarySearch(11, compare: (a, b) => a.compareTo(b)), 5);
-      expect(sorted.binarySearch(6, compare: (a, b) => a.compareTo(b)), isNegative); // Not found
-      expect(sorted.binarySearch(0, compare: (a, b) => a.compareTo(b)), isNegative); // Too small
-      expect(sorted.binarySearch(12, compare: (a, b) => a.compareTo(b)), isNegative); // Too large
-      
+      expect(sorted.binarySearch(5, compare: cmp), 2);
+      expect(sorted.binarySearch(1, compare: cmp), 0);
+      expect(sorted.binarySearch(11, compare: cmp), 5);
+      expect(
+        sorted.binarySearch(6, compare: cmp),
+        isNegative,
+      );
+      expect(
+        sorted.binarySearch(0, compare: cmp),
+        isNegative,
+      );
+      expect(
+        sorted.binarySearch(12, compare: cmp),
+        isNegative,
+      );
+
       // Empty list
-      expect(<int>[].binarySearch(5, compare: (a, b) => a.compareTo(b)), isNegative);
-      
+      expect(
+        <int>[].binarySearch(5, compare: cmp),
+        isNegative,
+      );
+
       // Single element
-      expect([5].binarySearch(5, compare: (a, b) => a.compareTo(b)), 0);
-      expect([5].binarySearch(3, compare: (a, b) => a.compareTo(b)), isNegative);
+      expect([5].binarySearch(5, compare: cmp), 0);
+      expect(
+        [5].binarySearch(3, compare: cmp),
+        isNegative,
+      );
     });
 
     test('binarySearch with custom comparator', () {
@@ -243,19 +258,21 @@ void main() {
         {'name': 'Bob', 'age': 30},
         {'name': 'Charlie', 'age': 35},
       ];
-      
+
       // Using dartx's binarySearch with custom comparator
       final index = users.binarySearch(
         {'name': 'Bob', 'age': 30},
-        compare: (a, b) => (a['name'] as String).compareTo(b['name'] as String),
+        compare: (a, b) =>
+            (a['name']! as String)
+                .compareTo(b['name']! as String),
       );
       expect(index, 1);
     });
 
     test('insertSorted maintains sorted order', () {
-      final sorted = [1, 3, 5, 7];
+      final sorted = [1, 3, 5, 7]
       
-      sorted.insertSorted(4);
+      ..insertSorted(4);
       expect(sorted, [1, 3, 4, 5, 7]);
       
       sorted.insertSorted(0);
@@ -265,8 +282,8 @@ void main() {
       expect(sorted, [0, 1, 3, 4, 5, 7, 10]);
       
       // Empty list
-      final empty = <int>[];
-      empty.insertSorted(5);
+      final empty = <int>[]
+      ..insertSorted(5);
       expect(empty, [5]);
     });
 
@@ -274,13 +291,12 @@ void main() {
       final users = [
         {'name': 'Alice', 'age': 25},
         {'name': 'Charlie', 'age': 35},
-      ];
-      
-      users.insertSorted(
-        {'name': 'Bob', 'age': 30},
-        (a, b) => (a['name'] as String).compareTo(b['name'] as String),
-      );
-      
+      ]..insertSorted(
+          {'name': 'Bob', 'age': 30},
+          (a, b) => (a['name']! as String)
+              .compareTo(b['name']! as String),
+        );
+
       expect(users[1]['name'], 'Bob');
     });
 
@@ -335,49 +351,50 @@ void main() {
 
   group('FalconToolListNullableExtensions', () {
     test('futureAsyncMap maps elements asynchronously', () async {
-      List<int>? numbers = [1, 2, 3];
+      final numbers = [1, 2, 3];
       final results = await numbers.futureAsyncMap((n) async {
-        await Future.delayed(Duration(milliseconds: 10));
+        await Future<void>.delayed(const Duration(milliseconds: 10));
         return n * 2;
       });
       expect(results, [2, 4, 6]);
-      
+
       // Null list
       List<int>? nullList;
-      final nullResults = await nullList.futureAsyncMap((n) => n * 2);
+      final nullResults =
+          await nullList.futureAsyncMap((n) => n * 2);
       expect(nullResults, isEmpty);
     });
 
     test('orEmpty returns list or empty list', () {
-      List<int>? numbers = [1, 2, 3];
+      final numbers = [1, 2, 3];
       expect(numbers.orEmpty, [1, 2, 3]);
-      
+
       List<int>? nullList;
       expect(nullList.orEmpty, isEmpty);
-      
-      List<int>? emptyList = [];
+
+      final emptyList = <int>[];
       expect(emptyList.orEmpty, isEmpty);
     });
 
     test('getOrNull safely gets element at index', () {
-      List<int>? numbers = [1, 2, 3];
+      final numbers = [1, 2, 3];
       expect(numbers.getOrNull(1), 2);
       expect(numbers.getOrNull(5), null);
       expect(numbers.getOrNull(-1), null);
-      
+
       List<int>? nullList;
       expect(nullList.getOrNull(0), null);
     });
 
     test('ifNotEmpty executes action for non-empty lists', () {
-      List<int>? numbers = [1, 2, 3];
+      final numbers = [1, 2, 3];
       var executed = false;
       numbers.ifNotEmpty((list) {
         executed = true;
         expect(list, [1, 2, 3]);
       });
       expect(executed, true);
-      
+
       // Null list
       List<int>? nullList;
       var nullExecuted = false;
@@ -385,9 +402,9 @@ void main() {
         nullExecuted = true;
       });
       expect(nullExecuted, false);
-      
+
       // Empty list
-      List<int>? emptyList = [];
+      final emptyList = <int>[];
       var emptyExecuted = false;
       emptyList.ifNotEmpty((list) {
         emptyExecuted = true;

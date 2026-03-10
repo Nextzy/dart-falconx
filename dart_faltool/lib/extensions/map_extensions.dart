@@ -1,5 +1,3 @@
-import 'package:dart_faltool/lib.dart';
-
 /// Extension methods for Map type with enhanced functionality.
 ///
 /// Provides comprehensive utilities for map operations including

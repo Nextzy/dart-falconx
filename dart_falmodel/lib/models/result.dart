@@ -2,27 +2,59 @@ import 'package:dart_falmodel/lib.dart';
 
 /// A type representing either a successful value or an exception.
 ///
-/// Result is useful for error handling without throwing exceptions,
-/// making error cases explicit in the type system.
+/// Result is useful for exception handling without throwing exceptions,
+/// making exception cases explicit in the type system.
 class Result<T> extends Equatable {
   /// Creates a successful result.
   factory Result.success(T value) => Result._success(value);
 
   /// Creates a failed result.
-  factory Result.failure(CommonException exception) =>
+  factory Result.failure(CommonException<Object> exception) =>
       Result._failure(exception);
+
+  factory Result.dataFailure({
+    required Object code,
+    String? userMessage,
+    String? developerMessage,
+    Object? originalException,
+    StackTrace? stackTrace,
+  }) => Result._failure(
+    DataLayerException<Object>(
+      type: code,
+      userMessage: userMessage,
+      developerMessage: developerMessage,
+      originalException: originalException,
+      stackTrace: stackTrace,
+    ),
+  );
+
+  factory Result.domainFailure({
+    required Object code,
+    String? userMessage,
+    String? developerMessage,
+    Object? originalException,
+    StackTrace? stackTrace,
+  }) => Result._failure(
+    DomainLayerException<Object>(
+      type: code,
+      userMessage: userMessage,
+      developerMessage: developerMessage,
+      originalException: originalException,
+      stackTrace: stackTrace,
+    ),
+  );
 
   const Result._success(T value)
     : _value = value,
       _exception = null,
       _isSuccess = true;
 
-  const Result._failure(CommonException exception)
+  const Result._failure(CommonException<Object> exception)
     : _value = null,
       _exception = exception,
       _isSuccess = false;
   final T? _value;
-  final CommonException? _exception;
+  final CommonException<Object>? _exception;
   final bool _isSuccess;
 
   /// True if the result is successful.
@@ -44,14 +76,15 @@ class Result<T> extends Equatable {
   T valueOr(T defaultValue) =>
       _isSuccess ? _value ?? defaultValue : defaultValue;
 
-  /// Gets the error if failed, throws if successful.
-  CommonException get exception {
+  /// Gets the exception if failed, throws if successful.
+  CommonException<Object> get exception {
     if (!_isSuccess) return _exception!;
-    throw StateError('Cannot get error from successful Result');
+    throw StateError('Cannot get exception from successful Result');
   }
 
   /// Gets the exception or null if successful.
-  CommonException? get exceptionOrNull => !_isSuccess ? _exception : null;
+  CommonException<Object>? get exceptionOrNull =>
+      !_isSuccess ? _exception : null;
 
   /// Gets the stack trace if failed, null otherwise.
   StackTrace? get stackTraceOrNull => exceptionOrNull?.stackTrace;
@@ -61,18 +94,22 @@ class Result<T> extends Equatable {
     if (_isSuccess) {
       try {
         return Result.success(transform(_value as T));
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
         return Result.failure(
-          error.toException(stackTrace: stackTrace),
+          exception.toException(stackTrace: stackTrace),
         );
       }
     }
     return Result.failure(_exception!);
   }
 
-  /// Transforms the error if failed.
+  /// Transforms the exception if failed.
   Result<T> mapException(
-    CommonException Function(CommonException error) transform,
+    CommonException<Object> Function(
+      CommonException<Object> exception,
+    ) transform,
   ) {
     if (!_isSuccess) {
       return Result.failure(transform(_exception!));
@@ -83,7 +120,8 @@ class Result<T> extends Equatable {
   /// Folds the result into a single value.
   R resolve<R>(
     R Function(T value) onSuccess,
-    R Function(CommonException exception, StackTrace? stackTrace) onError,
+    R Function(CommonException<Object> exception, StackTrace? stackTrace)
+        onError,
   ) {
     if (_isSuccess) {
       return onSuccess(_value as T);
@@ -94,7 +132,8 @@ class Result<T> extends Equatable {
   /// Executes a callback based on the result.
   void when(
     void Function(T value) onSuccess,
-    void Function(CommonException exception, StackTrace? stackTrace) onError,
+    void Function(CommonException<Object> exception, StackTrace? stackTrace)
+        onError,
   ) {
     if (_isSuccess) {
       onSuccess(_value as T);
@@ -111,9 +150,11 @@ class Result<T> extends Equatable {
     if (_isSuccess) {
       try {
         return transform(_value as T);
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
         return Result.failure(
-          error.toException(stackTrace: stackTrace),
+          exception.toException(stackTrace: stackTrace),
         );
       }
     }
@@ -121,13 +162,17 @@ class Result<T> extends Equatable {
   }
 
   /// Recovers from a failure by providing a fallback value.
-  Result<T> recover(T Function(CommonException exception) fallback) {
+  Result<T> recover(
+    T Function(CommonException<Object> exception) fallback,
+  ) {
     if (!_isSuccess) {
       try {
         return Result.success(fallback(_exception!));
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
         return Result.failure(
-          error.toException(stackTrace: stackTrace),
+          exception.toException(stackTrace: stackTrace),
         );
       }
     }
@@ -136,14 +181,16 @@ class Result<T> extends Equatable {
 
   /// Recovers from a failure by providing a fallback Result.
   Result<T> recoverWith(
-    Result<T> Function(CommonException exception) fallback,
+    Result<T> Function(CommonException<Object> exception) fallback,
   ) {
     if (!_isSuccess) {
       try {
         return fallback(_exception!);
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
         return Result.failure(
-          error.toException(stackTrace: stackTrace),
+          exception.toException(stackTrace: stackTrace),
         );
       }
     }
@@ -158,21 +205,38 @@ class Result<T> extends Equatable {
   }
 
   /// Executes a side-effect callback if failed.
-  void doOnFailure(void Function(CommonException exception) callback) {
+  void doOnFailure(
+    void Function(CommonException<Object> exception) callback,
+  ) {
     if (!_isSuccess) {
       callback(_exception!);
     }
+  }
+
+  Result<T> updateFailMessage({
+    String? userMessage,
+    String? developerMessage,
+  }) {
+    if (!_isSuccess) {
+      return Result._failure(
+        exception.copyWith(
+          userMessage: userMessage,
+          developerMessage: developerMessage,
+        ),
+      );
+    }
+    return this;
   }
 
   /// Swaps success and failure.
   ///
   /// Success becomes Failure with a new exception,
   /// Failure becomes Success with the exception.
-  Result<CommonException> swap({String? message}) {
+  Result<CommonException<Object>> swap({String? message}) {
     if (_isSuccess) {
       return Result.failure(
         CommonException(
-          code: ErrorType.unexpected,
+          type: ErrorType.unexpected,
           userMessage: message ?? 'Unexpected success',
         ),
       );

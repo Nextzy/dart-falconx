@@ -6,7 +6,8 @@ extension FalconFutureResultDataExtensions<DATA> on Future<DATA> {
   /// Catches any errors and wraps them in a `Result.failure`.
   /// Optionally transforms caught exceptions using [mapException].
   Future<Result<DATA>> toResult([
-    CommonException Function(CommonException exception)? mapException,
+    CommonException<Object> Function(CommonException<Object> exception)?
+        mapException,
   ]) {
     return then(Result<DATA>.success).catchError(
       (Object e, StackTrace stackTrace) {
@@ -25,7 +26,8 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
   /// Optionally transforms the exception if the Result is a failure.
   Future<Result<R>> mapResult<R>(
     R Function(DATA data) transform, [
-    CommonException Function(CommonException exception)? mapException,
+    CommonException<Object> Function(CommonException<Object> exception)?
+        mapException,
   ]) {
     return then((result) {
       final mapped = result.map(transform);
@@ -58,7 +60,8 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
 
   /// Transforms the exception if the Result is a failure.
   Future<Result<DATA>> mapResultException(
-    CommonException Function(CommonException exception) transform,
+    CommonException<Object> Function(CommonException<Object> exception)
+        transform,
   ) {
     return then((result) => result.mapException(transform));
   }
@@ -79,7 +82,7 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
   ///
   /// Returns the original `Future<Result>` for chaining.
   Future<Result<DATA>> onFailure(
-    void Function(CommonException exception) callback,
+    void Function(CommonException<Object> exception) callback,
   ) {
     return then((result) {
       if (result.isFailure) {
@@ -108,7 +111,7 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
 
   /// Recovers from a failure by providing a fallback value.
   Future<Result<DATA>> recover(
-    DATA Function(CommonException exception) fallback,
+    DATA Function(CommonException<Object> exception) fallback,
   ) {
     return then((result) {
       if (result.isFailure) {
@@ -120,7 +123,7 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
 
   /// Recovers from a failure by providing a fallback `Future<Result>`.
   Future<Result<DATA>> recoverWith(
-    Future<Result<DATA>> Function(CommonException exception) fallback,
+    Future<Result<DATA>> Function(CommonException<Object> exception) fallback,
   ) {
     return then((result) {
       if (result.isFailure) {
@@ -133,7 +136,7 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
   /// Executes callbacks based on whether the Result is successful or failed.
   Future<void> whenAsync(
     Future<void> Function(DATA data) onSuccess,
-    Future<void> Function(CommonException exception) onFailure,
+    Future<void> Function(CommonException<Object> exception) onFailure,
   ) {
     return then((result) {
       if (result.isSuccess) {
@@ -161,7 +164,8 @@ extension FalconStreamResultDataExtensions<DATA> on Stream<DATA> {
   /// Errors are caught and converted to failure Results.
   /// Optionally transforms caught exceptions using [mapException].
   Stream<Result<DATA>> toResult([
-    CommonException Function(CommonException exception)? mapException,
+    CommonException<Object> Function(CommonException<Object> exception)?
+        mapException,
   ]) {
     return map(Result<DATA>.success).handleError(
       (Object error, StackTrace stackTrace) {
@@ -180,7 +184,8 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
   /// Optionally transforms the exception if the Result is a failure.
   Stream<Result<R>> mapResult<R>(
     R Function(DATA data) transform, [
-    CommonException Function(CommonException exception)? mapException,
+    CommonException<Object> Function(CommonException<Object> exception)?
+        mapException,
   ]) {
     return map((result) {
       final mapped = result.map(transform);
@@ -207,7 +212,8 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
 
   /// Transforms exceptions in failed Results.
   Stream<Result<DATA>> mapResultException(
-    CommonException Function(CommonException exception) transform,
+    CommonException<Object> Function(CommonException<Object> exception)
+        transform,
   ) {
     return map((result) => result.mapException(transform));
   }
@@ -229,7 +235,7 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
   }
 
   /// Maps to a stream of exceptions only, discarding successes.
-  Stream<CommonException> failureOnly() {
+  Stream<CommonException<Object>> failureOnly() {
     return where((result) => result.isFailure)
         .map((result) => result.exception);
   }
@@ -244,7 +250,7 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
 
   /// Executes a callback for each failed Result.
   Stream<Result<DATA>> doOnFailure(
-    void Function(CommonException exception) callback,
+    void Function(CommonException<Object> exception) callback,
   ) {
     return map((result) {
       result.doOnFailure(callback);
@@ -254,14 +260,14 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
 
   /// Recovers from failures by providing a fallback value.
   Stream<Result<DATA>> recover(
-    DATA Function(CommonException exception) fallback,
+    DATA Function(CommonException<Object> exception) fallback,
   ) {
     return map((result) => result.recover(fallback));
   }
 
   /// Recovers from failures by providing a fallback Result.
   Stream<Result<DATA>> recoverWith(
-    Result<DATA> Function(CommonException exception) fallback,
+    Result<DATA> Function(CommonException<Object> exception) fallback,
   ) {
     return map((result) => result.recoverWith(fallback));
   }
@@ -283,7 +289,7 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
 
   /// Unwraps Results, computing default values for failures.
   Stream<DATA> getOrElseCompute(
-    DATA Function(CommonException exception) defaultValue,
+    DATA Function(CommonException<Object> exception) defaultValue,
   ) {
     return map((result) {
       if (result.isSuccess) {
@@ -297,7 +303,7 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
   /// Partitions the stream into successes and failures.
   ///
   /// Returns a record with two streams: (successes, failures).
-  (Stream<DATA>, Stream<CommonException>) partition() {
+  (Stream<DATA>, Stream<CommonException<Object>>) partition() {
     final broadcast = asBroadcastStream();
     return (
       broadcast.successOnly(),
@@ -336,8 +342,8 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
   }
 
   /// Collects all failures, ignoring successes.
-  Future<List<CommonException>> collectFailures() async {
-    final failures = <CommonException>[];
+  Future<List<CommonException<Object>>> collectFailures() async {
+    final failures = <CommonException<Object>>[];
 
     await for (final result in this) {
       if (result.isFailure) {
@@ -348,5 +354,3 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
     return failures;
   }
 }
-
-

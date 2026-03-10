@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import 'package:dio/dio.dart';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dio/dio.dart';
 
 /// Performance metrics for a single request.
 class RequestMetrics {
@@ -56,11 +56,15 @@ class RequestMetrics {
       'statusCode': statusCode,
       'error': error,
       'totalDuration': totalDuration.inMilliseconds,
-      'dnsLookupTime': dnsLookupTime?.inMilliseconds,
-      'connectionTime': connectionTime?.inMilliseconds,
-      'tlsHandshakeTime': tlsHandshakeTime?.inMilliseconds,
+      'dnsLookupTime':
+          dnsLookupTime?.inMilliseconds,
+      'connectionTime':
+          connectionTime?.inMilliseconds,
+      'tlsHandshakeTime':
+          tlsHandshakeTime?.inMilliseconds,
       'requestTime': requestTime?.inMilliseconds,
-      'timeToFirstByte': timeToFirstByte?.inMilliseconds,
+      'timeToFirstByte':
+          timeToFirstByte?.inMilliseconds,
       'downloadTime': downloadTime?.inMilliseconds,
       'requestSize': requestSize,
       'responseSize': responseSize,
@@ -100,11 +104,13 @@ class PerformanceStatistics {
 
     if (metrics.statusCode != null) {
       statusCodeCounts[metrics.statusCode!] =
-          (statusCodeCounts[metrics.statusCode!] ?? 0) + 1;
+          (statusCodeCounts[metrics.statusCode!] ?? 0) +
+              1;
     }
 
     if (metrics.error != null) {
-      errorCounts[metrics.error!] = (errorCounts[metrics.error!] ?? 0) + 1;
+      errorCounts[metrics.error!] =
+          (errorCounts[metrics.error!] ?? 0) + 1;
     }
 
     if (metrics.requestSize != null) {
@@ -133,13 +139,18 @@ class PerformanceStatistics {
   }
 
   Duration get averageDuration => totalRequests > 0
-      ? Duration(milliseconds: totalDuration.inMilliseconds ~/ totalRequests)
+      ? Duration(
+          milliseconds:
+              totalDuration.inMilliseconds ~/
+                  totalRequests,
+        )
       : Duration.zero;
 
   Duration get medianDuration {
     if (recentDurations.isEmpty) return Duration.zero;
 
-    final sorted = List<Duration>.from(recentDurations)..sort();
+    final sorted = List<Duration>.from(recentDurations)
+      ..sort();
     final middle = sorted.length ~/ 2;
 
     if (sorted.length.isOdd) {
@@ -148,14 +159,15 @@ class PerformanceStatistics {
       return Duration(
         milliseconds:
             (sorted[middle - 1].inMilliseconds +
-                sorted[middle].inMilliseconds) ~/
-            2,
+                    sorted[middle].inMilliseconds) ~/
+                2,
       );
     }
   }
 
-  double get successRate =>
-      totalRequests > 0 ? successfulRequests / totalRequests * 100 : 0.0;
+  double get successRate => totalRequests > 0
+      ? successfulRequests / totalRequests * 100
+      : 0.0;
 
   Map<String, dynamic> toJson() {
     return {
@@ -174,8 +186,10 @@ class PerformanceStatistics {
           ? totalResponseSize ~/ totalRequests
           : 0,
       'totalDuration': totalDuration.inMilliseconds,
-      'averageDuration': averageDuration.inMilliseconds,
-      'medianDuration': medianDuration.inMilliseconds,
+      'averageDuration':
+          averageDuration.inMilliseconds,
+      'medianDuration':
+          medianDuration.inMilliseconds,
       'minDuration': minDuration.inMilliseconds,
       'maxDuration': maxDuration.inMilliseconds,
     };
@@ -184,8 +198,8 @@ class PerformanceStatistics {
 
 /// Interceptor that monitors HTTP request performance.
 ///
-/// This interceptor collects detailed performance metrics for each request
-/// and provides aggregated statistics.
+/// This interceptor collects detailed performance metrics for
+/// each request and provides aggregated statistics.
 class PerformanceInterceptor extends Interceptor {
   /// Creates a new performance interceptor.
   PerformanceInterceptor({
@@ -203,16 +217,22 @@ class PerformanceInterceptor extends Interceptor {
   final bool collectDetailedTimings;
 
   /// Recent request metrics.
-  final Queue<RequestMetrics> _metricsHistory = Queue<RequestMetrics>();
+  final Queue<RequestMetrics> _metricsHistory =
+      Queue<RequestMetrics>();
 
   /// Aggregated statistics.
-  final PerformanceStatistics _statistics = PerformanceStatistics();
+  final PerformanceStatistics _statistics =
+      PerformanceStatistics();
 
   /// Metrics by URL pattern.
-  final Map<String, PerformanceStatistics> _urlStatistics = {};
+  final Map<String, PerformanceStatistics>
+      _urlStatistics = {};
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) {
     if (!config.enablePerformanceMonitoring) {
       return handler.next(options);
     }
@@ -222,10 +242,9 @@ class PerformanceInterceptor extends Interceptor {
       method: options.method,
       url: options.uri.toString(),
       startTime: DateTime.now(),
-    );
-
-    // Estimate request size
-    metrics.requestSize = _estimateRequestSize(options);
+    )
+      // Estimate request size
+      ..requestSize = _estimateRequestSize(options);
 
     // Store metrics in request options
     options.extra['performanceMetrics'] = metrics;
@@ -234,14 +253,17 @@ class PerformanceInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     if (!config.enablePerformanceMonitoring) {
       return handler.next(response);
     }
 
     // Get metrics from request
-    final metrics =
-        response.requestOptions.extra['performanceMetrics'] as RequestMetrics?;
+    final metrics = response.requestOptions
+        .extra['performanceMetrics'] as RequestMetrics?;
     if (metrics == null) {
       return handler.next(response);
     }
@@ -257,8 +279,11 @@ class PerformanceInterceptor extends Interceptor {
     _addMetrics(metrics);
 
     if (config.enableLogging) {
+      // Intentional logging for performance diagnostics.
+      // ignore: avoid_print
       print(
-        '[PerformanceInterceptor] ${metrics.method} ${metrics.url} - '
+        '[PerformanceInterceptor] '
+        '${metrics.method} ${metrics.url} - '
         '${metrics.totalDuration.inMilliseconds}ms, '
         'status: ${metrics.statusCode}, '
         'response: ${metrics.responseSize} bytes',
@@ -269,34 +294,43 @@ class PerformanceInterceptor extends Interceptor {
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) {
     if (!config.enablePerformanceMonitoring) {
       return handler.next(err);
     }
 
     // Get metrics from request
-    final metrics =
-        err.requestOptions.extra['performanceMetrics'] as RequestMetrics?;
+    final metrics = err.requestOptions
+        .extra['performanceMetrics'] as RequestMetrics?;
     if (metrics == null) {
       return handler.next(err);
     }
 
     // Update metrics
-    metrics.endTime = DateTime.now();
-    metrics.statusCode = err.response?.statusCode;
-    metrics.error = err.type.toString();
+    metrics
+      ..endTime = DateTime.now()
+      ..statusCode = err.response?.statusCode
+      ..error = err.type.toString();
 
     if (err.response != null) {
-      metrics.responseSize = _estimateResponseSize(err.response!);
+      metrics.responseSize =
+          _estimateResponseSize(err.response!);
     }
 
     // Add to history and statistics
     _addMetrics(metrics);
 
     if (config.enableLogging) {
+      // Intentional logging for performance diagnostics.
+      // ignore: avoid_print
       print(
-        '[PerformanceInterceptor] ${metrics.method} ${metrics.url} - '
-        'FAILED: ${metrics.totalDuration.inMilliseconds}ms, '
+        '[PerformanceInterceptor] '
+        '${metrics.method} ${metrics.url} - '
+        'FAILED: '
+        '${metrics.totalDuration.inMilliseconds}ms, '
         'error: ${metrics.error}',
       );
     }
@@ -318,21 +352,34 @@ class PerformanceInterceptor extends Interceptor {
     // Update URL pattern statistics
     final urlPattern = _getUrlPattern(metrics.url);
     _urlStatistics
-        .putIfAbsent(urlPattern, () => PerformanceStatistics())
+        .putIfAbsent(
+          urlPattern,
+          PerformanceStatistics.new,
+        )
         .addMetrics(metrics);
   }
 
-  /// Gets a normalized URL pattern for grouping statistics.
+  /// Gets a normalized URL pattern for grouping
+  /// statistics.
   String _getUrlPattern(String url) {
     try {
       final uri = Uri.parse(url);
 
-      // Remove query parameters and numeric path segments
+      // Remove query parameters and numeric path
+      // segments
       final pathSegments = uri.pathSegments
-          .map((segment) => int.tryParse(segment) != null ? '{id}' : segment)
+          .map(
+            (segment) =>
+                int.tryParse(segment) != null
+                    ? '{id}'
+                    : segment,
+          )
           .toList();
 
-      return '${uri.scheme}://${uri.host}/${pathSegments.join('/')}';
+      return '${uri.scheme}://${uri.host}'
+          '/${pathSegments.join('/')}';
+      // URI parsing may throw FormatException or other types.
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       return url;
     }
@@ -340,10 +387,11 @@ class PerformanceInterceptor extends Interceptor {
 
   /// Estimates the size of a request in bytes.
   int _estimateRequestSize(RequestOptions options) {
-    int size = 0;
+    var size = 0;
 
     // Add method and URL
-    size += options.method.length + options.uri.toString().length;
+    size += options.method.length +
+        options.uri.toString().length;
 
     // Add headers
     options.headers.forEach((key, value) {
@@ -360,9 +408,11 @@ class PerformanceInterceptor extends Interceptor {
         // Estimate FormData size
         final formData = options.data as FormData;
         for (final field in formData.fields) {
-          size += field.key.length + field.value.length;
+          size +=
+              field.key.length + field.value.length;
         }
-        // Note: File sizes are not included in this estimate
+        // Note: File sizes are not included in this
+        // estimate
       }
     }
 
@@ -370,8 +420,10 @@ class PerformanceInterceptor extends Interceptor {
   }
 
   /// Estimates the size of a response in bytes.
-  int _estimateResponseSize(Response response) {
-    int size = 0;
+  int _estimateResponseSize(
+    Response<dynamic> response,
+  ) {
+    var size = 0;
 
     // Add status line
     size += 20; // Approximate size of status line
@@ -389,7 +441,8 @@ class PerformanceInterceptor extends Interceptor {
       if (response.data is String) {
         size += (response.data as String).length;
       } else if (response.data is List<int>) {
-        size += (response.data as List<int>).length;
+        size +=
+            (response.data as List<int>).length;
       }
     }
 
@@ -408,24 +461,26 @@ class PerformanceInterceptor extends Interceptor {
   /// Gets aggregated performance statistics.
   PerformanceStatistics getStatistics() => _statistics;
 
-  /// Gets performance statistics grouped by URL pattern.
-  Map<String, PerformanceStatistics> getUrlStatistics() =>
-      Map.from(_urlStatistics);
+  /// Gets performance statistics grouped by URL
+  /// pattern.
+  Map<String, PerformanceStatistics>
+      getUrlStatistics() => Map.from(_urlStatistics);
 
   /// Clears all collected metrics and statistics.
   void clear() {
     _metricsHistory.clear();
-    _statistics.totalRequests = 0;
-    _statistics.successfulRequests = 0;
-    _statistics.failedRequests = 0;
-    _statistics.statusCodeCounts.clear();
-    _statistics.errorCounts.clear();
-    _statistics.totalRequestSize = 0;
-    _statistics.totalResponseSize = 0;
-    _statistics.totalDuration = Duration.zero;
-    _statistics.minDuration = const Duration(days: 365);
-    _statistics.maxDuration = Duration.zero;
-    _statistics.recentDurations.clear();
+    _statistics
+      ..totalRequests = 0
+      ..successfulRequests = 0
+      ..failedRequests = 0
+      ..statusCodeCounts.clear()
+      ..errorCounts.clear()
+      ..totalRequestSize = 0
+      ..totalResponseSize = 0
+      ..totalDuration = Duration.zero
+      ..minDuration = const Duration(days: 365)
+      ..maxDuration = Duration.zero
+      ..recentDurations.clear();
     _urlStatistics.clear();
   }
 }

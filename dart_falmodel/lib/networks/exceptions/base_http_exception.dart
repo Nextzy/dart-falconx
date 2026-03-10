@@ -11,8 +11,8 @@ abstract class BaseHttpException extends NetworkException {
   /// All HTTP exceptions should extend this class to inherit
   /// common functionality and ensure consistent behavior.
   const BaseHttpException({
+    required super.type,
     required super.statusCode,
-    super.type,
     super.userMessage,
     super.developerMessage,
     super.response,
@@ -47,33 +47,35 @@ abstract class BaseHttpException extends NetworkException {
     return retryableClientErrors.contains(statusCode);
   }
 
-  /// Returns the recommended retry delay in milliseconds.
+  /// Returns the recommended retry delay.
   ///
   /// For rate limiting (429), checks the Retry-After header.
   /// For other retryable errors, returns a default delay.
-  int get recommendedRetryDelay {
-    if (!isRetryable) return 0;
+  Duration get recommendedRetryDelay {
+    if (!isRetryable) return Duration.zero;
 
     // Check for Retry-After header (429 errors)
     if (statusCode == 429 && response?.headers != null) {
       final retryAfter = response!.headers.value('retry-after');
       if (retryAfter != null) {
         final seconds = int.tryParse(retryAfter);
-        if (seconds != null) return seconds * 1000;
+        if (seconds != null) return Duration(seconds: seconds);
       }
     }
 
     // Default retry delays
-    if (statusCode == 429) return 60000; // 1 minute for rate limiting
-    if (isServerError) return 5000; // 5 seconds for server errors
-    return 3000; // 3 seconds for other retryable errors
+    if (statusCode == 429) return const Duration(minutes: 1);
+    if (isServerError) return const Duration(seconds: 5);
+    return const Duration(seconds: 3);
   }
 
   /// Extracts error details from various response formats.
   ///
   /// Attempts to extract error information from common API error
   /// response formats including JSON and plain text.
-  static Map<String, String?> extractErrorDetails(Response? response) {
+  static Map<String, String?> extractErrorDetails(
+    Response<dynamic>? response,
+  ) {
     final result = <String, String?>{
       'type': null,
       'message': null,
@@ -133,7 +135,7 @@ abstract class BaseHttpException extends NetworkException {
       );
     }
 
-    buffer.writeln('Type: $code');
+    buffer.writeln('Type: $type');
     if (userMessage != null) buffer.writeln('Error: $userMessage');
     if (developerMessage != null) {
       buffer.writeln('Developer Message: $developerMessage');

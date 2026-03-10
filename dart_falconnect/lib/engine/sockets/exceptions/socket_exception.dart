@@ -16,6 +16,9 @@ class SocketException implements Exception {
 
   @override
   String toString() {
-    return 'SocketException{message: $message,\nresponse: $response,\nexception: $exception,\nstackTrace: $stackTrace}';
+    return 'SocketException{message: $message,\n'
+        'response: $response,\n'
+        'exception: $exception,\n'
+        'stackTrace: $stackTrace}';
   }
 }

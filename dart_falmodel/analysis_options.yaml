@@ -1,27 +1,22 @@
-#include: package:flutter_lints/flutter.yaml
 include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   errors:
-    inference_failure_on_instance_creation: ignore
     always_put_required_named_parameters_first: ignore
     avoid_redundant_argument_values: ignore
     prefer_int_literals: ignore
-    strict_raw_type: ignore
-    inference_failure_on_function_invocation: ignore
-    avoid_catches_without_on_clauses: ignore
     library_prefixes: ignore
     avoid_setters_without_getters: ignore
-    avoid_positional_boolean_parameters: ignore
-    invalid_annotation_target: ignore
-    avoid_void_async: ignore
-    inference_failure_on_function_return_type: ignore
+  language:
+    strict-casts: true
+    strict-inference: true
   exclude:
-    - build/**
-    - "**/generated/**"
+    - "build/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "**/*.gen.dart"
+    - "**/generated/**"
+    - ".dart_tool/**"
 
 linter:
   # The lint rules applied to this project can be customized in the

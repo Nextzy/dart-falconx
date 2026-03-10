@@ -1,5 +1,58 @@
 import 'package:dart_falmodel/lib.dart';
 
+extension FalconExceptionExtensions<T> on Exception? {
+  T? get code {
+    final exception = this;
+    if (exception is CommonException<T>) {
+      return exception.type;
+    }
+    return null;
+  }
+
+  String? get userMessage {
+    final exception = this;
+    if (exception is CommonException) {
+      return exception.userMessage;
+    }
+    return null;
+  }
+
+  String? get developerMessage {
+    final exception = this;
+    if (exception is CommonException) {
+      return exception.developerMessage;
+    }
+    return null;
+  }
+
+  StackTrace? get stackTrace {
+    final exception = this;
+    if (exception is Error) {
+      return exception.stackTrace;
+    } else if (exception is DioException) {
+      return exception.stackTrace;
+    } else if (exception is CommonException) {
+      return exception.stackTrace;
+    }
+    return null;
+  }
+
+  Result<Never> toCommonResultFailure({
+    String? userMessage,
+    String? developerMessage,
+  }) {
+    return Result.failure(
+      CommonException(
+        type: ErrorType.unknown,
+        userMessage: userMessage,
+        developerMessage: developerMessage ?? toString(),
+        originalException: this,
+        stackTrace: stackTrace,
+      ),
+    );
+  }
+}
+
 extension FalconObjectExceptionExtensions on Object? {
   CommonException<Object> toException({
     Object? type,
@@ -11,9 +64,10 @@ extension FalconObjectExceptionExtensions on Object? {
 
     if (exception == null) {
       return CommonException(
-        code: ErrorType.unknown,
+        type: ErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage ?? 'Null object.',
+        originalException: null,
         stackTrace: stackTrace ?? StackTrace.current,
       );
     }
@@ -37,10 +91,21 @@ extension FalconObjectExceptionExtensions on Object? {
         userMessage ??
         (detectedType is ErrorType ? detectedType.defaultMessage : null);
 
+    if (exception is Exception) {
+      return CommonException(
+        type: detectedType,
+        userMessage: message,
+        developerMessage: developerMessage ?? toString(),
+        originalException: exception,
+        stackTrace: trace,
+      );
+    }
+
     return CommonException(
-      code: detectedType,
+      type: detectedType,
       userMessage: message,
       developerMessage: developerMessage ?? toString(),
+      originalException: null,
       stackTrace: trace,
     );
   }
@@ -54,13 +119,13 @@ extension FalconObjectExceptionExtensions on Object? {
 
   Object _detectErrorType(Object? exception) {
     // Network & Connection
-    if (exception is SocketException) return ErrorType.noInternet;
-    if (exception is HttpException) return ErrorType.network;
-    if (exception is HandshakeException) return ErrorType.network;
-    if (exception is CertificateException) return ErrorType.network;
+    if (exception is SocketException) return ErrorType.system;
+    if (exception is HttpException) return ErrorType.system;
+    if (exception is HandshakeException) return ErrorType.system;
+    if (exception is CertificateException) return ErrorType.system;
 
     // Timeout
-    if (exception is TimeoutException) return ErrorType.timeout;
+    if (exception is TimeoutException) return ErrorType.system;
 
     // Format & Parsing
     if (exception is FormatException) return ErrorType.invalidFormat;
@@ -74,7 +139,7 @@ extension FalconObjectExceptionExtensions on Object? {
     if (exception is StateError) return ErrorType.system;
     if (exception is ArgumentError) return ErrorType.invalidInput;
     if (exception is RangeError) return ErrorType.invalidInput;
-    if (exception is UnsupportedError) return ErrorType.operationNotAllowed;
+    if (exception is UnsupportedError) return ErrorType.unexpected;
 
     // Async
     if (exception is AsyncError) return ErrorType.system;
@@ -83,221 +148,340 @@ extension FalconObjectExceptionExtensions on Object? {
   }
 
   ///========================= PRIVATE METHOD =========================///
-  CommonException<String> _getExceptionFromResponse(
-    Response? response, {
+  NetworkException _getExceptionFromResponse(
+    Response<dynamic>? response, {
     String? userMessage,
     String? developerMessage,
     StackTrace? stackTrace,
   }) {
     final finalStatusCode = response?.statusCode ?? 0;
-    String? finalType;
     String? finalUserMessage;
     String? finalDeveloperMessage;
     final finalStackTrace = stackTrace ?? StackTrace.current;
-    if (response?.data is String) {
-      finalUserMessage = response?.data as String?;
-    } else if (response?.data is Map) {
-      finalType = response?.data['type'] as String?;
-      finalUserMessage = userMessage ?? response?.data['message'] as String?;
+    final responseData = response?.data;
+    if (responseData is String) {
+      finalUserMessage = responseData;
+    } else if (responseData is Map) {
+      finalUserMessage = userMessage ?? responseData['message'] as String?;
       finalDeveloperMessage =
           developerMessage ??
-          response?.data['developerMessage'] as String? ??
+          responseData['developerMessage'] as String? ??
           toString();
     }
 
-    if (finalStatusCode >= 600) {
-      return NetworkNonStandardException(
+    final errorType = NetworkErrorType.fromStatusCode(finalStatusCode);
+
+    return switch (finalStatusCode) {
+      400 => NetworkBadRequestException(
+        userMessage: finalUserMessage ?? 'Invalid format.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      401 => NetworkAuthenticationException(
+        userMessage: finalUserMessage ?? 'Please log in to continue.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      402 => NetworkPaymentRequiredException(
+        userMessage: finalUserMessage ?? 'Payment required.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      403 => NetworkForbiddenException(
+        userMessage:
+            finalUserMessage ??
+            'You do not have permission to perform this action.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      404 => NetworkNotFoundException(
+        userMessage:
+            finalUserMessage ?? 'The requested resource was not found.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      405 => MethodNotAllowedException(
+        userMessage: finalUserMessage ?? 'This operation is not allowed.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      406 => NetworkNotAcceptableException(
+        userMessage: finalUserMessage ?? 'Not acceptable.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      407 => NetworkProxyAuthRequiredException(
+        userMessage: finalUserMessage ?? 'Proxy authentication required.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      408 => NetworkTimeoutException(
+        userMessage: finalUserMessage ?? 'Request timed out. Please try again.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      409 => NetworkConflictException(
+        userMessage:
+            finalUserMessage ?? 'A conflict occurred. Please try again.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      410 => NetworkGoneException(
+        userMessage:
+            finalUserMessage ??
+            'The requested resource is no longer available.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      411 => NetworkLengthRequiredException(
+        userMessage: finalUserMessage ?? 'Content length required.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      412 => NetworkPreconditionFailedException(
+        userMessage: finalUserMessage ?? 'Precondition failed.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      413 => NetworkContentTooLargeException(
+        userMessage: finalUserMessage ?? 'Content too large.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      414 => NetworkUriTooLongException(
+        userMessage: finalUserMessage ?? 'URI too long.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      415 => NetworkUnsupportedMediaTypeException(
+        userMessage: finalUserMessage ?? 'Unsupported media type.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      416 => NetworkRangeNotSatisfiableException(
+        userMessage: finalUserMessage ?? 'Range not satisfiable.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      417 => NetworkExpectationFailedException(
+        userMessage: finalUserMessage ?? 'Expectation failed.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      421 => NetworkMisdirectedRequestException(
+        userMessage: finalUserMessage ?? 'Misdirected request.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      422 => NetworkInvalidException(
+        userMessage:
+            finalUserMessage ?? 'Invalid input. Please check your data.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      423 => NetworkLockedException(
+        userMessage: finalUserMessage ?? 'Resource is locked.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      424 => NetworkFailedDependencyException(
+        userMessage: finalUserMessage ?? 'Failed dependency.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      425 => NetworkTooEarlyException(
+        userMessage: finalUserMessage ?? 'Too early.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      426 => NetworkUpgradeRequiredException(
+        userMessage: finalUserMessage ?? 'Upgrade required.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      428 => NetworkPreconditionRequiredException(
+        userMessage: finalUserMessage ?? 'Precondition required.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      429 => NetworkLimitExceededException(
+        userMessage: finalUserMessage ?? 'Limit exceeded. Please try again.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      431 => NetworkHeaderFieldsTooLargeException(
+        userMessage: finalUserMessage ?? 'Request header fields too large.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      451 => NetworkUnavailableForLegalException(
+        userMessage: finalUserMessage ?? 'Unavailable for legal reasons.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      >= 400 && < 500 => NetworkClientException(
         statusCode: finalStatusCode,
-        type: finalType,
-        userMessage: finalUserMessage,
+        type: errorType,
+        userMessage: finalUserMessage ?? 'Sorry. Please check your request.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      500 => NetworkInternalServerException(
+        userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
         developerMessage: finalDeveloperMessage,
         requestOptions: response?.requestOptions,
         response: response,
         stackTrace: finalStackTrace,
-      );
-    } else if (finalStatusCode >= 500 && finalStatusCode < 600) {
-      if (finalStatusCode == 500) {
-        return NetworkInternalServerException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
-          developerMessage: finalDeveloperMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 501) {
-        return NetowrkNotImplementException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ?? 'This service is currently unavailable.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 502) {
-        return NetworkBadGatewayException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 503) {
-        return ServiceUnavailableException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ?? 'This service is currently unavailable.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 504) {
-        return NetworkGatewayTimeoutException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ?? 'Request timed out. Please try again.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else {
-        return NetworkServerException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      }
-    } else if (finalStatusCode >= 400 && finalStatusCode < 500) {
-      if (finalStatusCode == 400) {
-        return NetworkBadRequestException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'Invalid format.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 401) {
-        return NetworkAuthenticationException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'Please log in to continue.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 403) {
-        return NetworkForbiddenException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ??
-              'You do not have permission to perform this action.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 404) {
-        return NetworkNotFoundException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ?? 'The requested resource was not found.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 405) {
-        return MethodNotAllowedException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'This operation is not allowed.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 408) {
-        return NetworkTimeoutException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ?? 'Request timed out. Please try again.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 409) {
-        return NetworkConflictException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ?? 'A conflict occurred. Please try again.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 422) {
-        return NetworkInvalidException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage:
-              finalUserMessage ?? 'Invalid input. Please check your data.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else if (finalStatusCode == 429) {
-        return NetworkLimitExceededException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'Limit exceeded. Please try again.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      } else {
-        return NetworkClientException(
-          statusCode: finalStatusCode,
-          type: finalType,
-          userMessage: finalUserMessage ?? 'Sorry. Please check your request.',
-          developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-          requestOptions: response?.requestOptions,
-          response: response,
-          stackTrace: finalStackTrace,
-        );
-      }
-    }
-    return NetworkException(
-      statusCode: finalStatusCode,
-      type: finalType,
-      userMessage:
-          finalUserMessage ?? 'Something went wrong. Please try again.',
-      developerMessage: finalDeveloperMessage ?? response?.statusMessage,
-      requestOptions: response?.requestOptions,
-      response: response,
-      stackTrace: finalStackTrace,
-    );
+      ),
+      501 => NetowrkNotImplementException(
+        userMessage:
+            finalUserMessage ?? 'This service is currently unavailable.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      502 => NetworkBadGatewayException(
+        userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      503 => ServiceUnavailableException(
+        userMessage:
+            finalUserMessage ?? 'This service is currently unavailable.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      504 => NetworkGatewayTimeoutException(
+        userMessage: finalUserMessage ?? 'Request timed out. Please try again.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      505 => NetworkHttpVersionNotSupportedException(
+        userMessage: finalUserMessage ?? 'HTTP version not supported.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      506 => NetworkVariantAlsoNegotiatesException(
+        userMessage: finalUserMessage ?? 'Variant also negotiates.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      507 => NetworkInsufficientStorageException(
+        userMessage: finalUserMessage ?? 'Insufficient storage.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      508 => NetworkLoopDetectedException(
+        userMessage: finalUserMessage ?? 'Loop detected.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      510 => NetworkNotExtendedException(
+        userMessage: finalUserMessage ?? 'Not extended.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      511 => NetworkAuthRequiredException(
+        userMessage: finalUserMessage ?? 'Network authentication required.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      >= 500 && < 600 => NetworkServerException(
+        statusCode: finalStatusCode,
+        type: errorType,
+        userMessage: finalUserMessage ?? 'Sorry. Please try again later.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+      _ => NetworkException(
+        statusCode: finalStatusCode,
+        type: errorType,
+        userMessage:
+            finalUserMessage ?? 'Something went wrong. Please try again.',
+        developerMessage: finalDeveloperMessage ?? response?.statusMessage,
+        requestOptions: response?.requestOptions,
+        response: response,
+        stackTrace: finalStackTrace,
+      ),
+    };
   }
 }

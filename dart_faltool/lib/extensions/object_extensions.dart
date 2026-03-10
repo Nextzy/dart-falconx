@@ -279,6 +279,7 @@ extension FalconToolObject<T> on T {
   ///     .applyIf(true, (n) => n * 2)
   ///     .applyIf(false, (n) => n + 10); // Result: 10
   /// ```
+  // ignore: avoid_positional_boolean_parameters
   T applyIf(bool condition, T Function(T value) transform) {
     if (condition) {
       return transform(this);

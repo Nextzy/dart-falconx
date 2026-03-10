@@ -8,7 +8,7 @@ import 'package:dart_falmodel/lib.dart';
 class NetworkNonStandardException extends BaseHttpException {
   const NetworkNonStandardException({
     required super.statusCode,
-    super.type,
+    super.type = NetworkErrorType.unknown,
     super.userMessage,
     super.developerMessage,
     super.response,

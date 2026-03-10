@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 class NetworkInvalidException extends NetworkClientException {
   const NetworkInvalidException({
     super.statusCode = 422,
-    super.type,
+    super.type = NetworkErrorType.unprocessableContent,
     super.userMessage,
     super.developerMessage,
     super.response,

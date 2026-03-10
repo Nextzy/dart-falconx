@@ -48,6 +48,8 @@ class SocketOptions {
   String? data;
 
   @override
+  // Needed for value equality in socket option comparisons
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SocketOptions &&
@@ -58,12 +60,16 @@ class SocketOptions {
           data == other.data);
 
   @override
+  // Must match operator == override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
   int get hashCode =>
       uri.hashCode ^ retryLimit.hashCode ^ data.hashCode ^ protocol.hashCode;
 
   @override
   String toString() {
-    return 'SocketOptions{ uri: $uri, retryLimit: $retryLimit, protocol: $protocol, data: $data,}';
+    return 'SocketOptions{ uri: $uri, '
+        'retryLimit: $retryLimit, '
+        'protocol: $protocol, data: $data,}';
   }
 
   /// Whether this connection uses secure WebSocket (wss://).
