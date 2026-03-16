@@ -22,8 +22,7 @@ extension DartFalconnectHttpFutureDynamicExtensions
   }
 }
 
-extension DartFalconnectFutureResponseExtensions<T>
-    on Future<Response<T>> {
+extension DartFalconnectFutureResponseExtensions<T> on Future<Response<T>> {
   Future<T> unwrapResponse() {
     return then<T>((response) {
       return Future.value(response.data);
@@ -35,15 +34,14 @@ extension DartFalconnectFutureResponseExtensions<T>
       DioException exception,
       StackTrace? stackTrace,
     )?
-        f,
+    f,
   ) {
     return then(
       (value) => value,
       onError: (Object error, StackTrace stackTrace) {
         if (f != null && error is DioException) {
           final resolve = f(error, error.stackTrace);
-          final response =
-              error.response.transformData(data: resolve);
+          final response = error.response.transformData(data: resolve);
           return Future.value(response);
         }
         // Error is rethrown as-is to preserve the original type.
@@ -54,28 +52,29 @@ extension DartFalconnectFutureResponseExtensions<T>
   }
 }
 
-extension DartFalconnectHttpFutureRpcResponseExtensions<T, E>
-    on Future<JsonRpcResponse<T, E>> {
-  Future<T> unwrapResponse() {
-    return then<T>((response) {
+extension DartFalconnectHttpFutureRpcResponseExtensions<
+  RESULT extends JsonRpcResult
+>
+    on Future<JsonRpcResponse<RESULT>> {
+  Future<RESULT> unwrapResponse() {
+    return then<RESULT>((response) {
       return Future.value(response.result);
     });
   }
 
-  Future<JsonRpcResponse<T, E>> catchWhenError(
-    T? Function(
+  Future<JsonRpcResponse<RESULT>> catchWhenError(
+    RESULT? Function(
       DioException exception,
       StackTrace? stackTrace,
     )?
-        f,
+    f,
   ) {
     return then(
       (value) => value,
       onError: (Object error, StackTrace stackTrace) {
         if (f != null && error is DioException) {
           final resolve = f(error, error.stackTrace);
-          final response =
-              error.response.transformData(data: resolve);
+          final response = error.response.transformData(data: resolve);
           return Future.value(response);
         }
         // Error is rethrown as-is to preserve the original type.
@@ -99,15 +98,14 @@ extension DartFalconnectHttpFutureResponseExtensions<T>
       DioException exception,
       StackTrace? stackTrace,
     )?
-        f,
+    f,
   ) {
     return then(
       (value) => value,
       onError: (Object error, StackTrace stackTrace) {
         if (f != null && error is DioException) {
           final resolve = f(error, error.stackTrace);
-          final response =
-              error.response.transformData(data: resolve);
+          final response = error.response.transformData(data: resolve);
           return Future.value(response);
         }
         // Error is rethrown as-is to preserve the original type.
@@ -132,13 +130,10 @@ extension DartFalconnectResponseExtensions on Response<dynamic>? {
     return Response<T>(
       data: (data ?? this?.data) as T?,
       headers: headers ?? this?.headers,
-      requestOptions:
-          requestOptions ?? this!.requestOptions,
-      isRedirect:
-          isRedirect ?? this?.isRedirect ?? false,
+      requestOptions: requestOptions ?? this!.requestOptions,
+      isRedirect: isRedirect ?? this?.isRedirect ?? false,
       statusCode: statusCode ?? this?.statusCode,
-      statusMessage:
-          statusMessage ?? this?.statusMessage,
+      statusMessage: statusMessage ?? this?.statusMessage,
       redirects: redirects ?? this?.redirects ?? [],
       extra: extra ?? this?.extra ?? {},
     );
@@ -161,13 +156,10 @@ extension DartFalconnectResponseExtensions on Response<dynamic>? {
     return Response<T>(
       data: data,
       headers: headers ?? this?.headers,
-      requestOptions:
-          requestOptions ?? this!.requestOptions,
-      isRedirect:
-          isRedirect ?? this?.isRedirect ?? false,
+      requestOptions: requestOptions ?? this!.requestOptions,
+      isRedirect: isRedirect ?? this?.isRedirect ?? false,
       statusCode: statusCode ?? this?.statusCode,
-      statusMessage:
-          statusMessage ?? this?.statusMessage,
+      statusMessage: statusMessage ?? this?.statusMessage,
       redirects: redirects ?? this?.redirects ?? [],
       extra: extra ?? this?.extra ?? {},
     );

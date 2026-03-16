@@ -1,8 +1,8 @@
 import 'package:dart_falmodel/lib.dart';
 
-part 'generated/rpc_request.freezed.dart';
+part 'generated/json_rpc_request.freezed.dart';
 
-part 'generated/rpc_request.g.dart';
+part 'generated/json_rpc_request.g.dart';
 
 @freezed
 abstract class JsonRpcRequest extends JsonRpc with _$JsonRpcRequest {

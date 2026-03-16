@@ -113,12 +113,14 @@ Generated files follow strict organization:
 
 ### Exception Architecture
 
-Comprehensive exception hierarchy in `dart_falmodel/lib/exceptions/`:
-- **Base exceptions**: Common error patterns
-- **HTTP exceptions**: Status code-specific errors (4xx, 5xx)
-- **Network exceptions**: Connectivity, timeout, retry failures
-- **Domain exceptions**: Business logic errors
-- All exceptions support error codes, messages, and stack traces
+Two exception systems in dart_falmodel:
+- **`ErrorType` enum** (`lib/exceptions/common_exception.dart`): General-purpose (unknown, system, validation, storage, etc.)
+- **`NetworkErrorType` enum** (`lib/networks/exceptions/network_exception.dart`): HTTP-specific, maps to status codes
+- `NetworkException extends CommonException<NetworkErrorType>` — do NOT mix with `ErrorType`
+- Each HTTP exception class has a default `NetworkErrorType` via `super.type = NetworkErrorType.xxx`
+- Barrel exports in `networks/exceptions/exceptions.dart` — new exception files MUST be added here
+- Known typo: `NetowrkNotImplementException` (501) — preserved for backward compatibility
+- Duplicate: both `NetworkAuthenticationException` and `UnauthorizedException` exist for 401
 
 ### Key Design Patterns
 
@@ -141,6 +143,12 @@ Comprehensive exception hierarchy in `dart_falmodel/lib/exceptions/`:
    - WebSocket responses as filtered streams
    - Reactive programming with RxDart
    - Proper subscription management required
+
+## Gotchas
+
+- When adding new exception classes, always add the export to `dart_falmodel/lib/networks/exceptions/exceptions.dart` — missing exports cause misleading analyzer errors (e.g., "method can't be unconditionally invoked because receiver can be 'null'")
+- Exports in barrel files must be sorted alphabetically (enforced by `directives_ordering` lint rule)
+- After large changes, run `dart pub get` before `dart analyze` to clear stale analyzer state
 
 ## Configuration Details
 
