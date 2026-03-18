@@ -54,7 +54,24 @@ class CommonException<T> implements Exception {
       developerMessage ??
       'Something went wrong. Please try again.';
 
-  /// Creates a copy of this CommonException with the given fields replaced.
+  CommonException<T> mapMessage({
+    String Function(T type)? userMessage,
+    String Function(T type)? developerMessage,
+  }) {
+    return copyWith(
+      userMessage: userMessage?.call(type) ?? this.userMessage,
+      developerMessage: developerMessage?.call(type) ?? this.developerMessage,
+    );
+  }
+
+  CommonException<T> mapUserMessage(String Function(T type) f) {
+    return mapMessage(userMessage: f);
+  }
+
+  CommonException<T> mapDeveloperMessage(String Function(T type) f) {
+    return mapMessage(developerMessage: f);
+  }
+
   CommonException<T> copyWith({
     T? type,
     String? userMessage,

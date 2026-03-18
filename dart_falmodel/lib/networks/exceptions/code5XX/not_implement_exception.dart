@@ -1,7 +1,7 @@
 import 'package:dart_falmodel/lib.dart';
 
-class NetowrkNotImplementException extends NetworkServerException {
-  const NetowrkNotImplementException({
+class NetworkNotImplementException extends NetworkServerException {
+  const NetworkNotImplementException({
     super.statusCode = 501,
     super.type = NetworkErrorType.notImplemented,
     super.userMessage,
