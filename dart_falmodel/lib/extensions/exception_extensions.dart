@@ -391,7 +391,7 @@ extension FalconObjectExceptionExtensions on Object? {
         response: response,
         stackTrace: finalStackTrace,
       ),
-      501 => NetowrkNotImplementException(
+      501 => NetworkNotImplementException(
         userMessage:
             finalUserMessage ?? 'This service is currently unavailable.',
         developerMessage: finalDeveloperMessage ?? response?.statusMessage,

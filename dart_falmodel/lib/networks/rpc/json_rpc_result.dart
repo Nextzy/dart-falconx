@@ -1,4 +1,3 @@
-import 'package:dart_falmodel/lib.dart';
 
 /// Base class for all JSON-RPC result objects.
 ///
