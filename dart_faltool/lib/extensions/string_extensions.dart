@@ -136,89 +136,7 @@ extension FalconToolStringExtension on String {
   /// Converts the string to bytes using UTF-8 encoding.
   Uint8List toBytes() => Uint8List.fromList(utf8.encode(this));
 
-  // Case Conversions
-
-  /// Converts the string to camelCase.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'hello_world'.toCamelCase(); // 'helloWorld'
-  /// 'HELLO-WORLD'.toCamelCase(); // 'helloWorld'
-  /// ```
-  String toCamelCase() {
-    // Handle camelCase strings by inserting underscores before capitals
-    final normalized = replaceAllMapped(
-      RegExp('([a-z])([A-Z])'),
-      (match) => '${match[1]}_${match[2]}',
-    );
-
-    final words = normalized.split(RegExp(r'[_\-\s]+'));
-    if (words.isEmpty) return toLowerCase();
-
-    return words.first.toLowerCase() +
-        words.skip(1).map((w) => w.toLowerCase().capitalize).join();
-  }
-
-  /// Converts the string to snake_case.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'helloWorld'.toSnakeCase(); // 'hello_world'
-  /// 'HelloWorld'.toSnakeCase(); // 'hello_world'
-  /// ```
-  String toSnakeCase() {
-    return replaceAllMapped(
-      RegExp('[A-Z]'),
-      (match) => '_${match.group(0)!.toLowerCase()}',
-    ).replaceAll(RegExp('^_'), '').replaceAll(RegExp(r'[\s\-]+'), '_');
-  }
-
-  /// Converts the string to PascalCase.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'hello_world'.toPascalCase(); // 'HelloWorld'
-  /// 'hello-world'.toPascalCase(); // 'HelloWorld'
-  /// ```
-  String toPascalCase() {
-    // Handle camelCase strings by inserting underscores before capitals
-    final normalized = replaceAllMapped(
-      RegExp('([a-z])([A-Z])'),
-      (match) => '${match[1]}_${match[2]}',
-    );
-
-    final words = normalized.split(RegExp(r'[_\-\s]+'));
-    return words.map((w) => w.toLowerCase().capitalize).join();
-  }
-
-  /// Converts the string to kebab-case.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'helloWorld'.toKebabCase(); // 'hello-world'
-  /// 'HelloWorld'.toKebabCase(); // 'hello-world'
-  /// ```
-  String toKebabCase() => toSnakeCase().replaceAll('_', '-');
-
   // String Manipulation
-
-  // capitalize is now provided by dartx package.
-  // Use: string.capitalize()
-
-  /// Capitalizes the first letter of each word.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'hello world'.capitalizeWords(); // 'Hello World'
-  /// ```
-  String capitalizeWords() {
-    return split(' ')
-        .map(
-          (word) =>
-              word.isEmpty ? word : word[0].toUpperCase() + word.substring(1),
-        )
-        .join(' ');
-  }
 
   /// Reverses the string.
   ///
@@ -229,23 +147,6 @@ extension FalconToolStringExtension on String {
   /// ```dart
   /// 'hello'.reversed; // 'olleh'
   /// ```
-
-  /// Truncates the string to the specified length.
-  ///
-  /// [length] - Maximum length of the result
-  /// [ellipsis] - String to append if truncated (default: '...')
-  ///
-  /// Example:
-  /// ```dart
-  /// 'Hello World'.truncate(8); // 'Hello...'
-  /// 'Hello World'.truncate(8, ellipsis: '~'); // 'Hello W~'
-  /// ```
-  String truncate(int? length, {String ellipsis = '...'}) {
-    if (length == null) return this;
-    if (this.length <= length) return this;
-    if (length <= ellipsis.length) return ellipsis.substring(0, length);
-    return substring(0, length - ellipsis.length) + ellipsis;
-  }
 
   /// Removes the protocol (http:// or https://) from the URL.
   ///
@@ -305,24 +206,6 @@ extension FalconToolStringExtension on String {
         .replaceAll('&#39;', "'");
   }
 
-  /// Returns a copy of this string having its first letter uppercased, or the
-  /// original string, if it's empty or already starts with an upper case
-  /// letter.
-  ///
-  /// ```dart
-  /// print('abcd'.capitalize()) // Abcd
-  /// print('Abcd'.capitalize()) // Abcd
-  /// ```
-  String get capitalize {
-    switch (length) {
-      case 0:
-        return this;
-      case 1:
-        return toUpperCase();
-      default:
-        return substring(0, 1).toUpperCase() + substring(1);
-    }
-  }
 }
 
 /// Extension methods for nullable String manipulation and validation.
@@ -366,12 +249,4 @@ extension FalconStringNullExtension on String? {
   /// Safely normalizes whitespace.
   String? get normalizeWhitespace => this?.normalizeWhitespace;
 
-  /// Safely capitalizes the string.
-  String? get capitalize => this == null || this!.isEmpty
-      ? this
-      : this![0].toUpperCase() + this!.substring(1);
-
-  /// Safely truncates the string.
-  String? truncate(int? length, {String ellipsis = '...'}) =>
-      this?.truncate(length, ellipsis: ellipsis);
 }

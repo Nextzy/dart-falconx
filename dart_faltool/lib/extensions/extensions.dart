@@ -29,4 +29,5 @@ export 'stream_extensions.dart';
 
 // String manipulation extensions
 export 'string_extensions.dart';
+export 'string_format_extensions.dart';
 export 'string_validator_extensions.dart';

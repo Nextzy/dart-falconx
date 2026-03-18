@@ -240,63 +240,7 @@ void main() {
       });
     });
 
-    group('Case Conversions', () {
-      test('toCamelCase converts to camelCase', () {
-        expect('hello_world'.toCamelCase(), 'helloWorld');
-        expect('HELLO-WORLD'.toCamelCase(), 'helloWorld');
-        expect('hello world'.toCamelCase(), 'helloWorld');
-        expect('Hello_World'.toCamelCase(), 'helloWorld');
-        expect('helloWorld'.toCamelCase(), 'helloWorld');
-        expect(''.toCamelCase(), '');
-      });
-
-      test('toSnakeCase converts to snake_case', () {
-        expect('helloWorld'.toSnakeCase(), 'hello_world');
-        expect('HelloWorld'.toSnakeCase(), 'hello_world');
-        expect('hello-world'.toSnakeCase(), 'hello_world');
-        expect('hello world'.toSnakeCase(), 'hello_world');
-        expect('hello_world'.toSnakeCase(), 'hello_world');
-        expect(''.toSnakeCase(), '');
-      });
-
-      test('toPascalCase converts to PascalCase', () {
-        expect('hello_world'.toPascalCase(), 'HelloWorld');
-        expect('hello-world'.toPascalCase(), 'HelloWorld');
-        expect('hello world'.toPascalCase(), 'HelloWorld');
-        expect('helloWorld'.toPascalCase(), 'HelloWorld');
-        expect(''.toPascalCase(), '');
-      });
-
-      test('toKebabCase converts to kebab-case', () {
-        expect('helloWorld'.toKebabCase(), 'hello-world');
-        expect('HelloWorld'.toKebabCase(), 'hello-world');
-        expect('hello_world'.toKebabCase(), 'hello-world');
-        expect('hello world'.toKebabCase(), 'hello-world');
-        expect(''.toKebabCase(), '');
-      });
-    });
-
     group('String Manipulation', () {
-      test(
-        'capitalizeWords capitalizes first letter of each word',
-        () {
-          expect(
-            'hello world'.capitalizeWords(),
-            'Hello World',
-          );
-          expect(
-            'HELLO WORLD'.capitalizeWords(),
-            'HELLO WORLD',
-          );
-          expect(
-            'hello   world'.capitalizeWords(),
-            'Hello   World',
-          );
-          expect(''.capitalizeWords(), '');
-          expect('a'.capitalizeWords(), 'A');
-        },
-      );
-
       test('reverse reverses the string', () {
         // Using dartx's reversed property
         expect('hello'.reversed, 'olleh');
@@ -304,20 +248,6 @@ void main() {
         expect('12345'.reversed, '54321');
         expect(''.reversed, '');
         expect('a'.reversed, 'a');
-      });
-
-      test('truncate truncates string to specified length', () {
-        expect('Hello World'.truncate(8), 'Hello...');
-        expect(
-          'Hello World'.truncate(8, ellipsis: '~'),
-          'Hello W~',
-        );
-        expect('Hello'.truncate(10), 'Hello');
-        expect('Hello World'.truncate(3), '...');
-        expect(
-          'Hello World'.truncate(null),
-          'Hello World',
-        );
       });
 
       test('removeHttp removes protocol from URL', () {
@@ -561,24 +491,5 @@ void main() {
       },
     );
 
-    test('capitalize safely capitalizes string', () {
-      String? nullString;
-      const emptyString = '';
-      const lowerString = 'hello';
-      const upperString = 'HELLO';
-
-      expect(nullString.capitalize, null);
-      expect(emptyString.capitalize, '');
-      expect(lowerString.capitalize, 'Hello');
-      expect(upperString.capitalize, 'HELLO');
-    });
-
-    test('truncate safely truncates string', () {
-      String? nullString;
-      const longString = 'Hello World';
-
-      expect(nullString.truncate(5), null);
-      expect(longString.truncate(5), 'He...');
-    });
   });
 }
