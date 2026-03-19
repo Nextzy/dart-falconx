@@ -47,9 +47,10 @@ dart fix --apply
 - Has its own interceptor system (`SocketInterceptor`, `SocketLogInterceptor`) separate from Dio interceptors
 
 **JSON-RPC (`engine/rpc/`)**
-- `RpcService` — Abstract class for JSON-RPC 2.0 over HTTP (uses Dio). Provides `request()` (expects result), `notify()` (fire-and-forget), and `batch()` (multiple calls)
+- `RpcService` — Abstract class for JSON-RPC 2.0 over HTTP (uses Dio). Provides `request()` (expects result), `notify()` (fire-and-forget), `notifySync()` (returns `FutureOr<void>`), and `batch()` (multiple calls)
+- `DefaultRpcService` — Concrete `RpcService` implementation with no additional logic
 - Error responses throw `JsonRpcErrorResponse`; missing `result` field throws `StateError`
-- Batch responses return `List<BatchJsonRpcItem>` — either `BatchJsonRpcSuccess` or `BatchJsonRpcFailure`
+- Batch responses return `List<BatchJsonRpcItem>` — sealed class with `resolve`/`map`/`responseOrNull`/`errorOrNull` convenience API
 
 ### Datasource Bound State (`engine/datasource_bound_state.dart`)
 

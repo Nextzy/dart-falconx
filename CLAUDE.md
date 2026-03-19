@@ -98,8 +98,9 @@ dart format .
   - Automatic reconnection handling
   
 - **rpc/**: JSON-RPC protocol implementation
-  - Freezed-based request/response models
-  - Proper JSON serialization with generated code
+  - `RpcService`: Abstract class for JSON-RPC 2.0 over HTTP; `DefaultRpcService`: concrete implementation
+  - `BatchJsonRpcItem`: Sealed class with `resolve`, `map`, `responseOrNull`, `errorOrNull` for batch responses
+  - Freezed-based request/response models with generated JSON serialization
 
 ### Code Generation Structure
 
@@ -119,7 +120,7 @@ Two exception systems in dart_falmodel:
 - `NetworkException extends CommonException<NetworkErrorType>` — do NOT mix with `ErrorType`
 - Each HTTP exception class has a default `NetworkErrorType` via `super.type = NetworkErrorType.xxx`
 - Barrel exports in `networks/exceptions/exceptions.dart` — new exception files MUST be added here
-- Known typo: `NetowrkNotImplementException` (501) — preserved for backward compatibility
+- Known typo: `NetworkNotImplementException` (501) — missing "ed" in "Implemented", preserved for backward compatibility
 - Duplicate: both `NetworkAuthenticationException` and `UnauthorizedException` exist for 401
 
 ### Key Design Patterns

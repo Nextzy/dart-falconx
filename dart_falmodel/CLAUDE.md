@@ -55,7 +55,7 @@ dart test
 
 ### JSON-RPC Models
 
-Split into success (`JsonRpcResponse<RESULT>`) and error (`JsonRpcErrorResponse`) types — both Freezed. `JsonRpcResult` is the abstract interface all RPC result types must implement (requires `toJson()`). `RawJsonRpcResult` wraps a raw `Map` for manual construction.
+Split into success (`JsonRpcResponse<RESULT>`) and error (`JsonRpcErrorResponse`) types — both Freezed. `JsonRpcResult` is the abstract interface all RPC result types must implement (requires `toJson()`). `RawJsonRpcResult` wraps a raw `Map` for manual construction. `BatchJsonRpcItem` is a hand-written sealed class (not Freezed) with `resolve`, `map`, `responseOrNull`, `errorOrNull` for batch response handling.
 
 ### UserFeedback
 
@@ -66,7 +66,7 @@ Freezed sealed class (`lib/feedbacks/feedback.dart`) with four variants: `Succes
 Generated files go to `lib/{{path}}/generated/` (configured in `build.yaml`). Currently used for:
 - `networks/https/responses/remote_error.dart` (Freezed + JSON)
 - `networks/rpc/json_rpc_response.dart` (Freezed + JSON)
-- `networks/rpc/json_rpc_request.dart`, `json_rpc_error.dart`, `batch_json_rpc_item.dart`
+- `networks/rpc/json_rpc_request.dart`, `json_rpc_error.dart`
 - `feedbacks/feedback.dart` (Freezed + JSON)
 
 ## Gotchas
