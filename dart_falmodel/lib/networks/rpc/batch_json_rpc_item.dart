@@ -8,33 +8,33 @@ sealed class BatchJsonRpcItem<RESULT extends JsonRpcResult> {
 
   bool get isFailure => this is BatchJsonRpcFailure;
 
-  JsonRpcResponse<RESULT>? get dataOrNull {
-    if (isSuccess) {
-      return (this as BatchJsonRpcSuccess<RESULT>).response;
-    }
-    return null;
-  }
+  JsonRpcResponse<RESULT>? get responseOrNull => switch (this) {
+    BatchJsonRpcSuccess(:final response) => response,
+    BatchJsonRpcFailure() => null,
+  };
 
-  JsonRpcResponse<RESULT> get data {
-    if (isSuccess) {
-      return (this as BatchJsonRpcSuccess<RESULT>).response;
-    }
-    throw StateError('Batch item is not a success');
-  }
+  JsonRpcErrorResponse? get errorOrNull => switch (this) {
+    BatchJsonRpcSuccess() => null,
+    BatchJsonRpcFailure(:final error) => error,
+  };
 
-  JsonRpcErrorResponse? get errorOrNull {
-    if (isFailure) {
-      return (this as BatchJsonRpcFailure).error;
-    }
-    return null;
-  }
+  /// Folds this item into a single value.
+  R resolve<R>({
+    required R Function(JsonRpcResponse<RESULT> response) success,
+    required R Function(JsonRpcErrorResponse error) failure,
+  }) => switch (this) {
+    BatchJsonRpcSuccess(:final response) => success(response),
+    BatchJsonRpcFailure(:final error) => failure(error),
+  };
 
-  JsonRpcErrorResponse get error {
-    if (isFailure) {
-      return (this as BatchJsonRpcFailure).error;
-    }
-    throw StateError('Batch item is not a failure');
-  }
+  /// Transforms the success response if present.
+  BatchJsonRpcItem<R> map<R extends JsonRpcResult>(
+    JsonRpcResponse<R> Function(JsonRpcResponse<RESULT> response) transform,
+  ) => switch (this) {
+    BatchJsonRpcSuccess(:final response) =>
+      BatchJsonRpcSuccess(transform(response)),
+    final BatchJsonRpcFailure<RESULT> f => BatchJsonRpcFailure(f.error),
+  };
 }
 
 /// A successful batch item wrapping a [JsonRpcResponse].
@@ -50,6 +50,5 @@ class BatchJsonRpcFailure<RESULT extends JsonRpcResult>
     extends BatchJsonRpcItem<RESULT> {
   const BatchJsonRpcFailure(this.error);
 
-  @override
   final JsonRpcErrorResponse error;
 }
