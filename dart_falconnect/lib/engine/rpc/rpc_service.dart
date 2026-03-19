@@ -105,13 +105,13 @@ abstract class RpcService {
     return value;
   }
 
-  void notifySync(
+  FutureOr<void> notifySync(
     String path, {
     String? jsonrpc,
     required String method,
     String? mockId,
     Map<String, dynamic>? params,
-  }) => notify(
+  }) async => await notify(
     path,
     jsonrpc: jsonrpc,
     method: method,
@@ -248,7 +248,7 @@ abstract class RpcService {
 
   String _randomRequestId() {
     final random = Random();
-    final randomNumber = random.nextInt(999999) + 1;
+    final randomNumber = random.nextInt(9999999) + 1;
     return randomNumber.toString();
   }
 
