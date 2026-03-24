@@ -1,7 +1,7 @@
 import 'package:dart_falmodel/lib.dart';
 
-class DomainLayerException extends CommonException {
-  const DomainLayerException({
+class JsonRpcCommonException extends CommonException {
+  const JsonRpcCommonException({
     super.category,
     required super.type,
     super.userMessage,

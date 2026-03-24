@@ -1,12 +1,12 @@
 /// JSON-RPC error categories aligned with the protocol specification.
-enum RemoteErrorCategory {
+enum JsonRpcErrorCategory {
   API_ERROR,
   EXTERNAL_API_ERROR,
-  INVALID_REQUEST_ERROR
-  ;
+  INVALID_REQUEST_ERROR,
+  UNKNOWN;
 
-  static RemoteErrorCategory fromJson(String value) =>
-      RemoteErrorCategory.values.firstWhere(
+  static JsonRpcErrorCategory fromJson(String value) =>
+      JsonRpcErrorCategory.values.firstWhere(
         (e) => e.name == value,
         orElse: () => throw ArgumentError('Unknown ErrorCategory: $value'),
       );

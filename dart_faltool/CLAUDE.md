@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Package Overview
 
-`dart_faltool` is the **base layer** of the dart_falconx monorepo. It provides utility extensions and helper functions consumed by all other packages (`dart_falmodel`, `dart_falconnect`). It depends on `dart_falmodel` and re-exports many third-party packages for convenience.
+`dart_faltool` is a **core utility package** in the dart_falconx monorepo. It provides utility extensions and helper functions consumed by all other packages. It has a **circular dependency** with `dart_falmodel` (each depends on the other, resolved via Dart workspace resolution) and re-exports many third-party packages for convenience.
 
 ## Commands
 
@@ -31,7 +31,7 @@ No code generation (`build_runner`) is needed in this package — it has no gene
 
 ### Two Entry Points
 
-- **`lib/lib.dart`** — Internal entry point used within the monorepo. Re-exports `dart_falmodel`, `dart:async`, `dart:convert`, `ansicolor`, `intl`, and `dart_faltool.dart`. Extension source files import this.
+- **`lib/lib.dart`** — Internal entry point used within the monorepo. Re-exports `dart_falmodel`, `dart:async`, `dart:convert`, `ansicolor`, `intl`, `yaml`, and `dart_faltool.dart`. Extension source files import this.
 - **`lib/dart_faltool.dart`** — Public entry point for external consumers. Re-exports ~15 third-party packages (fpdart, rxdart, freezed_annotation, equatable, logger, uuid, etc.) plus all extensions, type_def, and utils.
 
 When writing extension code in this package, import `lib.dart`. Consumers of this package import `dart_faltool.dart`.
@@ -46,6 +46,7 @@ Some extensions deliberately overlap with `dartx` — the `dartx` package is re-
 
 ### Utils (`lib/utils/`)
 
+- **`app_info.dart`** — `AppInfo`: Static class that reads app version from `pubspec.yaml`. Call `AppInfo.init()` at startup, then access `AppInfo.version`.
 - **`functions.dart`** — `runCatching`, `runDomainCatching`, `runDataCatching`: Execute async operations and catch exceptions into `Result<T>` failures. Each wraps exceptions into the appropriate layer exception (`CommonException`, `DomainLayerException`, `DataLayerException`).
 - **`uuid_generator.dart`** — `UuidGenerator.getV4()`: Static UUID v4 generation.
 

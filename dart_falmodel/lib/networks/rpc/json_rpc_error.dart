@@ -11,7 +11,7 @@ part 'generated/json_rpc_error.g.dart';
 @freezed
 sealed class JsonRpcError with _$JsonRpcError implements Exception {
   const factory JsonRpcError({
-    required RemoteErrorCategory category,
+    required JsonRpcErrorCategory category,
     required String code,
     required String userMessage,
     @JsonKey(includeIfNull: false) String? developerMessage,
@@ -22,13 +22,13 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
   factory JsonRpcError.fromJson(Map<String, dynamic> json) =>
       _$JsonRpcErrorFromJson(json);
 
-  /// Convenience factory for [RemoteErrorCategory.INVALID_REQUEST_ERROR].
+  /// Convenience factory for [JsonRpcErrorCategory.INVALID_REQUEST_ERROR].
   factory JsonRpcError.invalidRequest({
     required String code,
     required String userMessage,
     String? developerMessage,
   }) => JsonRpcError(
-    category: RemoteErrorCategory.INVALID_REQUEST_ERROR,
+    category: JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
     code: code,
     userMessage: userMessage,
     developerMessage: developerMessage,
@@ -39,7 +39,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     required String userMessage,
     String? developerMessage,
   }) => JsonRpcError(
-    category: RemoteErrorCategory.EXTERNAL_API_ERROR,
+    category: JsonRpcErrorCategory.EXTERNAL_API_ERROR,
     code: code,
     userMessage: userMessage,
     developerMessage: developerMessage,
@@ -50,8 +50,8 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     required String userMessage,
     String? developerMessage,
   }) => JsonRpcError(
-    category: RemoteErrorCategory.INVALID_REQUEST_ERROR,
-    code: RemoteApiErrorCode.METHOD_NOT_IMPLEMENTED.name,
+    category: JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
+    code: JsonRpcApiErrorType.METHOD_NOT_IMPLEMENTED.name,
     userMessage: userMessage,
     developerMessage: developerMessage,
   );
@@ -62,20 +62,20 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     required String userMessage,
     String? developerMessage,
   }) => JsonRpcError(
-    category: RemoteErrorCategory.INVALID_REQUEST_ERROR,
+    category: JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
     code: code,
     userMessage: userMessage,
     developerMessage: developerMessage,
   );
 
-  /// Convenience factory for [RemoteErrorCategory.API_ERROR].
+  /// Convenience factory for [JsonRpcErrorCategory.API_ERROR].
   factory JsonRpcError.internal({
     String? code,
     required String userMessage,
     String? developerMessage,
   }) => JsonRpcError(
-    category: RemoteErrorCategory.API_ERROR,
-    code: code ?? RemoteApiErrorCode.INTERNAL_SERVER_ERROR.name,
+    category: JsonRpcErrorCategory.API_ERROR,
+    code: code ?? JsonRpcApiErrorType.INTERNAL_SERVER_ERROR.name,
     userMessage: userMessage,
     developerMessage: developerMessage,
   );

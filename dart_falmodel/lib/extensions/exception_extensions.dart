@@ -1,9 +1,9 @@
 import 'package:dart_falmodel/lib.dart';
 
 extension FalconExceptionExtensions<T> on Exception? {
-  T? get code {
+  Object? get code {
     final exception = this;
-    if (exception is CommonException<T>) {
+    if (exception is CommonException) {
       return exception.type;
     }
     return null;
@@ -54,7 +54,7 @@ extension FalconExceptionExtensions<T> on Exception? {
 }
 
 extension FalconObjectExceptionExtensions on Object? {
-  CommonException<Object> toException({
+  CommonException toException({
     Object? type,
     String? userMessage,
     String? developerMessage,
@@ -72,7 +72,7 @@ extension FalconObjectExceptionExtensions on Object? {
       );
     }
 
-    if (exception is CommonException<Object>) {
+    if (exception is CommonException) {
       return exception;
     }
 

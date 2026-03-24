@@ -8,8 +8,8 @@ import 'dart:math';
 
 import 'package:dart_falconnect/lib.dart';
 
-abstract class RpcService {
-  const RpcService(
+abstract class JsonRpcService {
+  const JsonRpcService(
     this._dio, {
     required this.baseUrl,
     required this.jsonrpc,
@@ -21,14 +21,14 @@ abstract class RpcService {
   final String jsonrpc;
   final ParseErrorLogger? errorLogger;
 
-  Future<JsonRpcResponse<RESULT>> request<RESULT extends JsonRpcResult>(
-    String path, {
+  Future<JsonRpcResponse<RESULT>> request<RESULT extends JsonRpcResult>({
+    String? path,
     String? jsonrpc,
     required String method,
     Map<String, dynamic>? params,
     String? id,
     String? mockId,
-    RESULT Function(Map<String, dynamic> json)? fromResponseJson,
+    required RESULT Function(Map<String, dynamic> json) fromResultJson,
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -50,7 +50,7 @@ abstract class RpcService {
           )
           .compose(
             _dio.options,
-            path,
+            path ?? '',
             queryParameters: queryParameters,
             data: body,
           )
@@ -94,9 +94,10 @@ abstract class RpcService {
       value = JsonRpcResponse(
         jsonrpc: data['jsonrpc'] as String,
         id: data['id'] as int,
-        result: result is Map<String, dynamic>
-            ? fromResponseJson!(result)
-            : fromResponseJson!({'result': result}),
+        result: switch (result) {
+          final Map<String, dynamic> map => fromResultJson(map),
+          _ => throw StateError('Invalid result type'),
+        },
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, options);
@@ -105,22 +106,22 @@ abstract class RpcService {
     return value;
   }
 
-  FutureOr<void> notifySync(
-    String path, {
+  FutureOr<void> notifySync({
+    String? path,
     String? jsonrpc,
     required String method,
     String? mockId,
     Map<String, dynamic>? params,
   }) async => await notify(
-    path,
+    path: path,
     jsonrpc: jsonrpc,
     method: method,
     mockId: mockId,
     params: params,
   );
 
-  Future<void> notify(
-    String path, {
+  Future<void> notify({
+    String? path,
     String? jsonrpc,
     required String method,
     String? mockId,
@@ -145,7 +146,7 @@ abstract class RpcService {
           )
           .compose(
             _dio.options,
-            path,
+            path ?? '',
             queryParameters: queryParameters,
             data: data,
           )
@@ -221,20 +222,21 @@ abstract class RpcService {
             );
           }
 
-          final Function(Map<String, dynamic>? json)? fromResponseJson =
-              bodyList
-                  .firstOrNullWhere(
-                    (b) => b.id == id,
-                  )
-                  ?.fromResponseJson;
+          final Function(Map<String, dynamic>? json)? fromResultJson = bodyList
+              .firstOrNullWhere(
+                (b) => b.id == id,
+              )
+              ?.fromResultJson;
 
           return BatchJsonRpcSuccess(
             JsonRpcResponse(
               jsonrpc: jsonrpc,
               id: intId,
-              result: result is Map<String, dynamic>
-                  ? fromResponseJson!(result) as JsonRpcResult
-                  : fromResponseJson!({'result': result}) as JsonRpcResult,
+              result: switch (result) {
+                final Map<String, dynamic> map =>
+                  fromResultJson!(map) as JsonRpcResult,
+                _ => throw StateError('Invalid result type'),
+              },
             ),
           );
         },

@@ -205,7 +205,7 @@ enum NetworkErrorType {
   bool get isServerError => (statusCode ?? 0) >= 500 && (statusCode ?? 0) < 600;
 }
 
-class NetworkException extends CommonException<NetworkErrorType> {
+class NetworkException extends CommonException {
   const NetworkException({
     required super.type,
     required this.statusCode,

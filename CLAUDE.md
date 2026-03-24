@@ -15,12 +15,13 @@ This is a Dart/Flutter monorepo managed with Melos, containing packages for netw
 ```
 dart_falconx (umbrella: re-exports all packages)
     ↑
-dart_faltool (base layer: utilities, extensions)
-    ↑
-dart_falmodel (middle layer: models, exceptions, abstractions)
+dart_faltool ←→ dart_falmodel (circular dependency via workspace resolution)
     ↑
 dart_falconnect (top layer: network implementations)
 ```
+- `dart_faltool`: utilities, extensions — depends on `dart_falmodel`
+- `dart_falmodel`: models, exceptions, abstractions — depends on `dart_faltool`
+- Both resolve via Dart workspace resolution (not a layering violation)
 
 ## Common Development Commands
 
@@ -98,7 +99,7 @@ dart format .
   - Automatic reconnection handling
   
 - **rpc/**: JSON-RPC protocol implementation
-  - `RpcService`: Abstract class for JSON-RPC 2.0 over HTTP; `DefaultRpcService`: concrete implementation
+  - `JsonRpcService`: Abstract class for JSON-RPC 2.0 over HTTP; `DefaultJsonRpcService`: concrete implementation
   - `BatchJsonRpcItem`: Sealed class with `resolve`, `map`, `responseOrNull`, `errorOrNull` for batch responses
   - Freezed-based request/response models with generated JSON serialization
 
@@ -114,10 +115,12 @@ Generated files follow strict organization:
 
 ### Exception Architecture
 
-Two exception systems in dart_falmodel:
+Three exception systems in dart_falmodel:
 - **`ErrorType` enum** (`lib/exceptions/common_exception.dart`): General-purpose (unknown, system, validation, storage, etc.)
 - **`NetworkErrorType` enum** (`lib/networks/exceptions/network_exception.dart`): HTTP-specific, maps to status codes
-- `NetworkException extends CommonException<NetworkErrorType>` — do NOT mix with `ErrorType`
+- **JSON-RPC exceptions** (`lib/networks/rpc/exceptions/`): `JsonRpcCommonException`, `JsonRpcDataLayerException`, `JsonRpcDomainLayerException` — use `JsonRpcErrorCategory` and `JsonRpcApiErrorType`/`JsonRpcRequestErrorType` enums
+- `CommonException` has a `category` field and `toJsonRpcError()` method for converting to `JsonRpcError`
+- `NetworkException extends CommonException` — do NOT mix with `ErrorType`
 - Each HTTP exception class has a default `NetworkErrorType` via `super.type = NetworkErrorType.xxx`
 - Barrel exports in `networks/exceptions/exceptions.dart` — new exception files MUST be added here
 - Known typo: `NetworkNotImplementException` (501) — missing "ed" in "Implemented", preserved for backward compatibility

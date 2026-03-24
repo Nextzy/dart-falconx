@@ -31,16 +31,26 @@ dart test
 
 ### Two Exception Systems
 
-1. **`CommonException<T>`** (`lib/exceptions/common_exception.dart`) — Generic exception parameterized by an error type enum. Base for all exceptions.
+1. **`CommonException`** (`lib/exceptions/common_exception.dart`) — Generic exception with `type` and `category` fields. Base for all exceptions.
    - `ErrorType` enum: general-purpose categories (unknown, system, validation, storage, etc.)
+   - `category` field: optional grouping (e.g., `JsonRpcErrorCategory`)
+   - `toJsonRpcError()`: converts to `JsonRpcError` for RPC responses, auto-resolving category from `type`
    - Layer-specific subclasses: `DataLayerException`, `DomainLayerException`, `TodoException`
 
-2. **`NetworkException`** (`lib/networks/exceptions/network_exception.dart`) — Extends `CommonException<NetworkErrorType>` with HTTP-specific fields (`statusCode`, `response`, `requestOptions`).
+2. **`NetworkException`** (`lib/networks/exceptions/network_exception.dart`) — Extends `CommonException` with HTTP-specific fields (`statusCode`, `response`, `requestOptions`).
    - `NetworkErrorType` enum: maps 1:1 to HTTP status codes (400–511) plus general categories (network, timeout, noInternet)
    - `BaseHttpException`: abstract subclass adding retry logic, error detail extraction, and logging helpers
    - Concrete exceptions organized in `code4XX/` and `code5XX/` directories, one class per HTTP status code
 
-**Critical**: These two systems must not be mixed. `NetworkException` uses `NetworkErrorType`, not `ErrorType`.
+3. **JSON-RPC exceptions** (`lib/networks/rpc/exceptions/`) — RPC-specific exception types:
+   - `JsonRpcCommonException`, `JsonRpcDataLayerException`, `JsonRpcDomainLayerException` — extend their base counterparts
+   - `JsonRpcErrorCategory` enum: `API_ERROR`, `EXTERNAL_API_ERROR`, `INVALID_REQUEST_ERROR`, `UNKNOWN`
+   - `JsonRpcApiErrorType` enum: server-side errors (INTERNAL_SERVER_ERROR, UNAUTHORIZED, FORBIDDEN, RATE_LIMITED, etc.)
+   - `JsonRpcRequestErrorType` enum: client request errors (INVALID_JSON_RPC, BAD_REQUEST, INCORRECT_TYPE, etc.)
+   - `RemoteExternalApiErrorType` enum: external API errors
+   - Barrel: `lib/networks/rpc/exceptions/exceptions.dart` — new RPC exception files MUST be added here
+
+**Critical**: These three systems must not be mixed. `NetworkException` uses `NetworkErrorType`, not `ErrorType`. JSON-RPC exceptions use `JsonRpcErrorCategory` + `JsonRpcApiErrorType`/`JsonRpcRequestErrorType`.
 
 ### Adding New Network Exceptions
 
@@ -51,11 +61,13 @@ dart test
 
 ### Result Pattern
 
-`Result<T>` (`lib/models/result.dart`) — Success/Failure type without Freezed. Failures carry `CommonException<Object>`. Provides `map`, `flatMap`, `recover`, `when`, `resolve`, and convenience factories (`dataFailure`, `domainFailure`).
+`Result<T>` (`lib/models/result.dart`) — Success/Failure type without Freezed. Failures carry `CommonException`. Provides `map`, `flatMap`, `recover`, `when`, `resolve`, and convenience factories (`dataFailure`, `domainFailure`).
 
 ### JSON-RPC Models
 
 Split into success (`JsonRpcResponse<RESULT>`) and error (`JsonRpcErrorResponse`) types — both Freezed. `JsonRpcResult` is the abstract interface all RPC result types must implement (requires `toJson()`). `RawJsonRpcResult` wraps a raw `Map` for manual construction. `BatchJsonRpcItem` is a hand-written sealed class (not Freezed) with `resolve`, `map`, `responseOrNull`, `errorOrNull` for batch response handling.
+
+`JsonRpcError` is a Freezed sealed class with `category` (`JsonRpcErrorCategory`), `code` (String), `userMessage`, and optional `developerMessage`. Convenience factories: `invalidRequest`, `external`, `internal`, `methodNotImplement`, `invalidParams`.
 
 ### UserFeedback
 
