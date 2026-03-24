@@ -9,7 +9,7 @@ class Result<T> extends Equatable {
   factory Result.success(T value) => Result._success(value);
 
   /// Creates a failed result.
-  factory Result.failure(CommonException<Object> exception) =>
+  factory Result.failure(CommonException exception) =>
       Result._failure(exception);
 
   factory Result.dataFailure({
@@ -19,7 +19,7 @@ class Result<T> extends Equatable {
     Object? originalException,
     StackTrace? stackTrace,
   }) => Result._failure(
-    DataLayerException<Object>(
+    DataLayerException(
       type: code,
       userMessage: userMessage,
       developerMessage: developerMessage,
@@ -35,7 +35,7 @@ class Result<T> extends Equatable {
     Object? originalException,
     StackTrace? stackTrace,
   }) => Result._failure(
-    DomainLayerException<Object>(
+    DomainLayerException(
       type: code,
       userMessage: userMessage,
       developerMessage: developerMessage,
@@ -49,12 +49,12 @@ class Result<T> extends Equatable {
       _exception = null,
       _isSuccess = true;
 
-  const Result._failure(CommonException<Object> exception)
+  const Result._failure(CommonException exception)
     : _value = null,
       _exception = exception,
       _isSuccess = false;
   final T? _value;
-  final CommonException<Object>? _exception;
+  final CommonException? _exception;
   final bool _isSuccess;
 
   /// True if the result is successful.
@@ -77,13 +77,13 @@ class Result<T> extends Equatable {
       _isSuccess ? _value ?? defaultValue : defaultValue;
 
   /// Gets the exception if failed, throws if successful.
-  CommonException<Object> get exception {
+  CommonException get exception {
     if (!_isSuccess) return _exception!;
     throw StateError('Cannot get exception from successful Result');
   }
 
   /// Gets the exception or null if successful.
-  CommonException<Object>? get exceptionOrNull =>
+  CommonException? get exceptionOrNull =>
       !_isSuccess ? _exception : null;
 
   /// Gets the stack trace if failed, null otherwise.
@@ -107,8 +107,8 @@ class Result<T> extends Equatable {
 
   /// Transforms the exception if failed.
   Result<T> mapException(
-    CommonException<Object> Function(
-      CommonException<Object> exception,
+    CommonException Function(
+      CommonException exception,
     ) transform,
   ) {
     if (!_isSuccess) {
@@ -120,7 +120,7 @@ class Result<T> extends Equatable {
   /// Folds the result into a single value.
   R resolve<R>(
     R Function(T value) onSuccess,
-    R Function(CommonException<Object> exception, StackTrace? stackTrace)
+    R Function(CommonException exception, StackTrace? stackTrace)
         onError,
   ) {
     if (_isSuccess) {
@@ -132,7 +132,7 @@ class Result<T> extends Equatable {
   /// Executes a callback based on the result.
   void when(
     void Function(T value) onSuccess,
-    void Function(CommonException<Object> exception, StackTrace? stackTrace)
+    void Function(CommonException exception, StackTrace? stackTrace)
         onError,
   ) {
     if (_isSuccess) {
@@ -163,7 +163,7 @@ class Result<T> extends Equatable {
 
   /// Recovers from a failure by providing a fallback value.
   Result<T> recover(
-    T Function(CommonException<Object> exception) fallback,
+    T Function(CommonException exception) fallback,
   ) {
     if (!_isSuccess) {
       try {
@@ -181,7 +181,7 @@ class Result<T> extends Equatable {
 
   /// Recovers from a failure by providing a fallback Result.
   Result<T> recoverWith(
-    Result<T> Function(CommonException<Object> exception) fallback,
+    Result<T> Function(CommonException exception) fallback,
   ) {
     if (!_isSuccess) {
       try {
@@ -206,7 +206,7 @@ class Result<T> extends Equatable {
 
   /// Executes a side-effect callback if failed.
   void doOnFailure(
-    void Function(CommonException<Object> exception) callback,
+    void Function(CommonException exception) callback,
   ) {
     if (!_isSuccess) {
       callback(_exception!);
@@ -232,7 +232,7 @@ class Result<T> extends Equatable {
   ///
   /// Success becomes Failure with a new exception,
   /// Failure becomes Success with the exception.
-  Result<CommonException<Object>> swap({String? message}) {
+  Result<CommonException> swap({String? message}) {
     if (_isSuccess) {
       return Result.failure(
         CommonException(

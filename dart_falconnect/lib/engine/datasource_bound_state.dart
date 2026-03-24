@@ -40,8 +40,8 @@ class DatasourceBoundState<DataType, ResponseType> {
   /// ```
   static Stream<Result<DataType>> asLocalResultStream<DataType>({
     required Future<DataType> Function() loadFromDbFuture,
-    CommonException<Object> Function(
-      CommonException<Object> error,
+    CommonException Function(
+      CommonException error,
       StackTrace? stacktrace,
     )?
         handleError,
@@ -77,8 +77,8 @@ class DatasourceBoundState<DataType, ResponseType> {
 
   static Future<Result<DataType>> asLocalResultFuture<DataType>({
     required Future<DataType> Function() loadFromDbFuture,
-    CommonException<Object> Function(
-      CommonException<Object> error,
+    CommonException Function(
+      CommonException error,
       StackTrace? stacktrace,
     )?
         handleError,
@@ -139,8 +139,8 @@ class DatasourceBoundState<DataType, ResponseType> {
     required Future<ResponseType> Function() callRemoteFuture,
     FutureOr<DataType> Function(ResponseType response)?
         processResponse,
-    CommonException<Object> Function(
-      CommonException<Object> error,
+    CommonException Function(
+      CommonException error,
       StackTrace? stacktrace,
     )?
         handleError,
@@ -196,8 +196,8 @@ class DatasourceBoundState<DataType, ResponseType> {
     required Future<ResponseType> Function() createCallFuture,
     FutureOr<DataType> Function(ResponseType response)?
         processResponse,
-    CommonException<Object> Function(
-      CommonException<Object> error,
+    CommonException Function(
+      CommonException error,
       StackTrace? stacktrace,
     )?
         handleError,
@@ -272,8 +272,8 @@ class DatasourceBoundState<DataType, ResponseType> {
     Future<ResponseType> Function()? callRemoteFuture,
     FutureOr<DataType> Function(ResponseType response)?
         processResponse,
-    CommonException<Object> Function(
-      CommonException<Object> error,
+    CommonException Function(
+      CommonException error,
       StackTrace? stacktrace,
     )?
         handleError,

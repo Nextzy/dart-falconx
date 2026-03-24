@@ -1,3 +1,5 @@
+import 'package:dart_falmodel/lib.dart';
+
 enum ErrorType {
   unknown,
   system,
@@ -34,8 +36,9 @@ enum ErrorType {
   }
 }
 
-class CommonException<T> implements Exception {
+class CommonException implements Exception {
   const CommonException({
+    this.category,
     required this.type,
     this.userMessage,
     this.developerMessage,
@@ -43,7 +46,8 @@ class CommonException<T> implements Exception {
     this.stackTrace,
   });
 
-  final T type;
+  final Object? category;
+  final Object type;
   final String? userMessage;
   final String? developerMessage;
   final Object? originalException;
@@ -54,9 +58,9 @@ class CommonException<T> implements Exception {
       developerMessage ??
       'Something went wrong. Please try again.';
 
-  CommonException<T> mapMessage({
-    String Function(T type)? userMessage,
-    String Function(T type)? developerMessage,
+  CommonException mapMessage({
+    String Function(Object type)? userMessage,
+    String Function(Object type)? developerMessage,
   }) {
     return copyWith(
       userMessage: userMessage?.call(type) ?? this.userMessage,
@@ -64,16 +68,16 @@ class CommonException<T> implements Exception {
     );
   }
 
-  CommonException<T> mapUserMessage(String Function(T type) f) {
+  CommonException mapUserMessage(String Function(Object type) f) {
     return mapMessage(userMessage: f);
   }
 
-  CommonException<T> mapDeveloperMessage(String Function(T type) f) {
+  CommonException mapDeveloperMessage(String Function(Object type) f) {
     return mapMessage(developerMessage: f);
   }
 
-  CommonException<T> copyWith({
-    T? type,
+  CommonException copyWith({
+    Object? type,
     String? userMessage,
     String? developerMessage,
     Exception? originalException,
@@ -102,5 +106,42 @@ class CommonException<T> implements Exception {
       buffer.write('\n | StackTrace:\n$stackTrace');
     }
     return buffer.toString();
+  }
+
+  JsonRpcError toJsonRpcError({
+    JsonRpcErrorCategory? category,
+    String? userMessage,
+    String? developerMessage,
+  }) {
+    final tmpCode = code;
+
+    final resolveCategory =
+        category ??
+        _resolveJsonRpcErrorCategory(category: this.category, code: type);
+    final resolveCode = (tmpCode is Enum) ? tmpCode.name : tmpCode.toString();
+
+    return JsonRpcError(
+      category: resolveCategory ?? JsonRpcErrorCategory.API_ERROR,
+      code: resolveCode,
+      userMessage:
+          userMessage ??
+          this.userMessage ??
+          'Something went wrong. Please try again.',
+      developerMessage: developerMessage ?? this.developerMessage,
+    );
+  }
+
+  JsonRpcErrorCategory? _resolveJsonRpcErrorCategory({
+    required Object? category,
+    required Object? code,
+  }) {
+    return switch (category) {
+      JsonRpcErrorCategory() => category,
+      _ => switch (code) {
+        JsonRpcRequestErrorType() => JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
+        JsonRpcApiErrorType() => JsonRpcErrorCategory.API_ERROR,
+        _ => null,
+      },
+    };
   }
 }

@@ -1,7 +1,8 @@
 import 'package:dart_falmodel/lib.dart';
 
-class DomainLayerException<T> extends CommonException<T> {
+class DomainLayerException extends CommonException {
   const DomainLayerException({
+    super.category,
     required super.type,
     super.userMessage,
     super.developerMessage,

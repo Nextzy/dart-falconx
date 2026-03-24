@@ -1,17 +1,17 @@
 import 'package:dart_falmodel/lib.dart';
 
-class BatchJsonRpcBody<RESPONSE> extends JsonRpc {
+class BatchJsonRpcBody<RESULT> extends JsonRpc {
   const BatchJsonRpcBody({
     super.jsonrpc,
     super.id,
     required this.method,
     this.params,
-    this.fromResponseJson,
+    this.fromResultJson,
   }) : super();
 
   final String? method;
   final Map<String, dynamic>? params;
-  final RESPONSE Function(Map<String, dynamic>? json)? fromResponseJson;
+  final RESULT Function(Map<String, dynamic>? json)? fromResultJson;
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
