@@ -12,7 +12,7 @@ workspace:
   - dart_faltool
 
 dev_dependencies:
-  melos: ^7.4.1
+  melos: ^7.5.0
 
 melos:
   scripts:

@@ -1,5 +1,6 @@
 export 'dart:typed_data';
 
+export 'package:big_decimal/big_decimal.dart';
 export 'package:crypto/crypto.dart' hide Hash;
 export 'package:dartx/dartx.dart'
     hide

@@ -11,6 +11,7 @@ resolution: workspace
 dependencies:
   #PLATFORM: All
   ansicolor: ^2.0.3
+  big_decimal: ^0.7.0
   crypto: ^3.0.7
   dart_falmodel:
     path: ../dart_falmodel

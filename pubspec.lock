@@ -49,6 +49,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
+  big_decimal:
+    dependency: transitive
+    description:
+      name: big_decimal
+      sha256: "6413818091e80c907bb73bae383418db5c148fd7fd283e56197bfeeeb212d5bd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -85,10 +93,10 @@ packages:
     dependency: transitive
     description:
       name: build_runner
-      sha256: "3552e5c2874ed47cf9ed9d6813ac71b2276ee07622f48530468b8013f1767e3f"
+      sha256: "521daf8d189deb79ba474e43a696b41c49fb3987818dbacf3308f1e03673a75e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.13.0"
+    version: "2.13.1"
   built_collection:
     dependency: transitive
     description:
@@ -237,10 +245,10 @@ packages:
     dependency: transitive
     description:
       name: dio_cache_interceptor
-      sha256: ac9f312e5a81d79cbccb15f56b78aeae7343a981c1d7c169b11194fae806ec0b
+      sha256: "3644ce3e0c9ba21885cbb0578b3d2ffe022c8badc6f6f4042cb56ecdbe90a7ad"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.5"
+    version: "4.0.6"
   dio_web_adapter:
     dependency: transitive
     description:
@@ -397,10 +405,10 @@ packages:
     dependency: transitive
     description:
       name: json_serializable
-      sha256: "44729f5c45748e6748f6b9a57ab8f7e4336edc8ae41fc295070e3814e616a6c0"
+      sha256: fbcf404b03520e6e795f6b9b39badb2b788407dfc0a50cf39158a6ae1ca78925
       url: "https://pub.dev"
     source: hosted
-    version: "6.13.0"
+    version: "6.13.1"
   lean_builder:
     dependency: transitive
     description:
@@ -445,10 +453,10 @@ packages:
     dependency: "direct dev"
     description:
       name: melos
-      sha256: e3379a08af92a719a76d4cce9644c98dc87554e0fa3f2a93eb9a04bb295d4a03
+      sha256: "72942b70e2fad1f01b2d66b42696546f9f48f57c342bee61726c540e8bfdcb02"
       url: "https://pub.dev"
     source: hosted
-    version: "7.4.1"
+    version: "7.5.0"
   meta:
     dependency: transitive
     description:
