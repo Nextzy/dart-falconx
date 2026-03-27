@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$JsonRpcRequest {
 
- String get jsonrpc; String get method; Map<String, dynamic>? get params; int? get id;
+@JsonKey(includeFromJson: true, includeToJson: true) String get jsonrpc;@JsonKey(includeFromJson: true, includeToJson: true) String get method; Map<String, dynamic>? get params; int? get id;
 /// Create a copy of JsonRpcRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $JsonRpcRequestCopyWith<$Res>  {
   factory $JsonRpcRequestCopyWith(JsonRpcRequest value, $Res Function(JsonRpcRequest) _then) = _$JsonRpcRequestCopyWithImpl;
 @useResult
 $Res call({
- String jsonrpc, String method, Map<String, dynamic>? params, int? id
+@JsonKey(includeFromJson: true, includeToJson: true) String jsonrpc,@JsonKey(includeFromJson: true, includeToJson: true) String method, Map<String, dynamic>? params, int? id
 });
 
 
@@ -156,7 +156,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String jsonrpc,  String method,  Map<String, dynamic>? params,  int? id)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  String method,  Map<String, dynamic>? params,  int? id)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _JsonRpcRequest() when $default != null:
 return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
@@ -177,7 +177,7 @@ return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String jsonrpc,  String method,  Map<String, dynamic>? params,  int? id)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  String method,  Map<String, dynamic>? params,  int? id)  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcRequest():
 return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
@@ -197,7 +197,7 @@ return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String jsonrpc,  String method,  Map<String, dynamic>? params,  int? id)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  String method,  Map<String, dynamic>? params,  int? id)?  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcRequest() when $default != null:
 return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
@@ -212,10 +212,10 @@ return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
 @JsonSerializable()
 
 class _JsonRpcRequest extends JsonRpcRequest {
-  const _JsonRpcRequest({required final  String jsonrpc, required this.method, final  Map<String, dynamic>? params, final  int? id}): _params = params,super._(jsonrpc: jsonrpc, id: id);
+  const _JsonRpcRequest({@JsonKey(includeFromJson: true, includeToJson: true) required final  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true) required this.method, final  Map<String, dynamic>? params, final  int? id}): _params = params,super._(jsonrpc: jsonrpc, id: id);
   factory _JsonRpcRequest.fromJson(Map<String, dynamic> json) => _$JsonRpcRequestFromJson(json);
 
-@override final  String method;
+@override@JsonKey(includeFromJson: true, includeToJson: true) final  String method;
  final  Map<String, dynamic>? _params;
 @override Map<String, dynamic>? get params {
   final value = _params;
@@ -259,7 +259,7 @@ abstract mixin class _$JsonRpcRequestCopyWith<$Res> implements $JsonRpcRequestCo
   factory _$JsonRpcRequestCopyWith(_JsonRpcRequest value, $Res Function(_JsonRpcRequest) _then) = __$JsonRpcRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String jsonrpc, String method, Map<String, dynamic>? params, int? id
+@JsonKey(includeFromJson: true, includeToJson: true) String jsonrpc,@JsonKey(includeFromJson: true, includeToJson: true) String method, Map<String, dynamic>? params, int? id
 });
 
 

@@ -9,8 +9,11 @@ part 'generated/json_rpc_response.g.dart';
 sealed class JsonRpcResponse<RESULT extends JsonRpcResult>
     with _$JsonRpcResponse<RESULT> {
   const factory JsonRpcResponse({
+    @JsonKey(includeFromJson: true, includeToJson: true)
     required String jsonrpc,
+    @JsonKey(includeFromJson: true, includeToJson: true)
     required int id,
+    @JsonKey(includeFromJson: true, includeToJson: true)
     required RESULT result,
   }) = _JsonRpcResponse;
 
@@ -24,8 +27,11 @@ sealed class JsonRpcResponse<RESULT extends JsonRpcResult>
 @freezed
 sealed class JsonRpcErrorResponse with _$JsonRpcErrorResponse {
   const factory JsonRpcErrorResponse({
+    @JsonKey(includeFromJson: true, includeToJson: true)
     required String jsonrpc,
+    @JsonKey(includeFromJson: true, includeToJson: true)
     required int id,
+    @JsonKey(includeFromJson: true, includeToJson: true)
     required List<JsonRpcError> errors,
   }) = _JsonRpcErrorResponse;
 

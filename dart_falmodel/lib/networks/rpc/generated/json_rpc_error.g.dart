@@ -8,22 +8,23 @@ part of '../json_rpc_error.dart';
 
 _JsonRpcError _$JsonRpcErrorFromJson(Map<String, dynamic> json) =>
     _JsonRpcError(
-      category: $enumDecode(_$RemoteErrorCategoryEnumMap, json['category']),
+      category: $enumDecode(_$JsonRpcErrorCategoryEnumMap, json['category']),
       code: json['code'] as String,
-      userMessage: json['userMessage'] as String,
+      userMessage: json['userMessage'] as String?,
       developerMessage: json['developerMessage'] as String?,
     );
 
 Map<String, dynamic> _$JsonRpcErrorToJson(_JsonRpcError instance) =>
     <String, dynamic>{
-      'category': _$RemoteErrorCategoryEnumMap[instance.category]!,
+      'category': _$JsonRpcErrorCategoryEnumMap[instance.category]!,
       'code': instance.code,
       'userMessage': instance.userMessage,
       'developerMessage': ?instance.developerMessage,
     };
 
-const _$RemoteErrorCategoryEnumMap = {
-  RemoteErrorCategory.API_ERROR: 'API_ERROR',
-  RemoteErrorCategory.EXTERNAL_API_ERROR: 'EXTERNAL_API_ERROR',
-  RemoteErrorCategory.INVALID_REQUEST_ERROR: 'INVALID_REQUEST_ERROR',
+const _$JsonRpcErrorCategoryEnumMap = {
+  JsonRpcErrorCategory.API_ERROR: 'API_ERROR',
+  JsonRpcErrorCategory.EXTERNAL_API_ERROR: 'EXTERNAL_API_ERROR',
+  JsonRpcErrorCategory.INVALID_REQUEST_ERROR: 'INVALID_REQUEST_ERROR',
+  JsonRpcErrorCategory.UNKNOWN: 'UNKNOWN',
 };

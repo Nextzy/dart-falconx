@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$JsonRpcResponse<RESULT extends JsonRpcResult> {
 
- String get jsonrpc; int get id; RESULT get result;
+@JsonKey(includeFromJson: true, includeToJson: true) String get jsonrpc;@JsonKey(includeFromJson: true, includeToJson: true) int get id;@JsonKey(includeFromJson: true, includeToJson: true) RESULT get result;
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $JsonRpcResponseCopyWith<RESULT extends JsonRpcResult,$Res>
   factory $JsonRpcResponseCopyWith(JsonRpcResponse<RESULT> value, $Res Function(JsonRpcResponse<RESULT>) _then) = _$JsonRpcResponseCopyWithImpl;
 @useResult
 $Res call({
- String jsonrpc, int id, RESULT result
+@JsonKey(includeFromJson: true, includeToJson: true) String jsonrpc,@JsonKey(includeFromJson: true, includeToJson: true) int id,@JsonKey(includeFromJson: true, includeToJson: true) RESULT result
 });
 
 
@@ -152,7 +152,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String jsonrpc,  int id,  RESULT result)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  int id, @JsonKey(includeFromJson: true, includeToJson: true)  RESULT result)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse() when $default != null:
 return $default(_that.jsonrpc,_that.id,_that.result);case _:
@@ -173,7 +173,7 @@ return $default(_that.jsonrpc,_that.id,_that.result);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String jsonrpc,  int id,  RESULT result)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  int id, @JsonKey(includeFromJson: true, includeToJson: true)  RESULT result)  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse():
 return $default(_that.jsonrpc,_that.id,_that.result);}
@@ -190,7 +190,7 @@ return $default(_that.jsonrpc,_that.id,_that.result);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String jsonrpc,  int id,  RESULT result)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  int id, @JsonKey(includeFromJson: true, includeToJson: true)  RESULT result)?  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcResponse() when $default != null:
 return $default(_that.jsonrpc,_that.id,_that.result);case _:
@@ -205,12 +205,12 @@ return $default(_that.jsonrpc,_that.id,_that.result);case _:
 @JsonSerializable(genericArgumentFactories: true)
 
 class _JsonRpcResponse<RESULT extends JsonRpcResult> implements JsonRpcResponse<RESULT> {
-  const _JsonRpcResponse({required this.jsonrpc, required this.id, required this.result});
+  const _JsonRpcResponse({@JsonKey(includeFromJson: true, includeToJson: true) required this.jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true) required this.id, @JsonKey(includeFromJson: true, includeToJson: true) required this.result});
   factory _JsonRpcResponse.fromJson(Map<String, dynamic> json,RESULT Function(Object?) fromJsonRESULT) => _$JsonRpcResponseFromJson(json,fromJsonRESULT);
 
-@override final  String jsonrpc;
-@override final  int id;
-@override final  RESULT result;
+@override@JsonKey(includeFromJson: true, includeToJson: true) final  String jsonrpc;
+@override@JsonKey(includeFromJson: true, includeToJson: true) final  int id;
+@override@JsonKey(includeFromJson: true, includeToJson: true) final  RESULT result;
 
 /// Create a copy of JsonRpcResponse
 /// with the given fields replaced by the non-null parameter values.
@@ -245,7 +245,7 @@ abstract mixin class _$JsonRpcResponseCopyWith<RESULT extends JsonRpcResult,$Res
   factory _$JsonRpcResponseCopyWith(_JsonRpcResponse<RESULT> value, $Res Function(_JsonRpcResponse<RESULT>) _then) = __$JsonRpcResponseCopyWithImpl;
 @override @useResult
 $Res call({
- String jsonrpc, int id, RESULT result
+@JsonKey(includeFromJson: true, includeToJson: true) String jsonrpc,@JsonKey(includeFromJson: true, includeToJson: true) int id,@JsonKey(includeFromJson: true, includeToJson: true) RESULT result
 });
 
 
@@ -278,7 +278,7 @@ as RESULT,
 /// @nodoc
 mixin _$JsonRpcErrorResponse {
 
- String get jsonrpc; int get id; List<JsonRpcError> get errors;
+@JsonKey(includeFromJson: true, includeToJson: true) String get jsonrpc;@JsonKey(includeFromJson: true, includeToJson: true) int get id;@JsonKey(includeFromJson: true, includeToJson: true) List<JsonRpcError> get errors;
 /// Create a copy of JsonRpcErrorResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -311,7 +311,7 @@ abstract mixin class $JsonRpcErrorResponseCopyWith<$Res>  {
   factory $JsonRpcErrorResponseCopyWith(JsonRpcErrorResponse value, $Res Function(JsonRpcErrorResponse) _then) = _$JsonRpcErrorResponseCopyWithImpl;
 @useResult
 $Res call({
- String jsonrpc, int id, List<JsonRpcError> errors
+@JsonKey(includeFromJson: true, includeToJson: true) String jsonrpc,@JsonKey(includeFromJson: true, includeToJson: true) int id,@JsonKey(includeFromJson: true, includeToJson: true) List<JsonRpcError> errors
 });
 
 
@@ -415,7 +415,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String jsonrpc,  int id,  List<JsonRpcError> errors)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  int id, @JsonKey(includeFromJson: true, includeToJson: true)  List<JsonRpcError> errors)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _JsonRpcErrorResponse() when $default != null:
 return $default(_that.jsonrpc,_that.id,_that.errors);case _:
@@ -436,7 +436,7 @@ return $default(_that.jsonrpc,_that.id,_that.errors);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String jsonrpc,  int id,  List<JsonRpcError> errors)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  int id, @JsonKey(includeFromJson: true, includeToJson: true)  List<JsonRpcError> errors)  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcErrorResponse():
 return $default(_that.jsonrpc,_that.id,_that.errors);}
@@ -453,7 +453,7 @@ return $default(_that.jsonrpc,_that.id,_that.errors);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String jsonrpc,  int id,  List<JsonRpcError> errors)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(includeFromJson: true, includeToJson: true)  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true)  int id, @JsonKey(includeFromJson: true, includeToJson: true)  List<JsonRpcError> errors)?  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcErrorResponse() when $default != null:
 return $default(_that.jsonrpc,_that.id,_that.errors);case _:
@@ -468,13 +468,13 @@ return $default(_that.jsonrpc,_that.id,_that.errors);case _:
 @JsonSerializable()
 
 class _JsonRpcErrorResponse implements JsonRpcErrorResponse {
-  const _JsonRpcErrorResponse({required this.jsonrpc, required this.id, required final  List<JsonRpcError> errors}): _errors = errors;
+  const _JsonRpcErrorResponse({@JsonKey(includeFromJson: true, includeToJson: true) required this.jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true) required this.id, @JsonKey(includeFromJson: true, includeToJson: true) required final  List<JsonRpcError> errors}): _errors = errors;
   factory _JsonRpcErrorResponse.fromJson(Map<String, dynamic> json) => _$JsonRpcErrorResponseFromJson(json);
 
-@override final  String jsonrpc;
-@override final  int id;
+@override@JsonKey(includeFromJson: true, includeToJson: true) final  String jsonrpc;
+@override@JsonKey(includeFromJson: true, includeToJson: true) final  int id;
  final  List<JsonRpcError> _errors;
-@override List<JsonRpcError> get errors {
+@override@JsonKey(includeFromJson: true, includeToJson: true) List<JsonRpcError> get errors {
   if (_errors is EqualUnmodifiableListView) return _errors;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_errors);
@@ -514,7 +514,7 @@ abstract mixin class _$JsonRpcErrorResponseCopyWith<$Res> implements $JsonRpcErr
   factory _$JsonRpcErrorResponseCopyWith(_JsonRpcErrorResponse value, $Res Function(_JsonRpcErrorResponse) _then) = __$JsonRpcErrorResponseCopyWithImpl;
 @override @useResult
 $Res call({
- String jsonrpc, int id, List<JsonRpcError> errors
+@JsonKey(includeFromJson: true, includeToJson: true) String jsonrpc,@JsonKey(includeFromJson: true, includeToJson: true) int id,@JsonKey(includeFromJson: true, includeToJson: true) List<JsonRpcError> errors
 });
 
 
