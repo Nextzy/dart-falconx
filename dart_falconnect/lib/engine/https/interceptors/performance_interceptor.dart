@@ -19,21 +19,36 @@ class RequestMetrics {
   String? error;
 
   /// Time spent in DNS lookup.
+  ///
+  /// Always `null` on web — browsers do not expose XHR timing
+  /// breakdowns to dio.
   Duration? dnsLookupTime;
 
   /// Time spent establishing connection.
+  ///
+  /// Always `null` on web — browsers do not expose XHR timing
+  /// breakdowns to dio.
   Duration? connectionTime;
 
   /// Time spent in TLS handshake.
+  ///
+  /// Always `null` on web — browsers do not expose XHR timing
+  /// breakdowns to dio.
   Duration? tlsHandshakeTime;
 
   /// Time spent sending the request.
   Duration? requestTime;
 
   /// Time spent waiting for first byte.
+  ///
+  /// Always `null` on web — browsers do not expose XHR timing
+  /// breakdowns to dio.
   Duration? timeToFirstByte;
 
   /// Time spent downloading response.
+  ///
+  /// Always `null` on web — browsers do not expose XHR timing
+  /// breakdowns to dio.
   Duration? downloadTime;
 
   /// Total request duration.
