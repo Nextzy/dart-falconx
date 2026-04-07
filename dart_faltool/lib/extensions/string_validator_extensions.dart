@@ -1,34 +1,36 @@
 import 'package:dart_faltool/lib.dart';
 
-/// Extension methods for String manipulation and validation.
-///
-/// Provides comprehensive string utilities including conversions, validations,
-/// formatting, and transformations.
-extension FalconToolStringValidatorExtension on String {
+class FormatRegex {
   /// URL validation pattern that matches http and https URLs.
-  static final _urlRegex = RegExp(
+  static final url = RegExp(
     r'^https?://[-A-Z0-9.]+(\:[0-9]+)?(/[-A-Z0-9+&@#/%=~_|!:,.;]*)?(\?[A-Z0-9+&@#/%=~_|!:,.;]*)?$',
     caseSensitive: false,
   );
 
   /// Email validation pattern (RFC 5322 simplified).
-  static final _emailRegex = RegExp(
+  static final email = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
-  static final RegExp _htmlTags = RegExp(
+  static final RegExp html = RegExp(
     '<[^>]*>',
     multiLine: true,
     caseSensitive: false,
   );
 
-  static final RegExp _htmlEntities = RegExp(
+  static final RegExp htmlEntities = RegExp(
     '&[^;]+;',
     multiLine: true,
   );
 
-  static final _e164Regex = RegExp(r'^\+[1-9]\d{6,14}$');
+  static final e164 = RegExp(r'^\+[1-9]\d{6,14}$');
+}
 
+/// Extension methods for String manipulation and validation.
+///
+/// Provides comprehensive string utilities including conversions, validations,
+/// formatting, and transformations.
+extension FalconToolStringValidatorExtension on String {
   // Whitespace and Formatting
 
   /// Removes all whitespace characters from the string.
@@ -40,10 +42,14 @@ extension FalconToolStringValidatorExtension on String {
   /// ```
   String get removeWhiteSpace => replaceAll(RegExp(r'\s+'), '');
 
-  String get removeHtmlTags => replaceAll(
-    _htmlTags,
-    '',
-  ).replaceAll(_htmlEntities, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  String get removeHtmlTags =>
+      replaceAll(
+            FormatRegex.html,
+            '',
+          )
+          .replaceAll(FormatRegex.htmlEntities, ' ')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
 
   /// Removes leading and trailing whitespace and collapses internal whitespace.
   ///
@@ -67,7 +73,7 @@ extension FalconToolStringValidatorExtension on String {
   /// 'https://example.com'.isUrl; // true
   /// 'not a url'.isUrl; // false
   /// ```
-  bool get isUrl => _urlRegex.hasMatch(this);
+  bool get isUrl => FormatRegex.url.hasMatch(this);
 
   /// Returns true if the string is not a valid URL.
   bool get isNotUrl => !isUrl;
@@ -79,7 +85,7 @@ extension FalconToolStringValidatorExtension on String {
   /// 'user@example.com'.isEmail; // true
   /// 'invalid.email'.isEmail; // false
   /// ```
-  bool get isEmail => _emailRegex.hasMatch(this);
+  bool get isEmail => FormatRegex.email.hasMatch(this);
 
   /// Returns true if the string is not a valid email address.
   bool get isNotEmail => !isEmail;
@@ -117,7 +123,7 @@ extension FalconToolStringValidatorExtension on String {
   /// Returns true if the string is not valid JSON.
   bool get isNotJson => !isJson;
 
-  bool get isPhoneNumber => _e164Regex.hasMatch(this);
+  bool get isPhoneNumber => FormatRegex.e164.hasMatch(this);
 
   bool get isNotPhoneNumber => !isPhoneNumber;
 }

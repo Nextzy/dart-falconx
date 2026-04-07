@@ -77,12 +77,14 @@ class CommonException implements Exception {
   }
 
   CommonException copyWith({
+    Object? category,
     Object? type,
     String? userMessage,
     String? developerMessage,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => CommonException(
+    category: category ?? this.category,
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,

@@ -1,7 +1,7 @@
 import 'package:uuid/uuid.dart';
 
-class UuidGenerator{
-  static const Uuid _uuid = Uuid();
+const uuid = Uuid();
 
-  static String getV4() => _uuid.v4();
+class UuidGenerator {
+  static String getV4() => uuid.v4();
 }
