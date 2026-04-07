@@ -38,12 +38,15 @@ extension FalconExceptionExtensions<T> on Exception? {
   }
 
   Result<Never> toCommonResultFailure({
+    Object? category,
+    Object? type,
     String? userMessage,
     String? developerMessage,
   }) {
     return Result.failure(
       CommonException(
-        type: ErrorType.unknown,
+        category: category,
+        type: type ?? DefaultErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage ?? toString(),
         originalException: this,
@@ -55,6 +58,7 @@ extension FalconExceptionExtensions<T> on Exception? {
 
 extension FalconObjectExceptionExtensions on Object? {
   CommonException toException({
+    Object? category,
     Object? type,
     String? userMessage,
     String? developerMessage,
@@ -64,7 +68,8 @@ extension FalconObjectExceptionExtensions on Object? {
 
     if (exception == null) {
       return CommonException(
-        type: ErrorType.unknown,
+        category: category,
+        type: type ?? DefaultErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage ?? 'Null object.',
         originalException: null,
@@ -89,10 +94,11 @@ extension FalconObjectExceptionExtensions on Object? {
     final trace = stackTrace ?? _getStackTrace(exception);
     final message =
         userMessage ??
-        (detectedType is ErrorType ? detectedType.defaultMessage : null);
+        (detectedType is DefaultErrorType ? detectedType.defaultMessage : null);
 
     if (exception is Exception) {
       return CommonException(
+        category: category,
         type: detectedType,
         userMessage: message,
         developerMessage: developerMessage ?? toString(),
@@ -102,6 +108,7 @@ extension FalconObjectExceptionExtensions on Object? {
     }
 
     return CommonException(
+      category: category,
       type: detectedType,
       userMessage: message,
       developerMessage: developerMessage ?? toString(),
@@ -119,32 +126,32 @@ extension FalconObjectExceptionExtensions on Object? {
 
   Object _detectErrorType(Object? exception) {
     // Network & Connection
-    if (exception is SocketException) return ErrorType.system;
-    if (exception is HttpException) return ErrorType.system;
-    if (exception is HandshakeException) return ErrorType.system;
-    if (exception is CertificateException) return ErrorType.system;
+    if (exception is SocketException) return DefaultErrorType.system;
+    if (exception is HttpException) return DefaultErrorType.system;
+    if (exception is HandshakeException) return DefaultErrorType.system;
+    if (exception is CertificateException) return DefaultErrorType.system;
 
     // Timeout
-    if (exception is TimeoutException) return ErrorType.system;
+    if (exception is TimeoutException) return DefaultErrorType.system;
 
     // Format & Parsing
-    if (exception is FormatException) return ErrorType.invalidFormat;
-    if (exception is TypeError) return ErrorType.unexpected;
+    if (exception is FormatException) return DefaultErrorType.invalidFormat;
+    if (exception is TypeError) return DefaultErrorType.unexpected;
 
     // File & Storage
-    if (exception is FileSystemException) return ErrorType.storage;
-    if (exception is IOException) return ErrorType.storage;
+    if (exception is FileSystemException) return DefaultErrorType.storage;
+    if (exception is IOException) return DefaultErrorType.storage;
 
     // State & Argument
-    if (exception is StateError) return ErrorType.system;
-    if (exception is ArgumentError) return ErrorType.invalidInput;
-    if (exception is RangeError) return ErrorType.invalidInput;
-    if (exception is UnsupportedError) return ErrorType.unexpected;
+    if (exception is StateError) return DefaultErrorType.system;
+    if (exception is ArgumentError) return DefaultErrorType.invalidInput;
+    if (exception is RangeError) return DefaultErrorType.invalidInput;
+    if (exception is UnsupportedError) return DefaultErrorType.unexpected;
 
     // Async
-    if (exception is AsyncError) return ErrorType.system;
+    if (exception is AsyncError) return DefaultErrorType.system;
 
-    return ErrorType.unknown;
+    return DefaultErrorType.unknown;
   }
 
   ///========================= PRIVATE METHOD =========================///

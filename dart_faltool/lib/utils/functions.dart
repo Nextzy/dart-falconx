@@ -10,7 +10,7 @@ Future<Result<T>> runCatching<T>(
   } on Exception catch (e, st) {
     return Result.failure(
       CommonException(
-        type: ErrorType.unexpected,
+        type: DefaultErrorType.unexpected,
         developerMessage: e.toString(),
         originalException: e,
         stackTrace: st,
@@ -19,7 +19,7 @@ Future<Result<T>> runCatching<T>(
   } on Object catch (e, st) {
     return Result.failure(
       CommonException(
-        type: ErrorType.unexpected,
+        type: DefaultErrorType.unexpected,
         developerMessage: e.toString(),
         originalException: e,
         stackTrace: st,

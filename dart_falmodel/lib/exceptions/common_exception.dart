@@ -1,6 +1,12 @@
 import 'package:dart_falmodel/lib.dart';
 
-enum ErrorType {
+enum DefaultErrorCategory {
+  remote,
+  local,
+  unknown,
+}
+
+enum DefaultErrorType {
   unknown,
   system,
   unexpected,
@@ -18,20 +24,20 @@ enum ErrorType {
 
   String get defaultMessage {
     return switch (this) {
-      ErrorType.unknown => 'Something went wrong. Please try again.',
-      ErrorType.system => 'System error occurred.',
-      ErrorType.unexpected => 'An unexpected error occurred.',
-      ErrorType.validation => 'Invalid input. Please check your data.',
-      ErrorType.invalidInput => 'Invalid input provided.',
-      ErrorType.invalidFormat => 'Invalid format.',
-      ErrorType.notFound => 'The requested resource was not found.',
-      ErrorType.storage => 'Storage error occurred.',
-      ErrorType.cache => 'Cache error occurred.',
-      ErrorType.database => 'Database error occurred.',
-      ErrorType.businessRule => 'Operation not allowed.',
-      ErrorType.thirdParty => 'External service error.',
-      ErrorType.permission => 'Permission denied.',
-      ErrorType.deviceNotSupported => 'This device is not supported.',
+      DefaultErrorType.unknown => 'Something went wrong. Please try again.',
+      DefaultErrorType.system => 'System error occurred.',
+      DefaultErrorType.unexpected => 'An unexpected error occurred.',
+      DefaultErrorType.validation => 'Invalid input. Please check your data.',
+      DefaultErrorType.invalidInput => 'Invalid input provided.',
+      DefaultErrorType.invalidFormat => 'Invalid format.',
+      DefaultErrorType.notFound => 'The requested resource was not found.',
+      DefaultErrorType.storage => 'Storage error occurred.',
+      DefaultErrorType.cache => 'Cache error occurred.',
+      DefaultErrorType.database => 'Database error occurred.',
+      DefaultErrorType.businessRule => 'Operation not allowed.',
+      DefaultErrorType.thirdParty => 'External service error.',
+      DefaultErrorType.permission => 'Permission denied.',
+      DefaultErrorType.deviceNotSupported => 'This device is not supported.',
     };
   }
 }
