@@ -30,7 +30,7 @@ dart fix --apply
 ### Entry Points
 
 - `dart_falconnect.dart` — Public API: re-exports Dio, Retrofit, web_socket_channel, dio_cache_interceptor, and `engine/engine.dart`
-- `lib.dart` — Internal import: re-exports `dart:async`, `dart:convert`, `dart:io`, plus `dart_falmodel`, `dart_faltool`, `freezed_annotation`, and `dart_falconnect.dart`. All internal files import this single file
+- `lib.dart` — Internal import: re-exports `dart:async`, `dart:convert`, plus `ansicolor`, `dart_falmodel`, `dart_faltool`, `freezed_annotation`, and `dart_falconnect.dart`. All internal files import this single file
 
 ### Three Network Engines
 
@@ -77,7 +77,7 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 ### Key Patterns
 
 - **Internal imports**: All files use `import 'package:dart_falconnect/lib.dart'` — never import individual files directly
-- **`dart:io` hide**: `lib.dart` hides `HttpResponse` and `SocketException` from `dart:io` to avoid conflicts with package types
+- **No `dart:io` dependency**: `lib.dart` does not re-export `dart:io`; the package is portable to web. If you need `File`/`Platform`/`HttpClient`, import from `package:universal_io/io.dart` (via `dart_faltool`)
 - **Converter-required API**: Every HTTP method requires a `converter: (Map<String, dynamic>) → T` parameter — there is no raw response API
 - **`BaseRequestBody`**: POST/PUT/PATCH/DELETE data parameter type (from dart_falmodel), requires `.toJson()`
 - **Error propagation**: `catchWhenError` resolves with the error handler's return value; if no handler, errors are rethrown as-is

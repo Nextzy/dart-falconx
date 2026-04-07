@@ -116,7 +116,7 @@ Generated files follow strict organization:
 ### Exception Architecture
 
 Three exception systems in dart_falmodel:
-- **`ErrorType` enum** (`lib/exceptions/common_exception.dart`): General-purpose (unknown, system, validation, storage, etc.)
+- **`DefaultErrorType` enum** (`lib/exceptions/common_exception.dart`): General-purpose (unknown, system, validation, storage, etc.)
 - **`NetworkErrorType` enum** (`lib/networks/exceptions/network_exception.dart`): HTTP-specific, maps to status codes
 - **JSON-RPC exceptions** (`lib/networks/rpc/exceptions/`): `JsonRpcCommonException`, `JsonRpcDataLayerException`, `JsonRpcDomainLayerException` — use `JsonRpcErrorCategory` and `JsonRpcApiErrorType`/`JsonRpcRequestErrorType` enums
 - `CommonException` has a `category` field and `toJsonRpcError()` method for converting to `JsonRpcError`
@@ -172,4 +172,4 @@ Three exception systems in dart_falmodel:
 ### Environment Requirements
 - Dart SDK: `>=3.9.0 <4.0.0`
 - Workspace resolution enabled for monorepo
-- Melos: `^7.4.0` for workspace management
+- Melos: `^7.5.1` for workspace management

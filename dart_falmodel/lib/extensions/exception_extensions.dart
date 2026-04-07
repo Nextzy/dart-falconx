@@ -126,7 +126,6 @@ extension FalconObjectExceptionExtensions on Object? {
 
   Object _detectErrorType(Object? exception) {
     // Network & Connection
-    if (exception is SocketException) return DefaultErrorType.system;
     if (exception is HttpException) return DefaultErrorType.system;
     if (exception is HandshakeException) return DefaultErrorType.system;
     if (exception is CertificateException) return DefaultErrorType.system;

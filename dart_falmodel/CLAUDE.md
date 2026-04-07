@@ -26,13 +26,13 @@ dart test
 
 ### Entry Points
 
-- `lib/lib.dart` — Internal "prelude" that re-exports dart:async, dart:convert, dart:io, Dio, Freezed/JSON annotations, dart_faltool, and dart_falmodel. Most files in this package import from here instead of individual packages.
+- `lib/lib.dart` — Internal "prelude" that re-exports dart:async, dart:convert, Dio, Freezed/JSON annotations, json_annotation, and dart_faltool. Most files in this package import from here instead of individual packages.
 - `lib/dart_falmodel.dart` — Public API barrel that exports the five modules: exceptions, extensions, feedbacks, models, networks.
 
 ### Two Exception Systems
 
 1. **`CommonException`** (`lib/exceptions/common_exception.dart`) — Generic exception with `type` and `category` fields. Base for all exceptions.
-   - `ErrorType` enum: general-purpose categories (unknown, system, validation, storage, etc.)
+   - `DefaultErrorType` enum: general-purpose categories (unknown, system, validation, storage, etc.)
    - `category` field: optional grouping (e.g., `JsonRpcErrorCategory`)
    - `toJsonRpcError()`: converts to `JsonRpcError` for RPC responses, auto-resolving category from `type`
    - Layer-specific subclasses: `DataLayerException`, `DomainLayerException`, `TodoException`
