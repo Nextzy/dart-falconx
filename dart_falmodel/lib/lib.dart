@@ -1,6 +1,5 @@
 export 'dart:async';
 export 'dart:convert';
-export 'dart:io';
 
 export 'package:dart_faltool/dart_faltool.dart';
 export 'package:dio/dio.dart';
