@@ -7,11 +7,13 @@ export 'package:dartx/dartx.dart'
         IterableAll,
         IterableAppend,
         IterableNumAverageExtension,
+        IterableNumSumExtension,
         IterablePartition,
         IterableZip,
         MapOrEmpty,
         NumCoerceInRangeExtension,
         StringCapitalizeExtension;
+export 'package:data/data.dart' hide Field;
 export 'package:enum_to_string/enum_to_string.dart';
 export 'package:equatable/equatable.dart';
 export 'package:fpdart/fpdart.dart' hide State, Task;
