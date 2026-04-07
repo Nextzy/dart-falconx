@@ -12,6 +12,6 @@ abstract class JsonRpc {
     this.id,
   });
 
-  final String? jsonrpc;
+  final String jsonrpc;
   final int? id;
 }
