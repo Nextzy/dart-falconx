@@ -12,8 +12,10 @@ import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import '_stub_http_client.dart';
 
 // Prevents the compiler from tree-shaking the touched types.
+// The condition is never true so the throw never fires, but
+// dart2js cannot prove it, so the argument is kept live.
 void _sink(Object? o) {
-  if (identical(o, const Object())) print(o);
+  if (identical(o, const Object())) throw StateError('$o');
 }
 
 void main() {
