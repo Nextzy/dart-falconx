@@ -133,6 +133,22 @@ class CommonException implements Exception {
     );
   }
 
+  Information toInformation({FeedbackLevel level = FeedbackLevel.medium}) =>
+      Information(
+        message: userMessage,
+        level: level,
+      );
+
+  Failure toFailure({FeedbackLevel level = FeedbackLevel.medium}) => Failure(
+    message: userMessage,
+    level: level,
+  );
+
+  Warning toWarning({FeedbackLevel level = FeedbackLevel.medium}) => Warning(
+    message: userMessage,
+    level: level,
+  );
+
   JsonRpcErrorCategory? _resolveJsonRpcErrorCategory({
     required Object? category,
     required Object? code,
