@@ -1,3 +1,5 @@
+import 'package:dart_falmodel/extensions/_io_stubs.dart'
+    if (dart.library.io) '_io_real.dart';
 import 'package:dart_falmodel/lib.dart';
 
 extension FalconExceptionExtensions<T> on Exception? {
