@@ -40,3 +40,10 @@ melos:
       exec:
         concurrency: 1
 
+    verify:web:
+      description: Verify dart_falconnect compiles and runs on web
+      run: |
+        cd dart_falconnect && \
+        dart compile js -o /tmp/dart_falconnect_web.js test/web/compile_smoke.dart && \
+        dart test -p chrome test/web/engine_web_test.dart
+
