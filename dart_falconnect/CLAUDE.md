@@ -89,3 +89,20 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 - `NetworkExceptionHandlerInterceptor` uses `err.toException()` extension method (from dart_falmodel) to convert `DioException` to `NetworkException`
 - WebSocket uses RxDart's `PublishSubject` (not `ReplaySubject` despite the variable name `_replaySubject`)
 - Generated files go to `lib/{{path}}/generated/` subdirectories per `build.yaml` configuration
+
+## Web Support
+
+This package is verified to compile and run on web. To verify:
+
+```bash
+melos run verify:web
+```
+
+This runs two gates:
+1. `dart compile js` against `test/web/compile_smoke.dart` — ensures every public engine type compiles to JavaScript.
+2. `dart test -p chrome test/web/engine_web_test.dart` — instantiates HTTP client, interceptors, and JSON-RPC service in a real browser (mocked, no network).
+
+**Known caveats on web:**
+- `PerformanceInterceptor.RequestMetrics` timing fields (`dnsLookupTime`, `connectionTime`, `tlsHandshakeTime`, `timeToFirstByte`, `downloadTime`) are always `null` — browsers do not expose XHR timing breakdowns to dio.
+- `SocketClient` has compile-check coverage only; runtime behavior on web is delegated to `WebSocketChannel.connect()`'s auto-factory (VM → `IOWebSocketChannel`, web → `HtmlWebSocketChannel`).
+- Dio's `httpClientAdapter` is left as the auto factory so it resolves to `BrowserHttpClientAdapter` on web automatically. Do **not** import `package:dio/io.dart` or set `IOHttpClientAdapter` directly — that would break web.
