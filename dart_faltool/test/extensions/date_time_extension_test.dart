@@ -85,14 +85,16 @@ void main() {
         ];
 
         for (final testCase in monthTestCases) {
-          when('checking days in ${testCase.date.month}/${testCase.date.year}',
-              () {
-            final days = testCase.date.daysInMonth;
+          when(
+            'checking days in ${testCase.date.month}/${testCase.date.year}',
+            () {
+              final days = testCase.date.daysInMonth;
 
-            then('it should have ${testCase.expectedDays} days', () {
-              expect(days, equals(testCase.expectedDays));
-            });
-          });
+              then('it should have ${testCase.expectedDays} days', () {
+                expect(days, equals(testCase.expectedDays));
+              });
+            },
+          );
         }
       });
 
@@ -325,53 +327,55 @@ void main() {
             start: DateTime(2023, 5, 15),
             monthsToAdd: 2,
             expected: DateTime(2023, 7, 15),
-            description: 'normal month addition'
+            description: 'normal month addition',
           ),
           // Year overflow
           (
             start: DateTime(2023, 11, 15),
             monthsToAdd: 3,
             expected: DateTime(2024, 2, 15),
-            description: 'year overflow'
+            description: 'year overflow',
           ),
           // Day overflow (Jan 31 + 1 month = Feb 28/29)
           (
             start: DateTime(2023, 1, 31),
             monthsToAdd: 1,
             expected: DateTime(2023, 2, 28),
-            description: 'day overflow to non-leap February'
+            description: 'day overflow to non-leap February',
           ),
           (
             start: DateTime(2024, 1, 31),
             monthsToAdd: 1,
             expected: DateTime(2024, 2, 29),
-            description: 'day overflow to leap February'
+            description: 'day overflow to leap February',
           ),
           // Negative months
           (
             start: DateTime(2023, 3, 15),
             monthsToAdd: -2,
             expected: DateTime(2023, 1, 15),
-            description: 'negative months'
+            description: 'negative months',
           ),
           (
             start: DateTime(2023, 2, 15),
             monthsToAdd: -3,
             expected: DateTime(2022, 11, 15),
-            description: 'negative months with year underflow'
+            description: 'negative months with year underflow',
           ),
         ];
 
         for (final testCase in monthTestCases) {
           given(testCase.description, () {
-            when('adding ${testCase.monthsToAdd} months to ${testCase.start}',
-                () {
-              final result = testCase.start.addMonths(testCase.monthsToAdd);
+            when(
+              'adding ${testCase.monthsToAdd} months to ${testCase.start}',
+              () {
+                final result = testCase.start.addMonths(testCase.monthsToAdd);
 
-              then('it should equal ${testCase.expected}', () {
-                expect(result, equals(testCase.expected));
-              });
-            });
+                then('it should equal ${testCase.expected}', () {
+                  expect(result, equals(testCase.expected));
+                });
+              },
+            );
           });
         }
       });
@@ -996,7 +1000,7 @@ void main() {
           (duration: const Duration(days: 1, hours: 2), expected: '1d 2h'),
           (
             duration: const Duration(minutes: 45, seconds: 30),
-            expected: '45m 30s'
+            expected: '45m 30s',
           ),
           (duration: const Duration(seconds: 45), expected: '45s'),
           (duration: Duration.zero, expected: '0s'),
@@ -1018,15 +1022,15 @@ void main() {
         final timeStringTestCases = [
           (
             duration: const Duration(hours: 2, minutes: 30, seconds: 45),
-            expected: '02:30:45'
+            expected: '02:30:45',
           ),
           (
             duration: const Duration(hours: 25, minutes: 5),
-            expected: '25:05:00'
+            expected: '25:05:00',
           ),
           (
             duration: const Duration(minutes: 5, seconds: 8),
-            expected: '00:05:08'
+            expected: '00:05:08',
           ),
         ];
 
@@ -1144,6 +1148,4 @@ void main() {
       });
     });
   });
-
 }
-
