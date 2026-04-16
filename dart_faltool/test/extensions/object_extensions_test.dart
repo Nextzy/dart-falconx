@@ -468,16 +468,16 @@ void main() {
       );
     });
 
-    group('asList', () {
+    group('wrapInList', () {
       test('should wrap value in list', () {
-        final list = 42.asList();
+        final list = 42.wrapInList();
         expect(list, [42]);
         expect(list.length, 1);
       });
 
       test('should work with objects', () {
         final user = User('John', 25);
-        final list = user.asList();
+        final list = user.wrapInList();
         expect(list.length, 1);
         expect(list[0], user);
       });
