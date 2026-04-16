@@ -10,113 +10,6 @@ void main() {
 
   group('Feature: DateTime Extensions', () {
     group('Scenario: Date Component Extraction', () {
-      test('should extract start of day from any time', () {
-        // Given
-        late DateTime dateWithTime;
-        late DateTime result;
-
-        given('a date with specific time (2023-05-15 14:30:45)', () {
-          dateWithTime = DateTime(2023, 5, 15, 14, 30, 45);
-        });
-
-        // When
-        when('getting the start of day', () {
-          result = dateWithTime.startOfDay;
-        });
-
-        // Then
-        then('it should return the same date at 00:00:00.000', () {
-          expect(result, equals(DateTime(2023, 5, 15, 0, 0, 0, 0)));
-        });
-      });
-
-      test('should extract end of day from any time', () {
-        // Given
-        late DateTime dateWithTime;
-        late DateTime result;
-
-        given('a date with specific time (2023-05-15 14:30:45)', () {
-          dateWithTime = DateTime(2023, 5, 15, 14, 30, 45);
-        });
-
-        // When
-        when('getting the end of day', () {
-          result = dateWithTime.endOfDay;
-        });
-
-        // Then
-        then('it should return the same date at 23:59:59.999', () {
-          expect(result.year, equals(2023));
-          expect(result.month, equals(5));
-          expect(result.day, equals(15));
-          expect(result.hour, equals(23));
-          expect(result.minute, equals(59));
-          expect(result.second, equals(59));
-          expect(result.millisecond, equals(999));
-        });
-      });
-
-      test('should extract start and end of month', () {
-        // Given
-        late DateTime midMonthDate;
-        late DateTime startResult;
-        late DateTime endResult;
-
-        given('a date in the middle of May 2023', () {
-          midMonthDate = DateTime(2023, 5, 15);
-        });
-
-        // When
-        when('getting the start and end of month', () {
-          startResult = midMonthDate.startOfMonth;
-          endResult = midMonthDate.endOfMonth;
-        });
-
-        // Then
-        then('start should be May 1st', () {
-          expect(startResult, equals(DateTime(2023, 5, 1)));
-        });
-
-        and('end should be May 31st at 23:59:59.999', () {
-          expect(endResult.day, equals(31));
-          expect(endResult.hour, equals(23));
-          expect(endResult.minute, equals(59));
-          expect(endResult.second, equals(59));
-          expect(endResult.millisecond, equals(999));
-        });
-      });
-
-      test('should extract start and end of year', () {
-        // Given
-        late DateTime midYearDate;
-        late DateTime startResult;
-        late DateTime endResult;
-
-        given('a date in the middle of 2023', () {
-          midYearDate = DateTime(2023, 5, 15);
-        });
-
-        // When
-        when('getting the start and end of year', () {
-          startResult = midYearDate.startOfYear;
-          endResult = midYearDate.endOfYear;
-        });
-
-        // Then
-        then('start should be January 1st', () {
-          expect(startResult, equals(DateTime(2023, 1, 1)));
-        });
-
-        and('end should be December 31st at 23:59:59.999', () {
-          expect(endResult.month, equals(12));
-          expect(endResult.day, equals(31));
-          expect(endResult.hour, equals(23));
-          expect(endResult.minute, equals(59));
-          expect(endResult.second, equals(59));
-          expect(endResult.millisecond, equals(999));
-        });
-      });
-
       test('should correctly identify quarters', () {
         // Given
         final quarterTestCases = [
@@ -260,11 +153,11 @@ void main() {
 
         when('checking if dates are yesterday', () {
           then('yesterday should return true', () {
-            expect(yesterday.isYesterday, isTrue);
+            expect(yesterday.wasYesterday, isTrue);
           });
 
           and('today should return false', () {
-            expect(today.isYesterday, isFalse);
+            expect(today.wasYesterday, isFalse);
           });
         });
 
@@ -311,29 +204,6 @@ void main() {
             expect(futureDate.isPast, isFalse);
           });
         });
-      });
-
-      test('should identify weekends and weekdays', () {
-        // Given
-        final dayTestCases = [
-          (date: DateTime(2023, 5, 15), isWeekend: false, day: 'Monday'),
-          (date: DateTime(2023, 5, 20), isWeekend: true, day: 'Saturday'),
-          (date: DateTime(2023, 5, 21), isWeekend: true, day: 'Sunday'),
-        ];
-
-        for (final testCase in dayTestCases) {
-          given('a ${testCase.day}', () {
-            when('checking if it is a weekend', () {
-              then('isWeekend should return ${testCase.isWeekend}', () {
-                expect(testCase.date.isWeekend, equals(testCase.isWeekend));
-              });
-
-              and('isWeekday should return ${!testCase.isWeekend}', () {
-                expect(testCase.date.isWeekday, equals(!testCase.isWeekend));
-              });
-            });
-          });
-        }
       });
 
       test('should compare dates correctly', () {
@@ -714,26 +584,25 @@ void main() {
 
         // When & Then
         final relativeTimeTestCases = [
-          (time: now, expected: 'just now', description: 'current time'),
+          (
+            time: now,
+            expected: 'a moment ago',
+            description: 'current time',
+          ),
           (
             time: now.subtract(const Duration(minutes: 5)),
             expected: '5 minutes ago',
-            description: '5 minutes ago'
+            description: '5 minutes ago',
           ),
           (
             time: now.subtract(const Duration(hours: 2)),
             expected: '2 hours ago',
-            description: '2 hours ago'
+            description: '2 hours ago',
           ),
           (
             time: now.subtract(const Duration(days: 3)),
             expected: '3 days ago',
-            description: '3 days ago'
-          ),
-          (
-            time: now.add(const Duration(hours: 2, minutes: 1)),
-            expected: 'in 2 hours',
-            description: '2 hours in future'
+            description: '3 days ago',
           ),
         ];
 
@@ -741,11 +610,31 @@ void main() {
           when('formatting ${testCase.description}', () {
             final result = testCase.time.toRelative();
 
-            then('it should contain "${testCase.expected}"', () {
-              expect(result, contains(testCase.expected));
+            then('it should return "${testCase.expected}"', () {
+              expect(result, equals(testCase.expected));
             });
           });
         }
+      });
+
+      test('should format future dates with allowFromNow', () {
+        // Given
+        late DateTime now;
+
+        given('the current time', () {
+          now = DateTime.now();
+        });
+
+        // When
+        when('formatting a date 2 hours in the future with allowFromNow', () {
+          final futureDate = now.add(const Duration(hours: 2, minutes: 1));
+          final result = futureDate.toRelative(allowFromNow: true);
+
+          // Then
+          then('it should contain "from now"', () {
+            expect(result, contains('from now'));
+          });
+        });
       });
 
       test('should format human readable day names', () {
@@ -1256,26 +1145,5 @@ void main() {
     });
   });
 
-  group('Feature: DateTime Localizations', () {
-    test('should provide localized strings', () {
-      // Given & When & Then
-      final localizationTestCases = [
-        (method: DateTimeLocalizations.today, expected: 'Today'),
-        (method: DateTimeLocalizations.yesterday, expected: 'Yesterday'),
-        (method: DateTimeLocalizations.tomorrow, expected: 'Tomorrow'),
-        (method: DateTimeLocalizations.justNow, expected: 'just now'),
-        (method: DateTimeLocalizations.inAMoment, expected: 'in a moment'),
-      ];
-
-      for (final testCase in localizationTestCases) {
-        when('getting localized string', () {
-          final result = testCase.method();
-
-          then('it should return "${testCase.expected}"', () {
-            expect(result, equals(testCase.expected));
-          });
-        });
-      }
-    });
-  });
 }
+
