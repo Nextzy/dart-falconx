@@ -1,4 +1,3 @@
-
 import 'package:dart_falconnect/lib.dart';
 
 class DefaultJsonRpcService extends JsonRpcService {
@@ -8,4 +7,18 @@ class DefaultJsonRpcService extends JsonRpcService {
     required super.jsonrpc,
     super.errorLogger,
   });
+
+  factory DefaultJsonRpcService.fromHttpClient(
+    BaseHttpClient client, {
+    required String jsonrpc,
+    String? baseUrl,
+    ParseErrorLogger? errorLogger,
+  }) {
+    return DefaultJsonRpcService(
+      client.dio,
+      baseUrl: baseUrl ?? client.baseUrl,
+      jsonrpc: jsonrpc,
+      errorLogger: errorLogger,
+    );
+  }
 }
