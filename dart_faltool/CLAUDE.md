@@ -25,7 +25,10 @@ dart analyze
 dart format .
 ```
 
-No code generation (`build_runner`) is needed in this package — it has no generated files.
+```bash
+# Code generation (required after modifying @freezed classes, e.g. DecodedTypeId)
+dart run build_runner build -d
+```
 
 ## Architecture
 
@@ -49,6 +52,12 @@ Some extensions deliberately overlap with `dartx` — the `dartx` package is re-
 - **`app_info.dart`** — `AppInfo`: Static class that reads app version from `pubspec.yaml`. Call `AppInfo.init()` at startup, then access `AppInfo.version`.
 - **`functions.dart`** — `runCatching`, `runDomainCatching`, `runDataCatching`: Execute async operations and catch exceptions into `Result<T>` failures. Each wraps exceptions into the appropriate layer exception (`CommonException`, `DomainLayerException`, `DataLayerException`).
 - **`uuid_generator.dart`** — `UuidGenerator.getV4()`: Static UUID v4 generation.
+- **`json_serialize.dart`** — JSON serialization helpers.
+- **`typeid/`** — [TypeID](https://github.com/jetify-com/typeid) implementation:
+  - `TypeId`: Static class for generating (`generate`) and decoding (`decode`, `decodeOrNull`, `isValid`) TypeIDs (UUIDv7 + type prefix encoded as base32)
+  - `DecodedTypeId`: Freezed model holding prefix, suffix, and UUID — `toString()` reconstructs the TypeID string
+  - `Base32`: TypeID-specific base32 encoder/decoder (not generic base32)
+  - Prefix validation is strict per spec: `[a-z]` only, max 63 chars, no underscores
 
 ### Type Definitions (`lib/type_def.dart`)
 
@@ -59,4 +68,4 @@ Contains shared typedefs like `VoidErrorCallback`.
 - When adding a new extension file, add its export to `lib/extensions/extensions.dart` and create a matching test file in `test/extensions/`.
 - The `dartx` re-export hides specific members (`IterableAll`, `IterableAppend`, `MapOrEmpty`, etc.) — if you add an extension that conflicts with `dartx`, add a `hide` entry in `lib/dart_faltool.dart`.
 - Linting uses `very_good_analysis` with `strict-casts` and `strict-inference` enabled — no implicit casts or dynamic inference allowed.
-- `test/unit_test.dart` is a placeholder stub — real tests live in `test/extensions/`.
+- `test/unit_test.dart` is a placeholder stub — real tests live in `test/extensions/` and `test/utils/`.

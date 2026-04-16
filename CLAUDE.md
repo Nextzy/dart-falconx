@@ -164,7 +164,7 @@ Three exception systems in dart_falmodel:
 - Generated files excluded from analysis in `dart_falmodel` and `dart_faltool` (`**/generated/**`, `*.g.dart`, `*.freezed.dart`)
 
 ### Build Configuration
-- See `build.yaml` in `dart_falconnect` and `dart_falmodel` (no build.yaml in other packages)
+- See `build.yaml` in `dart_falconnect`, `dart_falmodel`, and `dart_faltool`
 - Generated files in subdirectories to maintain clean structure
 - Retrofit generator enabled for API clients
 - Melos scripts defined in root `pubspec.yaml` under `melos:` key (not in `melos.yaml`)
