@@ -1,13 +1,18 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-class DecodedTypeId {
-  final String prefix;
-  final String suffix;
-  final UuidValue uuid;
+part 'generated/decoded_typeid.freezed.dart';
 
-  DecodedTypeId({
-    required this.prefix,
-    required this.suffix,
-    required this.uuid,
-  });
+@freezed
+abstract class DecodedTypeId with _$DecodedTypeId {
+  const factory DecodedTypeId({
+    required String prefix,
+    required String suffix,
+    required UuidValue uuid,
+  }) = _DecodedTypeId;
+
+  const DecodedTypeId._();
+
+  @override
+  String toString() => prefix.isEmpty ? suffix : '${prefix}_$suffix';
 }
