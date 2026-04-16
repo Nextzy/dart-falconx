@@ -1,4 +1,5 @@
 import 'package:dart_faltool/lib.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 /// Extension methods for DateTime manipulation and formatting.
 /// 
@@ -166,142 +167,18 @@ extension FalconToolDateTimeExtensions on DateTime {
   /// Formats as month and year (MMMM yyyy).
   String get toMonthYear => format(monthYearPattern);
 
-  /// Formats as a relative time string with localization support.
-  /// 
+  /// Formats as a relative time string using the timeago package.
+  ///
+  /// Uses the [timeago] package for localized relative time formatting.
+  /// Register locales at app startup via `timeago.setLocaleMessages()`.
+  ///
   /// Example:
   /// ```dart
   /// DateTime.now().subtract(Duration(minutes: 5)).toRelative(); // '5 minutes ago'
-  /// DateTime.now().add(Duration(hours: 2)).toRelative(); // 'in 2 hours'
+  /// DateTime.now().add(Duration(hours: 2)).toRelative(allowFromNow: true); // '2 hours from now'
   /// ```
-  String toRelative({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    
-    final now = DateTime.now();
-    final difference = now.difference(this);
-    final isInPast = !difference.isNegative;
-    final duration = difference.abs();
-
-    if (duration.inSeconds < 60) {
-      return isInPast 
-          ? DateTimeLocalizations.justNow(locale: locale)
-          : DateTimeLocalizations.inAMoment(locale: locale);
-    } else if (duration.inMinutes < 60) {
-      final minutes = duration.inMinutes;
-      return isInPast
-          ? Intl.plural(
-              minutes,
-              one: Intl.message('$minutes minute ago', 
-                  name: 'minuteAgo', args: [minutes]),
-              other: Intl.message('$minutes minutes ago', 
-                  name: 'minutesAgo', args: [minutes]),
-              locale: locale,
-            )
-          : Intl.plural(
-              minutes,
-              one: Intl.message('in $minutes minute', 
-                  name: 'inMinute', args: [minutes]),
-              other: Intl.message('in $minutes minutes', 
-                  name: 'inMinutes', args: [minutes]),
-              locale: locale,
-            );
-    } else if (duration.inHours < 24) {
-      final hours = duration.inHours;
-      return isInPast
-          ? Intl.plural(
-              hours,
-              one: Intl.message('$hours hour ago', 
-                  name: 'hourAgo', args: [hours]),
-              other: Intl.message('$hours hours ago', 
-                  name: 'hoursAgo', args: [hours]),
-              locale: locale,
-            )
-          : Intl.plural(
-              hours,
-              one: Intl.message('in $hours hour', 
-                  name: 'inHour', args: [hours]),
-              other: Intl.message('in $hours hours', 
-                  name: 'inHours', args: [hours]),
-              locale: locale,
-            );
-    } else if (duration.inDays < 7) {
-      final days = duration.inDays;
-      return isInPast
-          ? Intl.plural(
-              days,
-              one: Intl.message('$days day ago', 
-                  name: 'dayAgo', args: [days]),
-              other: Intl.message('$days days ago', 
-                  name: 'daysAgo', args: [days]),
-              locale: locale,
-            )
-          : Intl.plural(
-              days,
-              one: Intl.message('in $days day', 
-                  name: 'inDay', args: [days]),
-              other: Intl.message('in $days days', 
-                  name: 'inDays', args: [days]),
-              locale: locale,
-            );
-    } else if (duration.inDays < 30) {
-      final weeks = (duration.inDays / 7).round();
-      return isInPast
-          ? Intl.plural(
-              weeks,
-              one: Intl.message('$weeks week ago', 
-                  name: 'weekAgo', args: [weeks]),
-              other: Intl.message('$weeks weeks ago', 
-                  name: 'weeksAgo', args: [weeks]),
-              locale: locale,
-            )
-          : Intl.plural(
-              weeks,
-              one: Intl.message('in $weeks week', 
-                  name: 'inWeek', args: [weeks]),
-              other: Intl.message('in $weeks weeks', 
-                  name: 'inWeeks', args: [weeks]),
-              locale: locale,
-            );
-    } else if (duration.inDays < 365) {
-      final months = (duration.inDays / 30).round();
-      return isInPast
-          ? Intl.plural(
-              months,
-              one: Intl.message('$months month ago', 
-                  name: 'monthAgo', args: [months]),
-              other: Intl.message('$months months ago', 
-                  name: 'monthsAgo', args: [months]),
-              locale: locale,
-            )
-          : Intl.plural(
-              months,
-              one: Intl.message('in $months month', 
-                  name: 'inMonth', args: [months]),
-              other: Intl.message('in $months months', 
-                  name: 'inMonths', args: [months]),
-              locale: locale,
-            );
-    } else {
-      final years = (duration.inDays / 365).round();
-      return isInPast
-          ? Intl.plural(
-              years,
-              one: Intl.message('$years year ago', 
-                  name: 'yearAgo', args: [years]),
-              other: Intl.message('$years years ago', 
-                  name: 'yearsAgo', args: [years]),
-              locale: locale,
-            )
-          : Intl.plural(
-              years,
-              one: Intl.message('in $years year', 
-                  name: 'inYear', args: [years]),
-              other: Intl.message('in $years years', 
-                  name: 'inYears', args: [years]),
-              locale: locale,
-            );
-    }
+  String toRelative({String? locale, bool allowFromNow = false}) {
+    return timeago.format(this, locale: locale, allowFromNow: allowFromNow);
   }
 
   /// Gets a human-readable string for the day with localization support.
@@ -395,7 +272,8 @@ extension FalconToolDateTimeNullExtensions on DateTime? {
   }
 
   /// Safely converts to relative time string with localization support.
-  String? toRelative({String? locale}) => this?.toRelative(locale: locale);
+  String? toRelative({String? locale, bool allowFromNow = false}) =>
+      this?.toRelative(locale: locale, allowFromNow: allowFromNow);
 
   /// Returns the DateTime or the current time if null.
   DateTime get orNow => this ?? DateTime.now();
@@ -487,50 +365,4 @@ extension FalconToolDurationExtensions on Duration {
   /// Divides the duration by a factor.
   Duration operator /(num factor) => 
       Duration(microseconds: (inMicroseconds / factor).round());
-}
-
-/// Helper class for localizable date/time strings.
-/// 
-/// This class provides static methods to get localized strings
-/// without hardcoding them in the extension methods.
-class DateTimeLocalizations {
-  /// Gets localized 'Today' string.
-  static String today({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('Today', name: 'today');
-  }
-
-  /// Gets localized 'Yesterday' string.
-  static String yesterday({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('Yesterday', name: 'yesterday');
-  }
-
-  /// Gets localized 'Tomorrow' string.
-  static String tomorrow({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('Tomorrow', name: 'tomorrow');
-  }
-
-  /// Gets localized 'just now' string.
-  static String justNow({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('just now', name: 'justNow');
-  }
-
-  /// Gets localized 'in a moment' string.
-  static String inAMoment({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('in a moment', name: 'inAMoment');
-  }
 }
