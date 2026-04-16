@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      freezed:
+        enabled: true
+        options:
+          build_extensions:
+            'lib/{{path}}/{{file}}.dart': 'lib/{{path}}/generated/{{file}}.freezed.dart'
