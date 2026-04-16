@@ -30,6 +30,8 @@ abstract class BaseHttpClient implements RequestApiService {
   /// needed.
   Dio get dio => _dio;
 
+  String get baseUrl => _dio.options.baseUrl;
+
   /// Sets the base URL for all requests.
   ///
   /// This is a convenience method that updates the Dio base
@@ -53,6 +55,12 @@ abstract class BaseHttpClient implements RequestApiService {
     Dio dio,
     Interceptors interceptors,
   ) {}
+
+  void addInterceptors(
+    Interceptors interceptors,
+  ) {
+    _dio.interceptors.addAll(interceptors);
+  }
 
   /// Gets the current Dio configuration options.
   BaseOptions get config => _dio.options;
@@ -97,11 +105,13 @@ abstract class BaseHttpClient implements RequestApiService {
     bool isUseToken = true,
     required FutureOr<T> Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.get(
@@ -158,11 +168,13 @@ abstract class BaseHttpClient implements RequestApiService {
     bool isUseToken = true,
     required T Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.post(
@@ -222,11 +234,13 @@ abstract class BaseHttpClient implements RequestApiService {
     bool isUseToken = true,
     required T Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.post(
@@ -285,11 +299,13 @@ abstract class BaseHttpClient implements RequestApiService {
     bool isUseToken = true,
     required T Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.patch(
@@ -348,11 +364,13 @@ abstract class BaseHttpClient implements RequestApiService {
     bool isUseToken = true,
     required T Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.put(
@@ -411,11 +429,13 @@ abstract class BaseHttpClient implements RequestApiService {
     bool isUseToken = true,
     required T Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.put(
@@ -469,11 +489,13 @@ abstract class BaseHttpClient implements RequestApiService {
     bool isUseToken = true,
     required T Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.delete(
@@ -498,14 +520,14 @@ abstract class BaseHttpClient implements RequestApiService {
     Future<Response<dynamic>> Function() requestFn, {
     required FutureOr<T> Function(
       Map<String, dynamic> json,
-    ) converter,
+    )
+    converter,
     T? Function(
       DioException exception,
       StackTrace? stackTrace,
-    )? catchError,
+    )?
+    catchError,
   }) async {
-    return requestFn()
-        .mapJson(converter)
-        .catchWhenError(catchError);
+    return requestFn().mapJson(converter).catchWhenError(catchError);
   }
 }

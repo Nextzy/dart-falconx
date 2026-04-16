@@ -223,12 +223,12 @@ void main() {
       });
 
       test('fromBase64 decodes base64 to string', () {
-        expect('SGVsbG8='.fromBase64(), 'Hello');
+        expect('SGVsbG8='.fromBase64ToString(), 'Hello');
         expect(
-          'SGVsbG8gV29ybGQh'.fromBase64(),
+          'SGVsbG8gV29ybGQh'.fromBase64ToString(),
           'Hello World!',
         );
-        expect(''.fromBase64(), '');
+        expect(''.fromBase64ToString(), '');
       });
 
       test('toBytes converts string to UTF-8 bytes', () {

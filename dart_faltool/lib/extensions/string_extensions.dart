@@ -115,23 +115,7 @@ extension FalconToolStringExtension on String {
   /// or empty map if parsing fails.
   Map<String, dynamic> toMapOrEmpty() => toMapOrNull() ?? {};
 
-  /// Encodes the string to base64.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'Hello'.toBase64(); // 'SGVsbG8='
-  /// ```
-  String toBase64() => base64.encode(utf8.encode(this));
 
-  /// Decodes the string from base64.
-  ///
-  /// Throws [FormatException] if the string is not valid base64.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'SGVsbG8='.fromBase64(); // 'Hello'
-  /// ```
-  String fromBase64() => utf8.decode(base64.decode(this));
 
   /// Converts the string to bytes using UTF-8 encoding.
   Uint8List toBytes() => Uint8List.fromList(utf8.encode(this));

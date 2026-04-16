@@ -66,5 +66,12 @@ hosting.*
 # Java class files
 *.class
 
-# Claude Code
+# AI
 .serena/
+.claude/worktrees/
+.claude.local.md
+.mcp.json
+.playwright-mcp/
+
+# Worktrees
+.worktrees/
