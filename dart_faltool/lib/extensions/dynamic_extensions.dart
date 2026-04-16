@@ -1,5 +1,4 @@
-// These imports will be used by numeric/BigDecimal conversion methods added in
-// subsequent tasks; suppressed here to preserve the scaffold structure.
+// Used by subsequent tasks for BigDecimal/json coercions.
 // ignore_for_file: unused_import
 import 'package:big_decimal/big_decimal.dart';
 import 'package:dart_faltool/lib.dart';
