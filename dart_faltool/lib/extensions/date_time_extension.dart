@@ -15,26 +15,6 @@ extension FalconToolDateTimeExtensions on DateTime {
 
   // Date Components
 
-  /// Gets the start of the day (00:00:00).
-  /// 
-  /// Example:
-  /// ```dart
-  /// DateTime(2023, 5, 15, 14, 30).startOfDay; // 2023-05-15 00:00:00
-  /// ```
-  DateTime get startOfDay => DateTime(year, month, day);
-
-  /// Gets the start of the month.
-  DateTime get startOfMonth => DateTime(year, month, 1);
-
-  /// Gets the end of the month.
-  DateTime get endOfMonth => DateTime(year, month + 1, 0, 23, 59, 59, 999);
-
-  /// Gets the start of the year.
-  DateTime get startOfYear => DateTime(year, 1, 1);
-
-  /// Gets the end of the year.
-  DateTime get endOfYear => DateTime(year, 12, 31, 23, 59, 59, 999);
-
   /// Gets the quarter of the year (1-4).
   int get quarter => ((month - 1) ~/ 3) + 1;
 
@@ -77,23 +57,11 @@ extension FalconToolDateTimeExtensions on DateTime {
     return 1 + (daysSinceFirstWeek / 7).floor();
   }
 
-  /// Checks if this date is yesterday.
-  bool get isYesterday {
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return year == yesterday.year &&
-        month == yesterday.month &&
-        day == yesterday.day;
-  }
-
   /// Checks if this date is in the past.
   bool get isPast => isBefore(DateTime.now());
 
   /// Checks if this date is in the future.
   bool get isFuture => isAfter(DateTime.now());
-
-  /// Checks if this date is on a weekday.
-  bool get isWeekday =>
-      weekday != DateTime.saturday && weekday != DateTime.sunday;
 
   /// Checks if this date is in the same day as another date.
   bool isSameDay(DateTime other) =>
@@ -347,7 +315,7 @@ extension FalconToolDateTimeExtensions on DateTime {
     if (isToday) {
       return Intl.message('Today', name: 'today');
     }
-    if (isYesterday) {
+    if (wasYesterday) {
       return Intl.message('Yesterday', name: 'yesterday');
     }
     if (isTomorrow) {
