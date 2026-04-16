@@ -194,18 +194,14 @@ extension FalconToolDateTimeExtensions on DateTime {
   ///
   /// Returns localized 'Today', 'Yesterday', 'Tomorrow', or the formatted date.
   String humanReadableDay({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-
     if (isToday) {
-      return Intl.message('Today', name: 'today');
+      return Intl.message('Today', name: 'today', locale: locale);
     }
     if (wasYesterday) {
-      return Intl.message('Yesterday', name: 'yesterday');
+      return Intl.message('Yesterday', name: 'yesterday', locale: locale);
     }
     if (isTomorrow) {
-      return Intl.message('Tomorrow', name: 'tomorrow');
+      return Intl.message('Tomorrow', name: 'tomorrow', locale: locale);
     }
     return format('EEEE, MMM dd', locale: locale);
   }
@@ -307,10 +303,6 @@ extension FalconToolDurationExtensions on Duration {
   /// Duration(days: 1, hours: 2).toHumanReadable(); // '1d 2h'
   /// ```
   String toHumanReadable({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-
     final days = inDays;
     final hours = inHours.remainder(24);
     final minutes = inMinutes.remainder(60);
@@ -318,19 +310,43 @@ extension FalconToolDurationExtensions on Duration {
 
     final parts = <String>[];
     if (days > 0) {
-      parts.add(Intl.message('${days}d', name: 'daysShort', args: [days]));
+      parts.add(
+        Intl.message(
+          '${days}d',
+          name: 'daysShort',
+          args: [days],
+          locale: locale,
+        ),
+      );
     }
     if (hours > 0) {
-      parts.add(Intl.message('${hours}h', name: 'hoursShort', args: [hours]));
+      parts.add(
+        Intl.message(
+          '${hours}h',
+          name: 'hoursShort',
+          args: [hours],
+          locale: locale,
+        ),
+      );
     }
     if (minutes > 0) {
       parts.add(
-        Intl.message('${minutes}m', name: 'minutesShort', args: [minutes]),
+        Intl.message(
+          '${minutes}m',
+          name: 'minutesShort',
+          args: [minutes],
+          locale: locale,
+        ),
       );
     }
     if (seconds > 0 || parts.isEmpty) {
       parts.add(
-        Intl.message('${seconds}s', name: 'secondsShort', args: [seconds]),
+        Intl.message(
+          '${seconds}s',
+          name: 'secondsShort',
+          args: [seconds],
+          locale: locale,
+        ),
       );
     }
 
