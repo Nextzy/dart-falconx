@@ -3,10 +3,10 @@ import 'package:dart_faltool/lib.dart';
 export 'base32.dart';
 export 'decoded_typeid.dart';
 
-const separator = '_';
-
 /// A class to generate and decode TypeIDs per the [specification](https://github.com/jetify-com/typeid/tree/main/spec)
 class TypeId {
+  static const _separator = '_';
+
   /// Generates a TypeID with the given prefix. provide an empty string for
   /// no prefix. Prefixes must be lowercase letters [a-z] and less than 64
   /// characters
@@ -19,14 +19,14 @@ class TypeId {
     if (prefix.isEmpty) {
       return base32Encoded;
     } else {
-      return "$prefix$separator$base32Encoded";
+      return "$prefix$_separator$base32Encoded";
     }
   }
 
   /// Decodes a TypeID into a [DecodedTypeId]. Throws [FormatException] if
   /// the provided TypeID is invalid
   static DecodedTypeId decode(String typeid) {
-    final parts = _splitLast(typeid, separator);
+    final parts = _splitLast(typeid, _separator);
 
     if (parts.length == 1) {
       parts.insert(0, '');
@@ -60,8 +60,8 @@ class TypeId {
       throw FormatException('Prefix too long');
     }
 
-    if (prefix.startsWith(separator) || prefix.endsWith(separator)) {
-      throw FormatException('Prefix cannot start or end with $separator');
+    if (prefix.startsWith(_separator) || prefix.endsWith(_separator)) {
+      throw FormatException('Prefix cannot start or end with $_separator');
     }
 
     // ensure all characters fall within [a-z_]
