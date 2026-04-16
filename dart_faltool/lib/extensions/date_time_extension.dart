@@ -2,7 +2,7 @@ import 'package:dart_faltool/lib.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 /// Extension methods for DateTime manipulation and formatting.
-/// 
+///
 /// Provides comprehensive utilities for date/time operations including
 /// formatting, comparisons, calculations, and timezone handling.
 extension FalconToolDateTimeExtensions on DateTime {
@@ -25,34 +25,27 @@ extension FalconToolDateTimeExtensions on DateTime {
     final jan1 = DateTime(year, 1, 1);
     final daysToThursday = (4 - jan1.weekday + 7) % 7;
     final firstThursday = jan1.add(Duration(days: daysToThursday));
-    
+
     // If this date is before the first Thursday, it belongs to the
     // previous year's last week
     if (isBefore(firstThursday.subtract(const Duration(days: 3)))) {
       // This is week 52 or 53 of the previous year
       final prevYearJan1 = DateTime(year - 1, 1, 1);
-      final prevDaysToThursday =
-          (4 - prevYearJan1.weekday + 7) % 7;
-      final prevFirstThursday =
-          prevYearJan1.add(Duration(days: prevDaysToThursday));
-      final lastWeekStart =
-          DateTime(year - 1, 12, 31).subtract(
+      final prevDaysToThursday = (4 - prevYearJan1.weekday + 7) % 7;
+      final prevFirstThursday = prevYearJan1.add(
+        Duration(days: prevDaysToThursday),
+      );
+      final lastWeekStart = DateTime(year - 1, 12, 31).subtract(
         Duration(
-          days: (DateTime(year - 1, 12, 31).weekday - 1 + 7)
-              % 7,
+          days: (DateTime(year - 1, 12, 31).weekday - 1 + 7) % 7,
         ),
       );
-      return 1 +
-          lastWeekStart
-              .difference(prevFirstThursday)
-              .inDays ~/
-              7;
+      return 1 + lastWeekStart.difference(prevFirstThursday).inDays ~/ 7;
     }
-    
+
     // Calculate the Monday of the week containing the first Thursday
-    final firstWeekMonday =
-        firstThursday.subtract(const Duration(days: 3));
-    
+    final firstWeekMonday = firstThursday.subtract(const Duration(days: 3));
+
     // Calculate weeks from the first week's Monday
     final daysSinceFirstWeek = difference(firstWeekMonday).inDays;
     return 1 + (daysSinceFirstWeek / 7).floor();
@@ -86,12 +79,12 @@ extension FalconToolDateTimeExtensions on DateTime {
   DateTime subtractDays(int days) => subtract(Duration(days: days));
 
   /// Adds the specified number of months.
-  /// 
+  ///
   /// Handles month overflow correctly (e.g., Jan 31 + 1 month = Feb 28/29).
   DateTime addMonths(int months) {
     var newYear = year;
     var newMonth = month + months;
-    
+
     while (newMonth > 12) {
       newYear++;
       newMonth -= 12;
@@ -100,24 +93,40 @@ extension FalconToolDateTimeExtensions on DateTime {
       newYear--;
       newMonth += 12;
     }
-    
+
     final newDay = day.clamp(1, DateTime(newYear, newMonth + 1, 0).day);
-    return DateTime(newYear, newMonth, newDay, hour, minute, second,
-        millisecond, microsecond);
+    return DateTime(
+      newYear,
+      newMonth,
+      newDay,
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+    );
   }
 
   /// Subtracts the specified number of months.
   DateTime subtractMonths(int months) => addMonths(-months);
 
   /// Adds the specified number of years.
-  DateTime addYears(int years) => DateTime(year + years, month, day, hour, 
-      minute, second, millisecond, microsecond);
+  DateTime addYears(int years) => DateTime(
+    year + years,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+  );
 
   /// Subtracts the specified number of years.
   DateTime subtractYears(int years) => addYears(-years);
 
   /// Gets the next occurrence of a specific weekday.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// // Get next Monday
@@ -139,7 +148,7 @@ extension FalconToolDateTimeExtensions on DateTime {
   // Formatting
 
   /// Formats the date using the specified pattern.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// DateTime.now().format('yyyy-MM-dd'); // '2023-05-15'
@@ -182,13 +191,13 @@ extension FalconToolDateTimeExtensions on DateTime {
   }
 
   /// Gets a human-readable string for the day with localization support.
-  /// 
+  ///
   /// Returns localized 'Today', 'Yesterday', 'Tomorrow', or the formatted date.
   String humanReadableDay({String? locale}) {
     if (locale != null) {
       Intl.defaultLocale = locale;
     }
-    
+
     if (isToday) {
       return Intl.message('Today', name: 'today');
     }
@@ -210,7 +219,7 @@ extension FalconToolDateTimeExtensions on DateTime {
   int get toJsTimestamp => millisecondsSinceEpoch;
 
   /// Gets the age in years from this date to now.
-  /// 
+  ///
   /// Useful for calculating someone's age from their birthdate.
   int get age {
     final now = DateTime.now();
@@ -222,7 +231,7 @@ extension FalconToolDateTimeExtensions on DateTime {
   }
 
   /// Gets the number of days until this date.
-  /// 
+  ///
   /// Returns negative values for dates in the future.
   int get daysUntil => DateTime.now().difference(this).inDays;
 
@@ -233,7 +242,7 @@ extension FalconToolDateTimeExtensions on DateTime {
 /// Extension methods for int to DateTime conversions.
 extension FalconToolIntToDateTimeExtensions on int {
   /// Converts Unix timestamp (seconds) to DateTime.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 1684156800.fromUnixToDateTime; // 2023-05-15 12:00:00 UTC
@@ -291,7 +300,7 @@ extension FalconToolDateTimeNullExtensions on DateTime? {
 /// Extension methods for Duration manipulation.
 extension FalconToolDurationExtensions on Duration {
   /// Formats the duration as a human-readable string with localization support.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Duration(hours: 2, minutes: 30).toHumanReadable(); // '2h 30m'
@@ -309,20 +318,20 @@ extension FalconToolDurationExtensions on Duration {
 
     final parts = <String>[];
     if (days > 0) {
-      parts.add(Intl.message('${days}d', 
-          name: 'daysShort', args: [days]));
+      parts.add(Intl.message('${days}d', name: 'daysShort', args: [days]));
     }
     if (hours > 0) {
-      parts.add(Intl.message('${hours}h', 
-          name: 'hoursShort', args: [hours]));
+      parts.add(Intl.message('${hours}h', name: 'hoursShort', args: [hours]));
     }
     if (minutes > 0) {
-      parts.add(Intl.message('${minutes}m', 
-          name: 'minutesShort', args: [minutes]));
+      parts.add(
+        Intl.message('${minutes}m', name: 'minutesShort', args: [minutes]),
+      );
     }
     if (seconds > 0 || parts.isEmpty) {
-      parts.add(Intl.message('${seconds}s', 
-          name: 'secondsShort', args: [seconds]));
+      parts.add(
+        Intl.message('${seconds}s', name: 'secondsShort', args: [seconds]),
+      );
     }
 
     return parts.join(' ');
@@ -337,10 +346,10 @@ extension FalconToolDurationExtensions on Duration {
   }
 
   /// Gets the total number of weeks in the duration.
-  /// 
+  ///
   /// This property is now provided by dartx package (via time package).
   /// Use: duration.inWeeks
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Duration(days: 14).inWeeks; // 2
@@ -351,18 +360,18 @@ extension FalconToolDurationExtensions on Duration {
   double get inYears => inDays / 365.25;
 
   /// Adds another duration to this one.
-  Duration operator +(Duration other) => 
+  Duration operator +(Duration other) =>
       Duration(microseconds: inMicroseconds + other.inMicroseconds);
 
   /// Subtracts another duration from this one.
-  Duration operator -(Duration other) => 
+  Duration operator -(Duration other) =>
       Duration(microseconds: inMicroseconds - other.inMicroseconds);
 
   /// Multiplies the duration by a factor.
-  Duration operator *(num factor) => 
+  Duration operator *(num factor) =>
       Duration(microseconds: (inMicroseconds * factor).round());
 
   /// Divides the duration by a factor.
-  Duration operator /(num factor) => 
+  Duration operator /(num factor) =>
       Duration(microseconds: (inMicroseconds / factor).round());
 }
