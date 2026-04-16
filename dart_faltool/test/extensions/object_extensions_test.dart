@@ -65,8 +65,7 @@ void main() {
 
       test('should work with type conversion', () {
         const number = 42;
-        final text =
-            number.map((value) => 'Number: $value');
+        final text = number.map((value) => 'Number: $value');
         expect(text, 'Number: 42');
       });
     });
@@ -74,15 +73,13 @@ void main() {
     group('mapOr', () {
       test('should transform non-null value', () {
         const name = 'John';
-        final length =
-            name.mapOr((value) => value.length, 0);
+        final length = name.mapOr((value) => value.length, 0);
         expect(length, 4);
       });
 
       test('should return default for null value', () {
         String? name;
-        final length =
-            name.mapOr((value) => value.length, 0);
+        final length = name.mapOr((value) => value.length, 0);
         expect(length, 0);
       });
     });
@@ -181,22 +178,19 @@ void main() {
     group('takeUnless', () {
       test('should return value when predicate is false', () {
         const input = 'valid';
-        final validInput =
-            input.takeUnless((value) => value.isEmpty);
+        final validInput = input.takeUnless((value) => value.isEmpty);
         expect(validInput, 'valid');
       });
 
       test('should return null when predicate is true', () {
         const input = '';
-        final validInput =
-            input.takeUnless((value) => value.isEmpty);
+        final validInput = input.takeUnless((value) => value.isEmpty);
         expect(validInput, null);
       });
 
       test('should return null when value is null', () {
         String? input;
-        final validInput =
-            input.takeUnless((value) => value.isEmpty);
+        final validInput = input.takeUnless((value) => value.isEmpty);
         expect(validInput, null);
       });
     });
@@ -372,10 +366,11 @@ void main() {
       });
 
       test('should chain multiple also calls', () {
-        final user = User('John', 25)
-            .also((u) => u.age = 30)
-            .also((u) => u.email = 'john@example.com')
-            ..also((u) => u.name = u.name.toUpperCase());
+        final user =
+            User('John', 25)
+                .also((u) => u.age = 30)
+                .also((u) => u.email = 'john@example.com')
+              ..also((u) => u.name = u.name.toUpperCase());
 
         expect(user.name, 'JOHN');
         expect(user.age, 30);
