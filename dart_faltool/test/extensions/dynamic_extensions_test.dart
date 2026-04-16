@@ -1,4 +1,3 @@
-import 'package:big_decimal/big_decimal.dart';
 import 'package:dart_faltool/lib.dart';
 import 'package:test/test.dart';
 
@@ -304,8 +303,10 @@ void main() {
       });
 
       test('parses BigInt string', () {
-        expect(('12345678901234567890' as Object?).asBigInt,
-            BigInt.parse('12345678901234567890'));
+        expect(
+          ('12345678901234567890' as Object?).asBigInt,
+          BigInt.parse('12345678901234567890'),
+        );
       });
 
       test('throws FormatException for null', () {
@@ -366,7 +367,10 @@ void main() {
       });
 
       test('parses BigDecimal string', () {
-        expect(('3.14159' as Object?).asBigDecimal, BigDecimal.parse('3.14159'));
+        expect(
+          ('3.14159' as Object?).asBigDecimal,
+          BigDecimal.parse('3.14159'),
+        );
       });
 
       test('throws FormatException for null', () {
@@ -384,8 +388,10 @@ void main() {
 
     group('asBigDecimalOrNull', () {
       test('returns value for valid input', () {
-        expect((BigDecimal.parse('1.1') as Object?).asBigDecimalOrNull,
-            BigDecimal.parse('1.1'));
+        expect(
+          (BigDecimal.parse('1.1') as Object?).asBigDecimalOrNull,
+          BigDecimal.parse('1.1'),
+        );
       });
 
       test('returns null for null', () {
@@ -446,7 +452,9 @@ void main() {
 
       test('throws FormatException for invalid string', () {
         expect(
-            () => ('not-a-date' as Object?).asDateTime, throwsFormatException);
+          () => ('not-a-date' as Object?).asDateTime,
+          throwsFormatException,
+        );
       });
 
       test('throws FormatException for unsupported type', () {
@@ -474,8 +482,10 @@ void main() {
     group('asDateTimeOr', () {
       test('returns value for valid input', () {
         final fallback = DateTime(2000);
-        expect(('2024-01-01' as Object?).asDateTimeOr(fallback),
-            DateTime(2024, 1, 1));
+        expect(
+          ('2024-01-01' as Object?).asDateTimeOr(fallback),
+          DateTime(2024, 1, 1),
+        );
       });
 
       test('returns default for null', () {
@@ -498,12 +508,17 @@ void main() {
       });
 
       test('converts int to Duration (milliseconds)', () {
-        expect((5000 as Object?).asDuration, const Duration(milliseconds: 5000));
+        expect(
+          (5000 as Object?).asDuration,
+          const Duration(milliseconds: 5000),
+        );
       });
 
       test('parses numeric string as milliseconds', () {
         expect(
-            ('3000' as Object?).asDuration, const Duration(milliseconds: 3000));
+          ('3000' as Object?).asDuration,
+          const Duration(milliseconds: 3000),
+        );
       });
 
       test('parses HH:MM:SS string', () {
@@ -526,8 +541,9 @@ void main() {
 
       test('throws FormatException for invalid string', () {
         expect(
-            () => ('not-a-duration' as Object?).asDuration,
-            throwsFormatException);
+          () => ('not-a-duration' as Object?).asDuration,
+          throwsFormatException,
+        );
       });
 
       test('throws FormatException for unsupported type', () {
@@ -588,8 +604,7 @@ void main() {
       });
 
       test('throws FormatException for JSON string that is not a list', () {
-        expect(
-            () => ('{"a":1}' as Object?).asList, throwsFormatException);
+        expect(() => ('{"a":1}' as Object?).asList, throwsFormatException);
       });
 
       test('throws FormatException for non-JSON string', () {
@@ -637,8 +652,10 @@ void main() {
       });
 
       test('parses JSON object string', () {
-        expect(('{"x": 1, "y": "hello"}' as Object?).asMap,
-            {'x': 1, 'y': 'hello'});
+        expect(('{"x": 1, "y": "hello"}' as Object?).asMap, {
+          'x': 1,
+          'y': 'hello',
+        });
       });
 
       test('throws FormatException for null', () {
@@ -678,8 +695,7 @@ void main() {
       });
 
       test('returns default for null', () {
-        expect((null as Object?).asMapOr({'default': true}),
-            {'default': true});
+        expect((null as Object?).asMapOr({'default': true}), {'default': true});
       });
 
       test('returns default for invalid input', () {
