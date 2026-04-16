@@ -7,9 +7,9 @@ export 'decoded_typeid.dart';
 class TypeId {
   static const _separator = '_';
 
-  /// Generates a TypeID with the given prefix. provide an empty string for
+  /// Generates a TypeID with the given prefix. Provide an empty string for
   /// no prefix. Prefixes must be lowercase letters [a-z] and less than 64
-  /// characters
+  /// characters.
   static String generate(String prefix) {
     _checkPrefix(prefix);
 
@@ -19,12 +19,12 @@ class TypeId {
     if (prefix.isEmpty) {
       return base32Encoded;
     } else {
-      return "$prefix$_separator$base32Encoded";
+      return '$prefix$_separator$base32Encoded';
     }
   }
 
   /// Decodes a TypeID into a [DecodedTypeId]. Throws [FormatException] if
-  /// the provided TypeID is invalid
+  /// the provided TypeID is invalid.
   static DecodedTypeId decode(String typeid) {
     final parts = _splitLast(typeid, _separator);
 
@@ -37,7 +37,9 @@ class TypeId {
         );
       }
     } else {
-      throw FormatException('Invalid typeid. prefix cannot contain _');
+      throw const FormatException(
+        'Invalid typeid. prefix cannot contain _',
+      );
     }
 
     final prefix = parts[0];
@@ -47,41 +49,62 @@ class TypeId {
 
     try {
       final base32Decoded = Base32.decode(suffix);
-      final uuid = UuidValue.fromByteList(base32Decoded);
+      final uuidValue = UuidValue.fromByteList(base32Decoded);
 
-      return DecodedTypeId(prefix: prefix, suffix: suffix, uuid: uuid);
-    } catch (e) {
-      throw FormatException('Invalid suffix: $e');
+      return DecodedTypeId(prefix: prefix, suffix: suffix, uuid: uuidValue);
+    } on FormatException {
+      rethrow;
     }
   }
 
-  static _checkPrefix(String prefix) {
+  /// Returns `true` if the given string is a valid TypeID.
+  static bool isValid(String typeid) {
+    try {
+      decode(typeid);
+      return true;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  /// Decodes a TypeID, returning `null` if the input is invalid
+  /// instead of throwing.
+  static DecodedTypeId? decodeOrNull(String typeid) {
+    try {
+      return decode(typeid);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static void _checkPrefix(String prefix) {
     if (prefix.length > 63) {
-      throw FormatException('Prefix too long');
+      throw const FormatException('Prefix too long');
     }
 
     if (prefix.startsWith(_separator) || prefix.endsWith(_separator)) {
-      throw FormatException('Prefix cannot start or end with $_separator');
+      throw const FormatException('Prefix cannot start or end with _');
     }
 
-    // ensure all characters fall within [a-z_]
-    final isValid = prefix.runes.every(
-      (code) => (code > 96 && code < 123) || code == 95,
+    // ensure all characters fall within [a-z]
+    final isValidChars = prefix.runes.every(
+      (code) => code > 96 && code < 123,
     );
 
-    if (!isValid) {
-      throw FormatException('prefix must only contain lowercase letters [a-z]');
+    if (!isValidChars) {
+      throw const FormatException(
+        'Prefix must only contain lowercase letters [a-z]',
+      );
     }
   }
 
   static List<String> _splitLast(String input, String delimiter) {
-    int lastIndex = input.lastIndexOf(delimiter);
+    final lastIndex = input.lastIndexOf(delimiter);
     if (lastIndex == -1) {
-      // Delimiter not found, return the input as a single element list
       return [input];
     }
-    String beforeLast = input.substring(0, lastIndex);
-    String afterLast = input.substring(lastIndex + delimiter.length);
+    final beforeLast = input.substring(0, lastIndex);
+    final afterLast = input.substring(lastIndex + delimiter.length);
     return [beforeLast, afterLast];
   }
 }
