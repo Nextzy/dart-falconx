@@ -308,9 +308,9 @@ extension FalconToolObject<T> on T {
   ///
   /// Example:
   /// ```dart
-  /// final numbers = 42.asList(); // [42]
+  /// final numbers = 42.wrapInList(); // [42]
   /// ```
-  List<T> asList() => [this];
+  List<T> wrapInList() => [this];
 
   /// Wraps the value in a set.
   ///
