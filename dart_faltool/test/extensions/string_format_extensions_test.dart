@@ -87,7 +87,7 @@ void main() {
         expect('0891234567'.maskPhoneNumber(), '08******67');
         expect(
           '+66891234567'.maskPhoneNumber(),
-          '+66********67',
+          '+66*******67',
         );
         expect(
           '089-123-4567'.maskPhoneNumber(),
