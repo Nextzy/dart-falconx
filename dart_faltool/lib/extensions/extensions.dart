@@ -6,6 +6,7 @@ library;
 
 export 'base64_extensions.dart';
 export 'date_time_extension.dart';
+export 'dynamic_extensions.dart';
 export 'enum_extensions.dart';
 export 'future_extensions.dart';
 export 'iterable_extensions.dart';
