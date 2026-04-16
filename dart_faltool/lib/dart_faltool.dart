@@ -30,6 +30,7 @@ export 'package:numeral/numeral.dart';
 export 'package:retry/retry.dart';
 export 'package:rxdart/rxdart.dart';
 export 'package:stack_trace/stack_trace.dart';
+export 'package:timeago/timeago.dart';
 export 'package:uuid/uuid.dart';
 export 'package:version/version.dart';
 
