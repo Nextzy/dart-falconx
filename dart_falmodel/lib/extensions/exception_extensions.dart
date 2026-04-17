@@ -129,9 +129,9 @@ extension FalconObjectExceptionExtensions on Object? {
   Object _detectErrorType(Object? exception) {
     // ─── Connectivity (specific) ───
     if (exception is SocketException) return ConnectivityErrorType.socket;
-    if (exception is TlsException) return ConnectivityErrorType.tls;
     if (exception is HandshakeException) return ConnectivityErrorType.tls;
     if (exception is CertificateException) return ConnectivityErrorType.tls;
+    if (exception is TlsException) return ConnectivityErrorType.tls;
     if (exception is HttpException) return ConnectivityErrorType.http;
 
     // ─── Storage (specific) ───

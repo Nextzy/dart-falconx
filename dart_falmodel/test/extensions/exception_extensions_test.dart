@@ -7,7 +7,7 @@ void main() {
   /// Helper: calls toException() on an object and returns the resolved type.
   Object detectType(Object exception) => exception.toException().type;
 
-  group('_detectErrorType — Connectivity', () {
+  group('_detectErrorType — Input', () {
     test('FormatException maps to InputErrorType.invalidFormat', () {
       expect(detectType(const FormatException()), InputErrorType.invalidFormat);
     });
