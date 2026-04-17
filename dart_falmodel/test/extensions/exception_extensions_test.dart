@@ -15,8 +15,12 @@ void main() {
     test('TypeError maps to InputErrorType.type', () {
       // Create a real TypeError by catching one
       try {
-        final dynamic value = 'not an int';
-        final int _ = value as int; // ignore: unused_local_variable
+        const dynamic value = 'not an int';
+        // Cast will throw TypeError at runtime — variable is never used.
+        // ignore: unused_local_variable
+        final result = value as int;
+        // We need to catch TypeError to test _detectErrorType mapping.
+        // ignore: avoid_catching_errors
       } on TypeError catch (e) {
         expect(detectType(e), InputErrorType.type);
         return;
@@ -88,6 +92,8 @@ void main() {
 
   group('toCommonResultFailure defaults', () {
     test('uses SystemErrorType.unknown when no type given', () {
+      // Extension is on Exception?, must be nullable to test.
+      // ignore: unnecessary_nullable_for_final_variable_declarations
       final Exception? ex = Exception('test');
       final result = ex.toCommonResultFailure();
       expect(result.exception.type, SystemErrorType.unknown);
