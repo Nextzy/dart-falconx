@@ -14,3 +14,9 @@ class CertificateException implements Exception {}
 class FileSystemException implements Exception {}
 
 class IOException implements Exception {}
+
+class SocketException implements Exception {}
+
+class TlsException implements Exception {}
+
+class PathNotFoundException implements Exception {}
