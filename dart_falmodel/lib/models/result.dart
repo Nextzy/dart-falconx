@@ -236,7 +236,7 @@ class Result<T> extends Equatable {
     if (_isSuccess) {
       return Result.failure(
         CommonException(
-          type: DefaultErrorType.unexpected,
+          type: SystemErrorType.unexpected,
           userMessage: message ?? 'Unexpected success',
         ),
       );
