@@ -35,15 +35,15 @@ enum JsonRpcRequestErrorType {
       );
 }
 
-enum RemoteExternalApiErrorType {
+enum JsonRpcExternalApiErrorType {
   INVALID_JSON_RPC,
   BAD_REQUEST,
   INCORRECT_TYPE,
   INVALID_VALUE,
   CONFLICTING_PARAMETERS;
 
-  static RemoteExternalApiErrorType fromJson(String value) =>
-      RemoteExternalApiErrorType.values.firstWhere(
+  static JsonRpcExternalApiErrorType fromJson(String value) =>
+      JsonRpcExternalApiErrorType.values.firstWhere(
         (e) => e.name == value,
         orElse: () =>
             throw ArgumentError('Unknown RemoteExternalApiErrorCode: $value'),

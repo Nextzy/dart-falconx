@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:dart_faltool/lib.dart';
 import 'package:test/test.dart';
 

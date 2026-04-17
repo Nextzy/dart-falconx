@@ -9,23 +9,12 @@
 // ignore: unused_import
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
-// Pull in the internal preludes too so dart2js sees their full re-export
-// graph. A regression that re-introduces `dart:io` via these umbrellas
-// would otherwise slip past this smoke test.
-// ignore: unused_import
 import 'package:dart_falconnect/lib.dart';
-// ignore: unused_import
 import 'package:dart_falmodel/dart_falmodel.dart';
-// ignore: unused_import
 import 'package:dart_falmodel/lib.dart';
-// ignore: unused_import
 import 'package:dart_faltool/dart_faltool.dart';
-
 import '_stub_http_client.dart';
 
-// Prevents the compiler from tree-shaking the touched types.
-// The condition is never true so the throw never fires, but
-// dart2js cannot prove it, so the argument is kept live.
 void _sink(Object? o) {
   if (identical(o, const Object())) throw StateError('$o');
 }
