@@ -48,7 +48,7 @@ extension FalconExceptionExtensions<T> on Exception? {
     return Result.failure(
       CommonException(
         category: category,
-        type: type ?? DefaultErrorType.unknown,
+        type: type ?? SystemErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage ?? toString(),
         originalException: this,
@@ -71,7 +71,7 @@ extension FalconObjectExceptionExtensions on Object? {
     if (exception == null) {
       return CommonException(
         category: category,
-        type: type ?? DefaultErrorType.unknown,
+        type: type ?? SystemErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage,
         originalException: null,
@@ -128,31 +128,31 @@ extension FalconObjectExceptionExtensions on Object? {
 
   Object _detectErrorType(Object? exception) {
     // Network & Connection
-    if (exception is HttpException) return DefaultErrorType.system;
-    if (exception is HandshakeException) return DefaultErrorType.system;
-    if (exception is CertificateException) return DefaultErrorType.system;
+    if (exception is HttpException) return SystemErrorType.system;
+    if (exception is HandshakeException) return SystemErrorType.system;
+    if (exception is CertificateException) return SystemErrorType.system;
 
     // Timeout
-    if (exception is TimeoutException) return DefaultErrorType.system;
+    if (exception is TimeoutException) return TimeoutErrorType.timeout;
 
     // Format & Parsing
-    if (exception is FormatException) return DefaultErrorType.invalidFormat;
-    if (exception is TypeError) return DefaultErrorType.unexpected;
+    if (exception is FormatException) return InputErrorType.invalidFormat;
+    if (exception is TypeError) return SystemErrorType.unexpected;
 
     // File & Storage
-    if (exception is FileSystemException) return DefaultErrorType.storage;
-    if (exception is IOException) return DefaultErrorType.storage;
+    if (exception is FileSystemException) return StorageErrorType.fileSystem;
+    if (exception is IOException) return StorageErrorType.storage;
 
     // State & Argument
-    if (exception is StateError) return DefaultErrorType.system;
-    if (exception is ArgumentError) return DefaultErrorType.invalidInput;
-    if (exception is RangeError) return DefaultErrorType.invalidInput;
-    if (exception is UnsupportedError) return DefaultErrorType.unexpected;
+    if (exception is StateError) return SystemErrorType.system;
+    if (exception is ArgumentError) return InputErrorType.argument;
+    if (exception is RangeError) return InputErrorType.outOfRange;
+    if (exception is UnsupportedError) return SystemErrorType.unexpected;
 
     // Async
-    if (exception is AsyncError) return DefaultErrorType.system;
+    if (exception is AsyncError) return AsyncErrorType.future;
 
-    return DefaultErrorType.unknown;
+    return SystemErrorType.unknown;
   }
 
   ///========================= PRIVATE METHOD =========================///

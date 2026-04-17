@@ -6,40 +6,122 @@ enum DefaultErrorCategory {
   unknown,
 }
 
-enum DefaultErrorType {
-  unknown,
-  system,
-  unexpected,
-  validation,
-  invalidInput,
-  invalidFormat,
-  notFound,
-  storage,
-  cache,
-  database,
-  businessRule,
-  thirdParty,
-  permission,
-  deviceNotSupported;
+sealed class DefaultErrorType {
+  String get defaultMessage;
+}
 
-  String get defaultMessage {
-    return switch (this) {
-      DefaultErrorType.unknown => 'Something went wrong. Please try again.',
-      DefaultErrorType.system => 'System error occurred.',
-      DefaultErrorType.unexpected => 'An unexpected error occurred.',
-      DefaultErrorType.validation => 'Invalid input. Please check your data.',
-      DefaultErrorType.invalidInput => 'Invalid input provided.',
-      DefaultErrorType.invalidFormat => 'Invalid format.',
-      DefaultErrorType.notFound => 'The requested resource was not found.',
-      DefaultErrorType.storage => 'Storage error occurred.',
-      DefaultErrorType.cache => 'Cache error occurred.',
-      DefaultErrorType.database => 'Database error occurred.',
-      DefaultErrorType.businessRule => 'Operation not allowed.',
-      DefaultErrorType.thirdParty => 'External service error.',
-      DefaultErrorType.permission => 'Permission denied.',
-      DefaultErrorType.deviceNotSupported => 'This device is not supported.',
-    };
-  }
+enum SystemErrorType implements DefaultErrorType {
+  unknown('Something went wrong. Please try again.'),
+  system('System error occurred.'),
+  unexpected('An unexpected error occurred.'),
+  concurrency('Concurrent modification error.');
+
+  const SystemErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum InputErrorType implements DefaultErrorType {
+  validation('Invalid input. Please check your data.'),
+  invalidFormat('Invalid format.'),
+  invalidValue('Invalid value provided.'),
+  outOfRange('Value out of range.'),
+  argument('Invalid argument provided.'),
+  type('Type error occurred.');
+
+  const InputErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum TimeoutErrorType implements DefaultErrorType {
+  timeout('Request timed out. Please try again.'),
+  deadline('Operation deadline exceeded.');
+
+  const TimeoutErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum StorageErrorType implements DefaultErrorType {
+  storage('Storage error occurred.'),
+  cache('Cache error occurred.'),
+  database('Database error occurred.'),
+  fileSystem('File system error.');
+
+  const StorageErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum ConnectivityErrorType implements DefaultErrorType {
+  connection('Connection error.'),
+  socket('Socket error.'),
+  tls('TLS/SSL error.'),
+  dns('DNS resolution failed.'),
+  http('HTTP error.');
+
+  const ConnectivityErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum AsyncErrorType implements DefaultErrorType {
+  stream('Stream error occurred.'),
+  future('Future error occurred.'),
+  isolate('Isolate error occurred.');
+
+  const AsyncErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum AccessErrorType implements DefaultErrorType {
+  permission('Permission denied.'),
+  unauthorized('Unauthorized access.'),
+  deviceNotSupported('This device is not supported.');
+
+  const AccessErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum ExternalErrorType implements DefaultErrorType {
+  thirdParty('External service error.'),
+  serviceUnavailable('Service is currently unavailable.');
+
+  const ExternalErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
+}
+
+enum BusinessErrorType implements DefaultErrorType {
+  businessRule('Operation not allowed.'),
+  notFound('The requested resource was not found.'),
+  conflict('A conflict occurred.'),
+  deprecated('This feature is deprecated.');
+
+  const BusinessErrorType(this._message);
+  final String _message;
+
+  @override
+  String get defaultMessage => _message;
 }
 
 class CommonException implements Exception {
