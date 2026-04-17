@@ -17,6 +17,7 @@ enum SystemErrorType implements DefaultErrorType {
   concurrency('Concurrent modification error.');
 
   const SystemErrorType(this._message);
+
   final String _message;
 
   @override
@@ -32,6 +33,7 @@ enum InputErrorType implements DefaultErrorType {
   type('Type error occurred.');
 
   const InputErrorType(this._message);
+
   final String _message;
 
   @override
@@ -43,6 +45,7 @@ enum TimeoutErrorType implements DefaultErrorType {
   deadline('Operation deadline exceeded.');
 
   const TimeoutErrorType(this._message);
+
   final String _message;
 
   @override
@@ -56,6 +59,7 @@ enum StorageErrorType implements DefaultErrorType {
   fileSystem('File system error.');
 
   const StorageErrorType(this._message);
+
   final String _message;
 
   @override
@@ -70,6 +74,7 @@ enum ConnectivityErrorType implements DefaultErrorType {
   http('HTTP error.');
 
   const ConnectivityErrorType(this._message);
+
   final String _message;
 
   @override
@@ -82,6 +87,7 @@ enum AsyncErrorType implements DefaultErrorType {
   isolate('Isolate error occurred.');
 
   const AsyncErrorType(this._message);
+
   final String _message;
 
   @override
@@ -94,6 +100,7 @@ enum AccessErrorType implements DefaultErrorType {
   deviceNotSupported('This device is not supported.');
 
   const AccessErrorType(this._message);
+
   final String _message;
 
   @override
@@ -105,6 +112,7 @@ enum ExternalErrorType implements DefaultErrorType {
   serviceUnavailable('Service is currently unavailable.');
 
   const ExternalErrorType(this._message);
+
   final String _message;
 
   @override
@@ -118,6 +126,7 @@ enum BusinessErrorType implements DefaultErrorType {
   deprecated('This feature is deprecated.');
 
   const BusinessErrorType(this._message);
+
   final String _message;
 
   @override
@@ -126,7 +135,6 @@ enum BusinessErrorType implements DefaultErrorType {
 
 class CommonException implements Exception {
   const CommonException({
-    this.category,
     required this.type,
     this.userMessage,
     this.developerMessage,
@@ -134,7 +142,6 @@ class CommonException implements Exception {
     this.stackTrace,
   });
 
-  final Object? category;
   final Object type;
   final String? userMessage;
   final String? developerMessage;
@@ -165,14 +172,12 @@ class CommonException implements Exception {
   }
 
   CommonException copyWith({
-    Object? category,
     Object? type,
     String? userMessage,
     String? developerMessage,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => CommonException(
-    category: category ?? this.category,
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
@@ -199,19 +204,14 @@ class CommonException implements Exception {
   }
 
   JsonRpcError toJsonRpcError({
-    JsonRpcErrorCategory? category,
     String? userMessage,
     String? developerMessage,
   }) {
-    final tmpCode = code;
-
-    final resolveCategory =
-        category ??
-        _resolveJsonRpcErrorCategory(category: this.category, code: type);
-    final resolveCode = (tmpCode is Enum) ? tmpCode.name : tmpCode.toString();
+    final resolveCategory = _resolveJsonRpcErrorCategory(type: type);
+    final resolveCode = (type is Enum) ? (type as Enum).name : type.toString();
 
     return JsonRpcError(
-      category: resolveCategory ?? JsonRpcErrorCategory.API_ERROR,
+      category: resolveCategory,
       code: resolveCode,
       userMessage:
           userMessage ??
@@ -237,17 +237,21 @@ class CommonException implements Exception {
     level: level,
   );
 
-  JsonRpcErrorCategory? _resolveJsonRpcErrorCategory({
-    required Object? category,
-    required Object? code,
-  }) {
-    return switch (category) {
-      JsonRpcErrorCategory() => category,
-      _ => switch (code) {
-        JsonRpcRequestErrorType() => JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
-        JsonRpcApiErrorType() => JsonRpcErrorCategory.API_ERROR,
-        _ => null,
-      },
-    };
-  }
+  JsonRpcErrorCategory _resolveJsonRpcErrorCategory({
+    required Object? type,
+  }) => switch (this) {
+    JsonRpcDomainLayerInternalApiException() ||
+    JsonRpcDatabaseException() => JsonRpcErrorCategory.API_ERROR,
+    JsonRpcDomainLayerExternalApiException() ||
+    JsonRpcDataLayerExternalApiException() =>
+      JsonRpcErrorCategory.EXTERNAL_API_ERROR,
+    JsonRpcDomainLayerInvalidRequestException() =>
+      JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
+    _ => switch (type) {
+      JsonRpcApiErrorType() => JsonRpcErrorCategory.API_ERROR,
+      JsonRpcExternalApiErrorType() => JsonRpcErrorCategory.EXTERNAL_API_ERROR,
+      JsonRpcRequestErrorType() => JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
+      _ => JsonRpcErrorCategory.API_ERROR,
+    },
+  };
 }

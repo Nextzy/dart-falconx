@@ -3,7 +3,7 @@ import 'package:dart_falmodel/extensions/_io_stubs.dart'
 import 'package:dart_falmodel/lib.dart';
 
 extension FalconExceptionExtensions<T> on Exception? {
-  Object? get code {
+  Object? get type {
     final exception = this;
     if (exception is CommonException) {
       return exception.type;
@@ -47,7 +47,6 @@ extension FalconExceptionExtensions<T> on Exception? {
   }) {
     return Result.failure(
       CommonException(
-        category: category,
         type: type ?? SystemErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage ?? toString(),
@@ -70,7 +69,6 @@ extension FalconObjectExceptionExtensions on Object? {
 
     if (exception == null) {
       return CommonException(
-        category: category,
         type: type ?? SystemErrorType.unknown,
         userMessage: userMessage,
         developerMessage: developerMessage,
@@ -100,7 +98,6 @@ extension FalconObjectExceptionExtensions on Object? {
 
     if (exception is Exception) {
       return CommonException(
-        category: category,
         type: detectedType,
         userMessage: resolveUserMessage,
         developerMessage: developerMessage ?? toString(),
@@ -110,7 +107,6 @@ extension FalconObjectExceptionExtensions on Object? {
     }
 
     return CommonException(
-      category: category,
       type: detectedType,
       userMessage: resolveUserMessage,
       developerMessage: developerMessage ?? toString(),

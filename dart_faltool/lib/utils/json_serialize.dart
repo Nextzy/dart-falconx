@@ -1,4 +1,3 @@
-import 'package:dart_faltool/lib.dart';
 
 class JsonSerializeUtil {
   static int dateTimeToUnix(DateTime dt) => dt.millisecondsSinceEpoch ~/ 1000;
