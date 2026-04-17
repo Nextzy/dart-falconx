@@ -75,3 +75,18 @@ hosting.*
 
 # Worktrees
 .worktrees/
+
+# === BMAD V6 ===
+
+# Compiled IDE artifacts — generate ใหม่ได้ด้วย `npx bmad-method install` ซ้ำ
+.claude/commands/bmad/
+.claude/commands/BMad/
+.claude/skills/bmad*
+.windsurf/workflows/bmad/
+
+# Runtime agent memory — state ของแต่ละ dev
+_bmad/_memory/*/memories.md
+_bmad/_memory/*/memories/
+
+# Auto-generated caches
+_bmad/_config/custom/
