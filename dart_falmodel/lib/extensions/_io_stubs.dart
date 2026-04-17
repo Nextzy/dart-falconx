@@ -7,16 +7,17 @@
 
 class HttpException implements Exception {}
 
-class HandshakeException implements Exception {}
+class TlsException implements Exception {}
 
-class CertificateException implements Exception {}
+class HandshakeException extends TlsException {}
 
-class FileSystemException implements Exception {}
+class CertificateException extends TlsException {}
 
 class IOException implements Exception {}
 
-class SocketException implements Exception {}
+class FileSystemException extends IOException {}
 
-class TlsException implements Exception {}
+class PathNotFoundException extends FileSystemException {}
 
-class PathNotFoundException implements Exception {}
+class SocketException extends IOException {}
+
