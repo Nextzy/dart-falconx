@@ -127,30 +127,42 @@ extension FalconObjectExceptionExtensions on Object? {
   }
 
   Object _detectErrorType(Object? exception) {
-    // Network & Connection
-    if (exception is HttpException) return SystemErrorType.system;
-    if (exception is HandshakeException) return SystemErrorType.system;
-    if (exception is CertificateException) return SystemErrorType.system;
+    // ─── Connectivity (specific) ───
+    if (exception is SocketException) return ConnectivityErrorType.socket;
+    if (exception is TlsException) return ConnectivityErrorType.tls;
+    if (exception is HandshakeException) return ConnectivityErrorType.tls;
+    if (exception is CertificateException) return ConnectivityErrorType.tls;
+    if (exception is HttpException) return ConnectivityErrorType.http;
 
-    // Timeout
+    // ─── Storage (specific) ───
+    if (exception is PathNotFoundException) return StorageErrorType.fileSystem;
+    if (exception is FileSystemException) return StorageErrorType.fileSystem;
+
+    // ─── Input ───
+    if (exception is FormatException) return InputErrorType.invalidFormat;
+    if (exception is TypeError) return InputErrorType.type;
+    if (exception is RangeError) return InputErrorType.outOfRange;
+    if (exception is ArgumentError) return InputErrorType.argument;
+    if (exception is NoSuchMethodError) return InputErrorType.type;
+
+    // ─── Timeout ───
     if (exception is TimeoutException) return TimeoutErrorType.timeout;
 
-    // Format & Parsing
-    if (exception is FormatException) return InputErrorType.invalidFormat;
-    if (exception is TypeError) return SystemErrorType.unexpected;
-
-    // File & Storage
-    if (exception is FileSystemException) return StorageErrorType.fileSystem;
-    if (exception is IOException) return StorageErrorType.storage;
-
-    // State & Argument
+    // ─── System (specific) ───
+    if (exception is ConcurrentModificationError) {
+      return SystemErrorType.concurrency;
+    }
+    if (exception is OutOfMemoryError) return SystemErrorType.system;
+    if (exception is StackOverflowError) return SystemErrorType.system;
     if (exception is StateError) return SystemErrorType.system;
-    if (exception is ArgumentError) return InputErrorType.argument;
-    if (exception is RangeError) return InputErrorType.outOfRange;
     if (exception is UnsupportedError) return SystemErrorType.unexpected;
 
-    // Async
-    if (exception is AsyncError) return AsyncErrorType.future;
+    // ─── Async ───
+    if (exception is AsyncError) return AsyncErrorType.stream;
+
+    // ─── Parent class fallback ───
+    if (exception is IOException) return StorageErrorType.storage;
+    if (exception is Error) return SystemErrorType.unexpected;
 
     return SystemErrorType.unknown;
   }
