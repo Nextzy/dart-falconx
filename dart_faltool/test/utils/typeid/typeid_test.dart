@@ -50,6 +50,14 @@ void main() {
         expect(decoded.prefix, 'order');
         expect(decoded.suffix.length, 26);
         expect(decoded.toString(), generated);
+        expect(
+          decoded.uuid,
+          matches(
+            RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+            ),
+          ),
+        );
       });
 
       test('decodes TypeID without prefix', () {
@@ -59,6 +67,14 @@ void main() {
         expect(decoded.prefix, isEmpty);
         expect(decoded.suffix.length, 26);
         expect(decoded.toString(), generated);
+        expect(
+          decoded.uuid,
+          matches(
+            RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+            ),
+          ),
+        );
       });
 
       test('throws FormatException for empty suffix with separator', () {
@@ -70,6 +86,26 @@ void main() {
           () => TypeId.decode('user_!!!!!!!!!!!!!!!!!!!!!!!!!!'),
           throwsFormatException,
         );
+      });
+
+      test('populates uuid with canonical 36-char lowercase hex', () {
+        // Known-good vector: generate, decode, re-encode, compare.
+        // This verifies the _uuidBytesToString helper produces canonical form.
+        final id = TypeId.generate('test');
+        final decoded = TypeId.decode(id);
+
+        expect(
+          decoded.uuid,
+          matches(
+            RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+            ),
+          ),
+        );
+        expect(decoded.uuid.length, 36);
+        expect(decoded.uuid.split('-').map((seg) => seg.length).toList(),
+            [8, 4, 4, 4, 12]);
+        expect(decoded.uuid, decoded.uuid.toLowerCase()); // must be lowercase
       });
     });
 

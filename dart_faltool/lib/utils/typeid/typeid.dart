@@ -127,7 +127,11 @@ Uint8List _uuidStringToBytes(String uuidString) {
 
 /// Formats a 16-byte UUID into the canonical 8-4-4-4-12 lowercase hex string.
 String _uuidBytesToString(Uint8List bytes) {
-  assert(bytes.length == 16, 'UUID must be exactly 16 bytes');
+  if (bytes.length != 16) {
+    throw FormatException(
+      'UUID bytes must be exactly 16, got ${bytes.length}',
+    );
+  }
   final hex = bytes
       .map((b) => b.toRadixString(16).padLeft(2, '0'))
       .join();
