@@ -10,9 +10,9 @@ class JsonRpcDomainLayerException extends CommonException {
   });
 }
 
-class JsonRpcDomainLayerInternalApiException
+class JsonRpcInternalApiDomainLayerException
     extends JsonRpcDomainLayerException {
-  const JsonRpcDomainLayerInternalApiException({
+  const JsonRpcInternalApiDomainLayerException({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -21,9 +21,9 @@ class JsonRpcDomainLayerInternalApiException
   });
 }
 
-class JsonRpcDomainLayerExternalApiException
+class JsonRpcExternalApiDomainLayerException
     extends JsonRpcDomainLayerException {
-  const JsonRpcDomainLayerExternalApiException({
+  const JsonRpcExternalApiDomainLayerException({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -32,13 +32,23 @@ class JsonRpcDomainLayerExternalApiException
   });
 }
 
-class JsonRpcDomainLayerInvalidRequestException
+class JsonRpcInvalidRequestDomainLayerException
     extends JsonRpcDomainLayerException {
-  const JsonRpcDomainLayerInvalidRequestException({
+  const JsonRpcInvalidRequestDomainLayerException({
     required super.type,
     super.userMessage,
     super.developerMessage,
     super.originalException,
     super.stackTrace,
   });
+}
+
+class JsonRpcBadRequestDomainLayerException
+    extends JsonRpcDomainLayerException {
+  const JsonRpcBadRequestDomainLayerException({
+    super.userMessage,
+    super.developerMessage,
+    super.originalException,
+    super.stackTrace,
+  }) : super(type: JsonRpcRequestErrorTypeEnum.BAD_REQUEST);
 }

@@ -1,4 +1,8 @@
-enum JsonRpcApiErrorType {
+interface class JsonRpcErrorType {}
+
+interface class JsonRpcApiErrorType implements JsonRpcErrorType {}
+
+enum JsonRpcApiErrorTypeEnum implements JsonRpcApiErrorType {
   INTERNAL_SERVER_ERROR,
   UNAUTHORIZED,
   TOKEN_INVALID,
@@ -14,36 +18,40 @@ enum JsonRpcApiErrorType {
   NOT_FOUND,
   FEATURE_DISABLED;
 
-  static JsonRpcApiErrorType fromJson(String value) =>
-      JsonRpcApiErrorType.values.firstWhere(
+  static JsonRpcApiErrorTypeEnum fromJson(String value) =>
+      JsonRpcApiErrorTypeEnum.values.firstWhere(
         (e) => e.name == value,
         orElse: () => throw ArgumentError('Unknown ApiErrorCode: $value'),
       );
 }
 
-enum JsonRpcRequestErrorType {
+interface class JsonRpcRequestErrorType implements JsonRpcErrorType {}
+
+enum JsonRpcRequestErrorTypeEnum implements JsonRpcRequestErrorType {
   INVALID_JSON_RPC,
   BAD_REQUEST,
   INCORRECT_TYPE,
   INVALID_VALUE,
   CONFLICTING_PARAMETERS;
 
-  static JsonRpcRequestErrorType fromJson(String value) =>
-      JsonRpcRequestErrorType.values.firstWhere(
+  static JsonRpcRequestErrorTypeEnum fromJson(String value) =>
+      JsonRpcRequestErrorTypeEnum.values.firstWhere(
         (e) => e.name == value,
         orElse: () => throw ArgumentError('Unknown RequestErrorCode: $value'),
       );
 }
 
-enum JsonRpcExternalApiErrorType {
+interface class JsonRpcExternalApiErrorType implements JsonRpcErrorType {}
+
+enum JsonRpcExternalApiErrorTypeEnum {
   INVALID_JSON_RPC,
   BAD_REQUEST,
   INCORRECT_TYPE,
   INVALID_VALUE,
   CONFLICTING_PARAMETERS;
 
-  static JsonRpcExternalApiErrorType fromJson(String value) =>
-      JsonRpcExternalApiErrorType.values.firstWhere(
+  static JsonRpcExternalApiErrorTypeEnum fromJson(String value) =>
+      JsonRpcExternalApiErrorTypeEnum.values.firstWhere(
         (e) => e.name == value,
         orElse: () =>
             throw ArgumentError('Unknown RemoteExternalApiErrorCode: $value'),

@@ -20,8 +20,8 @@ class JsonRpcDatabaseException extends JsonRpcDataLayerException {
   });
 }
 
-class JsonRpcDataLayerExternalApiException extends JsonRpcDataLayerException {
-  const JsonRpcDataLayerExternalApiException({
+class JsonRpcExternalApiDataLayerException extends JsonRpcDataLayerException {
+  const JsonRpcExternalApiDataLayerException({
     required super.type,
     super.userMessage,
     super.developerMessage,
