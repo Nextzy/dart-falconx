@@ -1,5 +1,12 @@
 import 'dart:typed_data';
 
+// NOTE: This encoder is intentionally custom rather than delegated to
+// `hashlib_codecs` Crockford Base32. TypeID uses a fixed-width
+// 16-byte -> 26-char encoding with 3-bit top-of-byte padding on the
+// first character, which does not match the bit packing produced by
+// `hashlib_codecs`. Verification was done in
+// docs/superpowers/specs/2026-04-20-hashlib-migration-design.md §3.
+
 /// Implements base32 encoding and decoding modified to conform with the
 /// [TypeID specification](https://github.com/jetify-com/typeid/tree/main/spec#base32-encoding)
 class Base32 {
