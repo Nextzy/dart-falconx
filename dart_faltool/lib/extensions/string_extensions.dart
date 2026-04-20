@@ -25,6 +25,18 @@ extension FalconToolStringExtension on String {
     return int.tryParse(cleaned) ?? 0;
   }
 
+  /// Computes the SHA-256 hash of this string and returns it as a lowercase
+  /// hex string.
+  ///
+  /// When [length] is provided and positive, the result is truncated or
+  /// right-padded with `'0'` to exactly [length] characters. A null, zero,
+  /// or negative [length] returns the full 64-character hash.
+  ///
+  /// Example:
+  /// ```dart
+  /// 'hello'.hashSha256();          // '2cf24dba...938b9824'
+  /// 'hello'.hashSha256(length: 8); // '2cf24dba'
+  /// ```
   String hashSha256({int? length}) {
     // Generate hash using hashlib's SHA-256 implementation.
     final hash = sha256.string(this).hex();
