@@ -333,6 +333,39 @@ void main() {
         );
       });
     });
+
+    group('hashSha256', () {
+      // SHA-256 of 'hello' is deterministic across all implementations.
+      const helloSha256 =
+          '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824';
+
+      test('produces canonical SHA-256 hex for a known input', () {
+        expect('hello'.hashSha256(), helloSha256);
+      });
+
+      test('truncates output when length is smaller than 64', () {
+        expect('hello'.hashSha256(length: 8), helloSha256.substring(0, 8));
+      });
+
+      test('pads with zeros when length is larger than 64', () {
+        final padded = 'hello'.hashSha256(length: 70);
+        expect(padded.length, 70);
+        expect(padded.startsWith(helloSha256), isTrue);
+        expect(padded.substring(64), '000000');
+      });
+
+      test('ignores length when null or non-positive', () {
+        expect('hello'.hashSha256(length: null), helloSha256);
+        expect('hello'.hashSha256(length: 0), helloSha256);
+      });
+
+      test('empty string hashes to the canonical empty SHA-256', () {
+        expect(
+          ''.hashSha256(),
+          'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        );
+      });
+    });
   });
 
   group('FalconStringNullExtension', () {
