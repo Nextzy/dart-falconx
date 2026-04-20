@@ -26,10 +26,8 @@ extension FalconToolStringExtension on String {
   }
 
   String hashSha256({int? length}) {
-    // Generate hash
-    final bytes = utf8.encode(this);
-    final digest = sha256.convert(bytes);
-    final hash = digest.toString();
+    // Generate hash using hashlib's SHA-256 implementation.
+    final hash = sha256.string(this).hex();
 
     // Adjust length if specified
     if (length != null && length > 0) {
