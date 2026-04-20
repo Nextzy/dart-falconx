@@ -169,6 +169,106 @@ void main() {
       });
     });
 
+    group('deepMerge', () {
+      test('should merge top-level keys without overlap', () {
+        final base = <String, dynamic>{'a': 1, 'b': 2};
+        final patch = <String, dynamic>{'c': 3, 'd': 4};
+        final merged = base.deepMerge(patch);
+        expect(merged, {'a': 1, 'b': 2, 'c': 3, 'd': 4});
+      });
+
+      test('should override scalar values from patch', () {
+        final base = <String, dynamic>{'name': 'old', 'age': 30};
+        final patch = <String, dynamic>{'name': 'new'};
+        final merged = base.deepMerge(patch);
+        expect(merged, {'name': 'new', 'age': 30});
+      });
+
+      test('should skip null values in patch and preserve original', () {
+        final base = <String, dynamic>{'name': 'John', 'age': 30};
+        final patch = <String, dynamic>{'name': null, 'age': 31};
+        final merged = base.deepMerge(patch);
+        expect(merged, {'name': 'John', 'age': 31});
+      });
+
+      test('should recursively merge nested maps instead of replacing', () {
+        final base = <String, dynamic>{
+          'user': <String, dynamic>{'name': 'John', 'age': 30},
+        };
+        final patch = <String, dynamic>{
+          'user': <String, dynamic>{'age': 31, 'email': 'j@x.com'},
+        };
+        final merged = base.deepMerge(patch);
+        expect(merged, {
+          'user': {'name': 'John', 'age': 31, 'email': 'j@x.com'},
+        });
+      });
+
+      test('should deeply merge multi-level nested maps', () {
+        final base = <String, dynamic>{
+          'a': <String, dynamic>{
+            'b': <String, dynamic>{'c': 1, 'd': 2},
+          },
+        };
+        final patch = <String, dynamic>{
+          'a': <String, dynamic>{
+            'b': <String, dynamic>{'d': 20, 'e': 30},
+          },
+        };
+        final merged = base.deepMerge(patch);
+        expect(merged, {
+          'a': {
+            'b': {'c': 1, 'd': 20, 'e': 30},
+          },
+        });
+      });
+
+      test('should replace existing scalar when patch value is a map', () {
+        final base = <String, dynamic>{'config': 'simple'};
+        final patch = <String, dynamic>{
+          'config': <String, dynamic>{'host': 'localhost'},
+        };
+        final merged = base.deepMerge(patch);
+        expect(merged, {
+          'config': {'host': 'localhost'},
+        });
+      });
+
+      test('should replace existing map when patch value is a scalar', () {
+        final base = <String, dynamic>{
+          'config': <String, dynamic>{'host': 'localhost'},
+        };
+        final patch = <String, dynamic>{'config': 'simple'};
+        final merged = base.deepMerge(patch);
+        expect(merged, {'config': 'simple'});
+      });
+
+      test('should not mutate the original map', () {
+        final base = <String, dynamic>{
+          'user': <String, dynamic>{'name': 'John'},
+        };
+        final patch = <String, dynamic>{
+          'user': <String, dynamic>{'name': 'Jane'},
+        };
+        base.deepMerge(patch);
+        expect(base, {
+          'user': {'name': 'John'},
+        });
+      });
+
+      test('should return equivalent map when patch is empty', () {
+        final base = <String, dynamic>{'a': 1, 'b': 2};
+        final merged = base.deepMerge(<String, dynamic>{});
+        expect(merged, {'a': 1, 'b': 2});
+      });
+
+      test('should return patch when original is empty', () {
+        final patch = <String, dynamic>{'a': 1, 'b': 2};
+        final merged = <String, dynamic>{}.deepMerge(patch);
+        expect(merged, {'a': 1, 'b': 2});
+      });
+    });
+
     group('invert', () {
       test('should invert map keys and values', () {
         final codes = {'US': 'United States', 'UK': 'United Kingdom'};

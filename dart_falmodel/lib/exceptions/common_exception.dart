@@ -240,12 +240,12 @@ class CommonException implements Exception {
   JsonRpcErrorCategory _resolveJsonRpcErrorCategory({
     required Object? type,
   }) => switch (this) {
-    JsonRpcDomainLayerInternalApiException() ||
+    JsonRpcInternalApiDomainLayerException() ||
     JsonRpcDatabaseException() => JsonRpcErrorCategory.API_ERROR,
-    JsonRpcDomainLayerExternalApiException() ||
-    JsonRpcDataLayerExternalApiException() =>
+    JsonRpcExternalApiDomainLayerException() ||
+    JsonRpcExternalApiDataLayerException() =>
       JsonRpcErrorCategory.EXTERNAL_API_ERROR,
-    JsonRpcDomainLayerInvalidRequestException() =>
+    JsonRpcInvalidRequestDomainLayerException() =>
       JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
     _ => switch (type) {
       JsonRpcApiErrorType() => JsonRpcErrorCategory.API_ERROR,

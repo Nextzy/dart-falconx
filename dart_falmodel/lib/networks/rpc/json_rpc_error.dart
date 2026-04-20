@@ -51,7 +51,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     String? developerMessage,
   }) => JsonRpcError(
     category: JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
-    code: JsonRpcApiErrorType.METHOD_NOT_IMPLEMENTED.name,
+    code: JsonRpcApiErrorTypeEnum.METHOD_NOT_IMPLEMENTED.name,
     userMessage: userMessage,
     developerMessage: developerMessage,
   );
@@ -75,7 +75,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     String? developerMessage,
   }) => JsonRpcError(
     category: JsonRpcErrorCategory.API_ERROR,
-    code: code ?? JsonRpcApiErrorType.INTERNAL_SERVER_ERROR.name,
+    code: code ?? JsonRpcApiErrorTypeEnum.INTERNAL_SERVER_ERROR.name,
     userMessage: userMessage,
     developerMessage: developerMessage,
   );

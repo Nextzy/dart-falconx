@@ -83,8 +83,7 @@ class Result<T> extends Equatable {
   }
 
   /// Gets the exception or null if successful.
-  CommonException? get exceptionOrNull =>
-      !_isSuccess ? _exception : null;
+  CommonException? get exceptionOrNull => !_isSuccess ? _exception : null;
 
   /// Gets the stack trace if failed, null otherwise.
   StackTrace? get stackTraceOrNull => exceptionOrNull?.stackTrace;
@@ -109,7 +108,8 @@ class Result<T> extends Equatable {
   Result<T> mapException(
     CommonException Function(
       CommonException exception,
-    ) transform,
+    )
+    transform,
   ) {
     if (!_isSuccess) {
       return Result.failure(transform(_exception!));
@@ -120,8 +120,7 @@ class Result<T> extends Equatable {
   /// Folds the result into a single value.
   R resolve<R>(
     R Function(T value) onSuccess,
-    R Function(CommonException exception, StackTrace? stackTrace)
-        onError,
+    R Function(CommonException exception, StackTrace? stackTrace) onError,
   ) {
     if (_isSuccess) {
       return onSuccess(_value as T);
@@ -132,8 +131,7 @@ class Result<T> extends Equatable {
   /// Executes a callback based on the result.
   void when(
     void Function(T value) onSuccess,
-    void Function(CommonException exception, StackTrace? stackTrace)
-        onError,
+    void Function(CommonException exception, StackTrace? stackTrace) onError,
   ) {
     if (_isSuccess) {
       onSuccess(_value as T);
@@ -232,12 +230,17 @@ class Result<T> extends Equatable {
   ///
   /// Success becomes Failure with a new exception,
   /// Failure becomes Success with the exception.
-  Result<CommonException> swap({String? message}) {
+  Result<CommonException> swap({
+    Object? errorType,
+    String? userMessage,
+    String? developerMessage,
+  }) {
     if (_isSuccess) {
       return Result.failure(
         CommonException(
-          type: SystemErrorType.unexpected,
-          userMessage: message ?? 'Unexpected success',
+          type: errorType ?? SystemErrorType.system,
+          userMessage: userMessage ?? 'Unexpected success',
+          developerMessage: developerMessage,
         ),
       );
     }
