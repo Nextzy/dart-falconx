@@ -1,4 +1,5 @@
 import 'package:dart_faltool/lib.dart';
+import 'package:hashlib/random.dart' as hl;
 
 export 'base32.dart';
 export 'decoded_typeid.dart';
@@ -13,8 +14,9 @@ class TypeId {
   static String generate(String prefix) {
     _checkPrefix(prefix);
 
-    final v7 = uuid.v7obj();
-    final base32Encoded = Base32.encode(v7.toBytes());
+    final v7String = hl.uuid.v7();
+    final bytes = _uuidStringToBytes(v7String);
+    final base32Encoded = Base32.encode(bytes);
 
     if (prefix.isEmpty) {
       return base32Encoded;
@@ -49,9 +51,9 @@ class TypeId {
 
     try {
       final base32Decoded = Base32.decode(suffix);
-      final uuidValue = UuidValue.fromByteList(base32Decoded);
+      final uuidString = _uuidBytesToString(base32Decoded);
 
-      return DecodedTypeId(prefix: prefix, suffix: suffix, uuid: uuidValue);
+      return DecodedTypeId(prefix: prefix, suffix: suffix, uuid: uuidString);
     } on FormatException {
       rethrow;
     }
@@ -107,4 +109,31 @@ class TypeId {
     final afterLast = input.substring(lastIndex + delimiter.length);
     return [beforeLast, afterLast];
   }
+}
+
+/// Parses a canonical 36-character UUID string (with dashes) into the
+/// 16-byte representation expected by [Base32.encode].
+Uint8List _uuidStringToBytes(String uuidString) {
+  final hex = uuidString.replaceAll('-', '');
+  if (hex.length != 32) {
+    throw FormatException('Invalid UUID string: $uuidString');
+  }
+  final bytes = Uint8List(16);
+  for (var i = 0; i < 16; i++) {
+    bytes[i] = int.parse(hex.substring(i * 2, i * 2 + 2), radix: 16);
+  }
+  return bytes;
+}
+
+/// Formats a 16-byte UUID into the canonical 8-4-4-4-12 lowercase hex string.
+String _uuidBytesToString(Uint8List bytes) {
+  assert(bytes.length == 16, 'UUID must be exactly 16 bytes');
+  final hex = bytes
+      .map((b) => b.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-'
+      '${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-'
+      '${hex.substring(16, 20)}-'
+      '${hex.substring(20, 32)}';
 }

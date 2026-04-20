@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DecodedTypeId {
 
- String get prefix; String get suffix; UuidValue get uuid;
+ String get prefix; String get suffix; String get uuid;
 /// Create a copy of DecodedTypeId
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -41,7 +41,7 @@ abstract mixin class $DecodedTypeIdCopyWith<$Res>  {
   factory $DecodedTypeIdCopyWith(DecodedTypeId value, $Res Function(DecodedTypeId) _then) = _$DecodedTypeIdCopyWithImpl;
 @useResult
 $Res call({
- String prefix, String suffix, UuidValue uuid
+ String prefix, String suffix, String uuid
 });
 
 
@@ -63,7 +63,7 @@ class _$DecodedTypeIdCopyWithImpl<$Res>
 prefix: null == prefix ? _self.prefix : prefix // ignore: cast_nullable_to_non_nullable
 as String,suffix: null == suffix ? _self.suffix : suffix // ignore: cast_nullable_to_non_nullable
 as String,uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
-as UuidValue,
+as String,
   ));
 }
 
@@ -148,7 +148,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String prefix,  String suffix,  UuidValue uuid)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String prefix,  String suffix,  String uuid)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DecodedTypeId() when $default != null:
 return $default(_that.prefix,_that.suffix,_that.uuid);case _:
@@ -169,7 +169,7 @@ return $default(_that.prefix,_that.suffix,_that.uuid);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String prefix,  String suffix,  UuidValue uuid)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String prefix,  String suffix,  String uuid)  $default,) {final _that = this;
 switch (_that) {
 case _DecodedTypeId():
 return $default(_that.prefix,_that.suffix,_that.uuid);case _:
@@ -189,7 +189,7 @@ return $default(_that.prefix,_that.suffix,_that.uuid);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String prefix,  String suffix,  UuidValue uuid)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String prefix,  String suffix,  String uuid)?  $default,) {final _that = this;
 switch (_that) {
 case _DecodedTypeId() when $default != null:
 return $default(_that.prefix,_that.suffix,_that.uuid);case _:
@@ -209,7 +209,7 @@ class _DecodedTypeId extends DecodedTypeId {
 
 @override final  String prefix;
 @override final  String suffix;
-@override final  UuidValue uuid;
+@override final  String uuid;
 
 /// Create a copy of DecodedTypeId
 /// with the given fields replaced by the non-null parameter values.
@@ -237,7 +237,7 @@ abstract mixin class _$DecodedTypeIdCopyWith<$Res> implements $DecodedTypeIdCopy
   factory _$DecodedTypeIdCopyWith(_DecodedTypeId value, $Res Function(_DecodedTypeId) _then) = __$DecodedTypeIdCopyWithImpl;
 @override @useResult
 $Res call({
- String prefix, String suffix, UuidValue uuid
+ String prefix, String suffix, String uuid
 });
 
 
@@ -259,7 +259,7 @@ class __$DecodedTypeIdCopyWithImpl<$Res>
 prefix: null == prefix ? _self.prefix : prefix // ignore: cast_nullable_to_non_nullable
 as String,suffix: null == suffix ? _self.suffix : suffix // ignore: cast_nullable_to_non_nullable
 as String,uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
-as UuidValue,
+as String,
   ));
 }
 
