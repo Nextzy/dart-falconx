@@ -96,15 +96,18 @@ abstract class DecodedTypeId {
 ### 2.5 Re-export in `dart_faltool.dart` — BREAKING
 
 ```dart
-// old
+// old (two separate re-exports)
 export 'package:crypto/crypto.dart' hide Hash;
+export 'package:uuid/uuid.dart';
 
 // new
 export 'package:hashlib/hashlib.dart';
 // export 'package:hashlib/codecs.dart';  // add only if consumers need codec API
 ```
 
-**Consumer migration:** replace `sha256.convert(bytes).toString()` with `sha256.convert(bytes).hex()` or the string form `sha256.string(text).hex()`.
+**Consumer migration:**
+- Replace `sha256.convert(bytes).toString()` with `sha256.convert(bytes).hex()` or the string form `sha256.string(text).hex()`.
+- Anything using `Uuid`, `UuidValue`, or related types from `package:uuid` via the re-export must migrate to `package:hashlib/random.dart`'s `uuid` object (or add `package:uuid` as a direct dep locally).
 
 ## 3. Base32 Verification Strategy
 
@@ -150,7 +153,7 @@ test('hashlib_codecs Base32Codec.crockford matches TypeID Base32', () {
 | # | File | Change |
 |---|---|---|
 | 1 | `dart_faltool/pubspec.yaml` | drop `crypto`/`uuid`; add `hashlib: ^2.3.4` (+ `hashlib_codecs` if §3 passes); bump `version: 2.0.0` |
-| 2 | `dart_faltool/lib/dart_faltool.dart` | remove `export 'package:crypto/crypto.dart' hide Hash;`; add `export 'package:hashlib/hashlib.dart';` |
+| 2 | `dart_faltool/lib/dart_faltool.dart` | remove `export 'package:crypto/crypto.dart' hide Hash;` (line 7) **and** `export 'package:uuid/uuid.dart';` (line 33); add `export 'package:hashlib/hashlib.dart';` |
 | 3 | `dart_faltool/lib/lib.dart` | verify no stale `crypto`/`uuid` re-exports |
 | 4 | `dart_faltool/lib/extensions/string_extensions.dart` | rewrite `hashSha256()` using hashlib |
 | 5 | `dart_faltool/lib/utils/uuid_generator.dart` | import hashlib random; call `uuid.v4()` |
