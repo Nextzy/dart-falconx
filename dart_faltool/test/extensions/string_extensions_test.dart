@@ -351,12 +351,13 @@ void main() {
         final padded = 'hello'.hashSha256(length: 70);
         expect(padded.length, 70);
         expect(padded.startsWith(helloSha256), isTrue);
-        expect(padded.substring(64), '000000');
+        expect(padded.substring(helloSha256.length), '000000');
       });
 
       test('ignores length when null or non-positive', () {
         expect('hello'.hashSha256(length: null), helloSha256);
         expect('hello'.hashSha256(length: 0), helloSha256);
+        expect('hello'.hashSha256(length: -1), helloSha256);
       });
 
       test('empty string hashes to the canonical empty SHA-256', () {
