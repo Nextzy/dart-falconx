@@ -103,8 +103,13 @@ void main() {
           ),
         );
         expect(decoded.uuid.length, 36);
-        expect(decoded.uuid.split('-').map((seg) => seg.length).toList(),
-            [8, 4, 4, 4, 12]);
+        expect(decoded.uuid.split('-').map((seg) => seg.length).toList(), [
+          8,
+          4,
+          4,
+          4,
+          12,
+        ]);
         expect(decoded.uuid, decoded.uuid.toLowerCase()); // must be lowercase
       });
     });

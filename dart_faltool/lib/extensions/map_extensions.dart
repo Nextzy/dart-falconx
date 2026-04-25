@@ -1,4 +1,9 @@
+/// Extension methods for `Map<String, dynamic>` with deep-merge support.
 extension FalconToolMapJsonExtension on Map<String, dynamic> {
+  /// Recursively merges [patch] into this map, overriding existing keys.
+  ///
+  /// Nested maps are merged recursively; null values in [patch] are skipped.
+  /// Returns a new map — the original is not modified.
   Map<String, dynamic> deepMerge(
     Map<String, dynamic>? patch,
   ) {
@@ -18,7 +23,6 @@ extension FalconToolMapJsonExtension on Map<String, dynamic> {
   }
 }
 
-/// safe transformations, filtering, merging, and advanced operations.
 /// Extension methods for Map type with enhanced functionality.
 ///
 /// Provides comprehensive utilities for map operations including

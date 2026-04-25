@@ -1,5 +1,9 @@
 import 'package:dart_faltool/lib.dart';
 
+/// Executes [execute] and wraps any thrown exception into a [Result.failure].
+///
+/// [CommonException] instances are wrapped directly; all other exceptions are
+/// converted via `toException()` before wrapping.
 Future<Result<T>> runCatching<T>(
   Future<Result<T>> Function() execute,
 ) async {

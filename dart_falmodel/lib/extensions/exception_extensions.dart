@@ -2,7 +2,11 @@ import 'package:dart_falmodel/extensions/_io_stubs.dart'
     if (dart.library.io) '_io_real.dart';
 import 'package:dart_falmodel/lib.dart';
 
+/// Extensions on a nullable [Exception] for convenient
+/// [CommonException] access.
 extension FalconExceptionExtensions<T> on Exception? {
+  /// Returns [CommonException.type] if this is a [CommonException],
+  /// otherwise `null`.
   Object? get type {
     final exception = this;
     if (exception is CommonException) {
@@ -11,6 +15,8 @@ extension FalconExceptionExtensions<T> on Exception? {
     return null;
   }
 
+  /// Returns [CommonException.userMessage] if this is a [CommonException],
+  /// otherwise `null`.
   String? get userMessage {
     final exception = this;
     if (exception is CommonException) {
@@ -19,6 +25,8 @@ extension FalconExceptionExtensions<T> on Exception? {
     return null;
   }
 
+  /// Returns [CommonException.developerMessage] if this is a
+  /// [CommonException], otherwise `null`.
   String? get developerMessage {
     final exception = this;
     if (exception is CommonException) {
@@ -27,6 +35,8 @@ extension FalconExceptionExtensions<T> on Exception? {
     return null;
   }
 
+  /// Returns the stack trace from an [Error], [DioException], or
+  /// [CommonException]; `null` otherwise.
   StackTrace? get stackTrace {
     final exception = this;
     if (exception is Error) {
@@ -39,6 +49,10 @@ extension FalconExceptionExtensions<T> on Exception? {
     return null;
   }
 
+  /// Wraps this exception in a `Result.failure` containing a [CommonException].
+  ///
+  /// [type] defaults to [SystemErrorType.unknown] when not provided.
+  /// [developerMessage] defaults to `toString()` of this exception.
   Result<Never> toCommonResultFailure({
     Object? category,
     Object? type,
@@ -57,7 +71,14 @@ extension FalconExceptionExtensions<T> on Exception? {
   }
 }
 
+/// Extensions on a nullable [Object] for converting arbitrary values
+/// to [CommonException].
 extension FalconObjectExceptionExtensions on Object? {
+  /// Converts this object to a [CommonException].
+  ///
+  /// Handles [CommonException] (returned as-is), [DioException] (mapped to an
+  /// appropriate [NetworkException]), standard [Exception], and bare [Error]
+  /// objects. The [type] is inferred from the runtime type when not provided.
   CommonException toException({
     Object? category,
     Object? type,

@@ -1,8 +1,8 @@
 /// Configuration options for WebSocket connections.
-/// 
+///
 /// Contains all necessary parameters for establishing and managing
 /// WebSocket connections including URI, retry behavior, and protocols.
-/// 
+///
 /// Example:
 /// ```dart
 /// final options = SocketOptions(
@@ -14,7 +14,7 @@
 /// ```
 class SocketOptions {
   /// Creates socket options with the given parameters.
-  /// 
+  ///
   /// [uri] is the WebSocket endpoint URL (ws:// or wss://).
   /// [retryLimit] is the maximum number of reconnection attempts (default: 3).
   /// [protocol] is the optional sub-protocol for the WebSocket handshake.
@@ -27,23 +27,23 @@ class SocketOptions {
   });
 
   /// The WebSocket endpoint URL.
-  /// 
+  ///
   /// Should use 'ws://' for non-secure or 'wss://' for secure connections.
   String uri;
 
   /// Maximum number of reconnection attempts.
-  /// 
+  ///
   /// Set to 0 to disable automatic reconnection.
   int retryLimit;
 
   /// Optional sub-protocol for the WebSocket handshake.
-  /// 
+  ///
   /// Used to specify the application-level protocol that the client
   /// wishes to use. The server will select one from the list provided.
   String? protocol;
 
   /// Optional initial data to send upon connection.
-  /// 
+  ///
   /// Can be used for authentication tokens or initial handshake data.
   String? data;
 

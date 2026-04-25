@@ -1,6 +1,8 @@
 import 'package:dart_falmodel/lib.dart';
 
+/// Extension methods for Base64 encoding and decoding on [String].
 extension FalconBase64StringExtension<K, V> on String {
+  /// Returns `true` if this string is valid Base64-encoded data.
   bool isBase64() {
     try {
       base64Decode(this);
@@ -31,7 +33,7 @@ extension FalconBase64StringExtension<K, V> on String {
 
   /// Decodes the string from base64 into raw bytes.
   ///
-  /// Uses [base64Url.normalize] to handle both standard and URL-safe base64
+  /// Uses `base64Url.normalize` to handle both standard and URL-safe base64
   /// before decoding.
   ///
   /// Throws [FormatException] if the string is not valid base64.

@@ -112,8 +112,7 @@ void main() {
       test(
         'should fail immediately with retryIf returning false',
         () async {
-          final future =
-              Future<String>.error(Exception('Not retryable'));
+          final future = Future<String>.error(Exception('Not retryable'));
 
           expect(
             () => future.retryWithBackoff(
@@ -147,8 +146,7 @@ void main() {
         Object? callbackError;
         StackTrace? callbackStackTrace;
 
-        final future =
-            Future<String>.error(Exception('Test error'));
+        final future = Future<String>.error(Exception('Test error'));
 
         expect(
           () => future.onErrorDo((error, stackTrace) {
@@ -183,8 +181,7 @@ void main() {
     group('mapSuccess', () {
       test('should transform successful result', () async {
         final future = Future.value(5);
-        final result =
-            await future.mapSuccess((value) => value * 2);
+        final result = await future.mapSuccess((value) => value * 2);
         expect(result, 10);
       });
 
@@ -202,12 +199,10 @@ void main() {
 
     group('mapError', () {
       test('should transform error', () async {
-        final future =
-            Future<String>.error(Exception('Original'));
+        final future = Future<String>.error(Exception('Original'));
 
         try {
-          await future
-              .mapError((error) => Exception('Transformed'));
+          await future.mapError((error) => Exception('Transformed'));
           fail('Should have thrown');
           // Generic catch needed to verify error transformation.
           // ignore: avoid_catches_without_on_clauses
@@ -240,8 +235,7 @@ void main() {
 
       test('should execute action on error', () async {
         var actionExecuted = false;
-        final future =
-            Future<String>.error(Exception('Error'));
+        final future = Future<String>.error(Exception('Error'));
 
         try {
           await future.whenCompleteDo(() {
@@ -388,8 +382,7 @@ void main() {
       });
 
       test('should propagate errors to stream', () async {
-        final future =
-            Future<String>.error(Exception('Error'));
+        final future = Future<String>.error(Exception('Error'));
         final stream = future.toStream();
 
         expect(stream, emitsError(isException));
@@ -401,8 +394,7 @@ void main() {
     group('toEither', () {
       test('should wrap successful result in Right', () async {
         final future = Future.value('success');
-        final either =
-            await future.toEither((error) => 'Error: $error');
+        final either = await future.toEither((error) => 'Error: $error');
 
         expect(either.isRight(), true);
         expect(either.isLeft(), false);
@@ -418,8 +410,7 @@ void main() {
           final future = Future<String>.error(
             Exception('Test error'),
           );
-          final either =
-              await future.toEither((error) => 'Error: $error');
+          final either = await future.toEither((error) => 'Error: $error');
 
           expect(either.isLeft(), true);
           expect(either.isRight(), false);
@@ -454,8 +445,7 @@ void main() {
           const Duration(milliseconds: 50),
           () => 'delayed success',
         );
-        final either =
-            await future.toEither((error) => 'Error: $error');
+        final either = await future.toEither((error) => 'Error: $error');
 
         expect(either.isRight(), true);
         either.fold(
@@ -469,8 +459,7 @@ void main() {
           const Duration(milliseconds: 50),
           () => throw Exception('Delayed error'),
         );
-        final either =
-            await future.toEither((error) => 'Error: $error');
+        final either = await future.toEither((error) => 'Error: $error');
 
         expect(either.isLeft(), true);
         either.fold(
@@ -516,15 +505,13 @@ void main() {
     group('whenNotNull', () {
       test('should return future when not null', () async {
         final future = Future.value('success');
-        final result =
-            await future.whenNotNull(orElse: () => 'default');
+        final result = await future.whenNotNull(orElse: () => 'default');
         expect(result, 'success');
       });
 
       test('should return orElse value when null', () async {
         const Future<String>? future = null;
-        final result =
-            await future.whenNotNull(orElse: () => 'default');
+        final result = await future.whenNotNull(orElse: () => 'default');
         expect(result, 'default');
       });
     });
@@ -534,15 +521,13 @@ void main() {
     group('mapIfNotNull', () {
       test('should map non-null values', () async {
         final future = Future<String?>.value('hello');
-        final result =
-            await future.mapIfNotNull((value) => value.length);
+        final result = await future.mapIfNotNull((value) => value.length);
         expect(result, 5);
       });
 
       test('should return null for null values', () async {
         final future = Future<String?>.value(null);
-        final result =
-            await future.mapIfNotNull((value) => value.length);
+        final result = await future.mapIfNotNull((value) => value.length);
         expect(result, null);
       });
     });
@@ -566,8 +551,7 @@ void main() {
         'should return value when predicate is true',
         () async {
           final future = Future<int?>.value(5);
-          final result =
-              await future.where((value) => value > 3);
+          final result = await future.where((value) => value > 3);
           expect(result, 5);
         },
       );
@@ -576,8 +560,7 @@ void main() {
         'should return null when predicate is false',
         () async {
           final future = Future<int?>.value(2);
-          final result =
-              await future.where((value) => value > 3);
+          final result = await future.where((value) => value > 3);
           expect(result, null);
         },
       );

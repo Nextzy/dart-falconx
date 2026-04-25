@@ -1,15 +1,24 @@
 import 'package:dart_falconnect/lib.dart';
 
-/// Support Error Response:
+/// Abstract queued interceptor that routes Dio errors to typed handler methods
+/// based on HTTP status-code ranges.
+///
+/// Subclasses must implement [onClientError] (4xx) and [onServerError] (5xx).
+/// Connection timeouts are converted to [NetworkTimeoutException] before
+/// dispatch. Errors that match neither range are forwarded to
+/// [onNonStandardError], which defaults to calling `handler.next`.
+///
+/// Expected server error-response shape:
+/// ```json
 /// {
 ///   "type": "ERROR_TYPE",
-///   "message": "Message show to user",
-///   "developerMessage": "Message show to developer",
-///   "errors": {
-///     ...
-///   }
+///   "message": "Message shown to user",
+///   "developerMessage": "Message shown to developer",
+///   "errors": { ... }
 /// }
+/// ```
 abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
+  /// Creates a [NetworkExceptionHandlerInterceptor].
   NetworkExceptionHandlerInterceptor();
 
   @override
@@ -50,16 +59,26 @@ abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
     }
   }
 
+  /// Called when the response status code is in the 4xx range.
+  ///
+  /// Implementors may resolve, reject, or forward [err] via [handler].
   void onClientError(
     DioException err,
     ErrorInterceptorHandler handler,
   );
 
+  /// Called when the response status code is in the 5xx range.
+  ///
+  /// Implementors may resolve, reject, or forward [err] via [handler].
   void onServerError(
     DioException err,
     ErrorInterceptorHandler handler,
   );
 
+  /// Called when the error does not fall into the 4xx or 5xx ranges.
+  ///
+  /// Defaults to forwarding [err] via `handler.next`. Override to add
+  /// custom handling for non-standard errors.
   void onNonStandardError(
     DioException err,
     ErrorInterceptorHandler handler,

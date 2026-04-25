@@ -21,8 +21,7 @@ class Person {
           city == other.city;
 
   @override
-  int get hashCode =>
-      name.hashCode ^ age.hashCode ^ city.hashCode;
+  int get hashCode => name.hashCode ^ age.hashCode ^ city.hashCode;
 }
 
 void main() {
@@ -44,8 +43,7 @@ void main() {
         'should return single element for single-item collection',
         () {
           final numbers = [42];
-          final result =
-              numbers.reduceOrNull((a, b) => a + b);
+          final result = numbers.reduceOrNull((a, b) => a + b);
           expect(result, 42);
         },
       );
@@ -68,8 +66,7 @@ void main() {
         'should return default value for empty collection',
         () {
           final numbers = <int>[];
-          final result =
-              numbers.reduceSafe((a, b) => a + b, 100);
+          final result = numbers.reduceSafe((a, b) => a + b, 100);
           expect(result, 100);
         },
       );
@@ -78,8 +75,7 @@ void main() {
         'should return single element for single-item collection',
         () {
           final numbers = [42];
-          final result =
-              numbers.reduceSafe((a, b) => a + b, 0);
+          final result = numbers.reduceSafe((a, b) => a + b, 0);
           expect(result, 42);
         },
       );
@@ -94,8 +90,7 @@ void main() {
           'dart',
           'flutter',
         ];
-        final grouped =
-            words.groupBy((word) => word.length);
+        final grouped = words.groupBy((word) => word.length);
 
         expect(grouped[2], ['hi']);
         expect(grouped[4], ['dart']);
@@ -105,8 +100,7 @@ void main() {
 
       test('should handle empty collection', () {
         final empty = <String>[];
-        final grouped =
-            empty.groupBy((word) => word.length);
+        final grouped = empty.groupBy((word) => word.length);
         expect(grouped, <int, List<String>>{});
       });
 
@@ -118,13 +112,11 @@ void main() {
           const Person('David', 30, 'NYC'),
         ];
 
-        final byAge =
-            people.groupBy((person) => person.age);
+        final byAge = people.groupBy((person) => person.age);
         expect(byAge[25]?.length, 2);
         expect(byAge[30]?.length, 2);
 
-        final byCity =
-            people.groupBy((person) => person.city);
+        final byCity = people.groupBy((person) => person.city);
         expect(byCity['NYC']?.length, 3);
         expect(byCity['LA']?.length, 1);
       });
@@ -154,9 +146,7 @@ void main() {
 
       test('should handle empty collection', () {
         final empty = <String>[];
-        final result = empty
-            .whereIndexed((value, index) => true)
-            .toList();
+        final result = empty.whereIndexed((value, index) => true).toList();
         expect(result, <String>[]);
       });
     });
@@ -275,8 +265,7 @@ void main() {
         'should intersperse separator between elements',
         () {
           final letters = ['a', 'b', 'c'];
-          final result =
-              letters.intersperse('-').toList();
+          final result = letters.intersperse('-').toList();
           expect(result, ['a', '-', 'b', '-', 'c']);
         },
       );
@@ -374,8 +363,7 @@ void main() {
         'should partition elements based on predicate',
         () {
           final numbers = [1, 2, 3, 4, 5, 6];
-          final (odds, evens) =
-              numbers.partition((n) => n.isEven);
+          final (odds, evens) = numbers.partition((n) => n.isEven);
 
           expect(evens.toList(), [2, 4, 6]);
           expect(odds.toList(), [1, 3, 5]);
@@ -384,8 +372,7 @@ void main() {
 
       test('should handle all matching predicate', () {
         final numbers = [2, 4, 6, 8];
-        final (odds, evens) =
-            numbers.partition((n) => n.isEven);
+        final (odds, evens) = numbers.partition((n) => n.isEven);
 
         expect(evens.toList(), [2, 4, 6, 8]);
         expect(odds.toList(), <int>[]);
@@ -393,8 +380,7 @@ void main() {
 
       test('should handle none matching predicate', () {
         final numbers = [1, 3, 5, 7];
-        final (odds, evens) =
-            numbers.partition((n) => n.isEven);
+        final (odds, evens) = numbers.partition((n) => n.isEven);
 
         expect(evens.toList(), <int>[]);
         expect(odds.toList(), [1, 3, 5, 7]);
@@ -402,8 +388,7 @@ void main() {
 
       test('should handle empty collection', () {
         final empty = <int>[];
-        final (notMatching, matching) =
-            empty.partition((n) => n > 0);
+        final (notMatching, matching) = empty.partition((n) => n > 0);
 
         expect(matching.toList(), <int>[]);
         expect(notMatching.toList(), <int>[]);
@@ -539,15 +524,13 @@ void main() {
     group('reduceOrNull', () {
       test('should reduce non-null collection', () {
         final Iterable<int> numbers = [1, 2, 3, 4, 5];
-        final result =
-            numbers.reduceOrNull((a, b) => a + b);
+        final result = numbers.reduceOrNull((a, b) => a + b);
         expect(result, 15);
       });
 
       test('should return null for null collection', () {
         Iterable<int>? numbers;
-        final result =
-            numbers.reduceOrNull((a, b) => a + b);
+        final result = numbers.reduceOrNull((a, b) => a + b);
         expect(result, null);
       });
 
@@ -555,8 +538,7 @@ void main() {
         'should return null for empty non-null collection',
         () {
           final Iterable<int> numbers = <int>[];
-          final result =
-              numbers.reduceOrNull((a, b) => a + b);
+          final result = numbers.reduceOrNull((a, b) => a + b);
           expect(result, null);
         },
       );
@@ -565,15 +547,13 @@ void main() {
     group('reduceSafe', () {
       test('should reduce non-null collection', () {
         final Iterable<int> numbers = [1, 2, 3, 4, 5];
-        final result =
-            numbers.reduceSafe((a, b) => a + b, 0);
+        final result = numbers.reduceSafe((a, b) => a + b, 0);
         expect(result, 15);
       });
 
       test('should return default for null collection', () {
         Iterable<int>? numbers;
-        final result =
-            numbers.reduceSafe((a, b) => a + b, 100);
+        final result = numbers.reduceSafe((a, b) => a + b, 100);
         expect(result, 100);
       });
 
@@ -581,8 +561,7 @@ void main() {
         'should return default for empty non-null collection',
         () {
           final Iterable<int> numbers = <int>[];
-          final result =
-              numbers.reduceSafe((a, b) => a + b, 100);
+          final result = numbers.reduceSafe((a, b) => a + b, 100);
           expect(result, 100);
         },
       );

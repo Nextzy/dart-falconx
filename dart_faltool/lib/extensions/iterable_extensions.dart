@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 /// Extension methods for Iterable type with enhanced functionality.
-/// 
+///
 /// Provides comprehensive utilities for collection operations including
 /// safe transformations, aggregations, grouping, and advanced filtering.
 extension FalconToolIterableExtensions<T> on Iterable<T> {
   /// Reduces the collection safely, returning null if empty.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final sum = [1, 2, 3].reduceOrNull((a, b) => a + b); // 6
@@ -19,7 +19,7 @@ extension FalconToolIterableExtensions<T> on Iterable<T> {
   }
 
   /// Reduces the collection safely with a default value for empty collections.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final sum = [1, 2, 3].reduceSafe((a, b) => a + b, 0); // 6
@@ -44,7 +44,6 @@ extension FalconToolIterableExtensions<T> on Iterable<T> {
     final index = rand.nextInt(length);
     return elementAt(index);
   }
-
 }
 
 /// Extension methods for nullable Iterable type.
@@ -86,6 +85,7 @@ extension FalconToolNullIterableExtensions<T> on Iterable<T>? {
   }
 }
 
+/// Extension that adds an [average] method to iterables of numeric types.
 extension FalconToolIterableNumAverageExtension<T extends num> on Iterable<T> {
   /// Returns the average of all elements in the collection.
   double average() {
@@ -103,8 +103,6 @@ extension FalconToolIterableNumAverageExtension<T extends num> on Iterable<T> {
     }
   }
 }
-
-
 
 /// Extension methods for mixed-type iterables.
 extension FalconToolMixedIterableExtensions on Iterable<Object?> {

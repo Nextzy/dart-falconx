@@ -206,17 +206,15 @@ extension FalconStringNullFormatExtension on String? {
     int prefixLength = 2,
     int suffixLength = 2,
     String maskChar = '*',
-  }) =>
-      this?.maskPhoneNumber(
-        prefixLength: prefixLength,
-        suffixLength: suffixLength,
-        maskChar: maskChar,
-      );
+  }) => this?.maskPhoneNumber(
+    prefixLength: prefixLength,
+    suffixLength: suffixLength,
+    maskChar: maskChar,
+  );
 
   /// Safely masks an email address.
   String? maskEmail({
     int visibleChars = 2,
     String maskChar = '*',
-  }) =>
-      this?.maskEmail(visibleChars: visibleChars, maskChar: maskChar);
+  }) => this?.maskEmail(visibleChars: visibleChars, maskChar: maskChar);
 }

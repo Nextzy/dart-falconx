@@ -4,16 +4,24 @@ import 'package:dio/dio.dart';
 
 /// Response cache entry.
 class CacheEntry {
+  /// Creates a cache entry with the given [response], creation [timestamp],
+  /// and cache [maxAge].
   CacheEntry({
     required this.response,
     required this.timestamp,
     required this.maxAge,
   });
 
+  /// The cached HTTP response.
   final Response<dynamic> response;
+
+  /// The time at which this entry was stored.
   final DateTime timestamp;
+
+  /// The maximum duration this entry remains valid.
   final Duration maxAge;
 
+  /// Returns `true` if the entry has exceeded its [maxAge].
   bool get isExpired {
     final age = DateTime.now().difference(timestamp);
     return age > maxAge;
@@ -30,6 +38,7 @@ class CacheInterceptor extends Interceptor {
     required this.config,
   });
 
+  /// Configuration driving cache behavior (enable flag, duration, size limit).
   final HttpClientConfig config;
   final Map<String, CacheEntry> _cache = {};
   int _currentCacheSize = 0;
@@ -46,8 +55,7 @@ class CacheInterceptor extends Interceptor {
 
     // Check for no-cache directive
     final cacheControl = options.headers['cache-control'];
-    if (cacheControl == 'no-cache' ||
-        cacheControl == 'no-store') {
+    if (cacheControl == 'no-cache' || cacheControl == 'no-store') {
       return handler.next(options);
     }
 
@@ -94,8 +102,7 @@ class CacheInterceptor extends Interceptor {
     }
 
     // Check cache-control headers
-    final cacheControl =
-        response.headers.value('cache-control');
+    final cacheControl = response.headers.value('cache-control');
     if (cacheControl != null &&
         (cacheControl.contains('no-cache') ||
             cacheControl.contains('no-store'))) {
@@ -103,8 +110,7 @@ class CacheInterceptor extends Interceptor {
     }
 
     // Generate cache key
-    final cacheKey =
-        _generateCacheKey(response.requestOptions);
+    final cacheKey = _generateCacheKey(response.requestOptions);
 
     // Calculate cache duration
     final cacheDuration = _getCacheDuration(response);
@@ -118,10 +124,8 @@ class CacheInterceptor extends Interceptor {
   /// Generates a unique cache key for a request.
   String _generateCacheKey(RequestOptions options) {
     final url = options.uri.toString();
-    final queryParams =
-        jsonEncode(options.queryParameters);
-    final headers =
-        jsonEncode(_getCacheableHeaders(options.headers));
+    final queryParams = jsonEncode(options.queryParameters);
+    final headers = jsonEncode(_getCacheableHeaders(options.headers));
 
     final input = '$url:$queryParams:$headers';
 
@@ -157,14 +161,11 @@ class CacheInterceptor extends Interceptor {
   /// config.
   Duration _getCacheDuration(Response<dynamic> response) {
     // Check Cache-Control max-age
-    final cacheControl =
-        response.headers.value('cache-control');
+    final cacheControl = response.headers.value('cache-control');
     if (cacheControl != null) {
-      final maxAgeMatch =
-          RegExp(r'max-age=(\d+)').firstMatch(cacheControl);
+      final maxAgeMatch = RegExp(r'max-age=(\d+)').firstMatch(cacheControl);
       if (maxAgeMatch != null) {
-        final seconds =
-            int.tryParse(maxAgeMatch.group(1)!);
+        final seconds = int.tryParse(maxAgeMatch.group(1)!);
         if (seconds != null) {
           return Duration(seconds: seconds);
         }
@@ -177,8 +178,7 @@ class CacheInterceptor extends Interceptor {
       try {
         // Parse common HTTP date formats
         final expiresDate = DateTime.parse(expires);
-        final duration =
-            expiresDate.difference(DateTime.now());
+        final duration = expiresDate.difference(DateTime.now());
         if (duration.isNegative) {
           return Duration.zero;
         }
@@ -209,8 +209,7 @@ class CacheInterceptor extends Interceptor {
     final responseSize = _estimateResponseSize(response);
 
     // Check if adding this would exceed cache size
-    if (_currentCacheSize + responseSize >
-        config.maxCacheSize) {
+    if (_currentCacheSize + responseSize > config.maxCacheSize) {
       _evictOldestEntries(responseSize);
     }
 
@@ -239,8 +238,7 @@ class CacheInterceptor extends Interceptor {
   void _removeFromCache(String key) {
     final entry = _cache.remove(key);
     if (entry != null) {
-      _currentCacheSize -=
-          _estimateResponseSize(entry.response);
+      _currentCacheSize -= _estimateResponseSize(entry.response);
     }
   }
 
@@ -249,14 +247,12 @@ class CacheInterceptor extends Interceptor {
     // Sort entries by timestamp (oldest first)
     final sortedEntries = _cache.entries.toList()
       ..sort(
-        (a, b) =>
-            a.value.timestamp.compareTo(b.value.timestamp),
+        (a, b) => a.value.timestamp.compareTo(b.value.timestamp),
       );
 
     // Remove entries until we have enough space
     for (final entry in sortedEntries) {
-      if (_currentCacheSize + requiredSize <=
-          config.maxCacheSize) {
+      if (_currentCacheSize + requiredSize <= config.maxCacheSize) {
         break;
       }
       _removeFromCache(entry.key);

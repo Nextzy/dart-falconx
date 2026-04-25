@@ -6,6 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// (4XX or 5XX range) but not explicitly defined in the standard HTTP
 /// specification or not commonly used.
 class NetworkNonStandardException extends BaseHttpException {
+  /// Creates a [NetworkNonStandardException] with the given [statusCode].
   const NetworkNonStandardException({
     required super.statusCode,
     super.type = NetworkErrorType.unknown,

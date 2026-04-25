@@ -3,15 +3,15 @@ import 'package:dart_faltool/lib.dart';
 /// Extension methods for converting strings to enum values.
 extension FalconToolEnumStringExtension on String {
   /// Converts the string to an enum value.
-  /// 
+  ///
   /// Searches through [enumValues] to find a matching enum value.
   /// If no match is found, returns [defaultValue] if provided,
   /// otherwise throws.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive, pending }
-  /// 
+  ///
   /// 'active'.toEnum(Status.values); // Status.active
   /// 'ACTIVE'.toEnum(Status.values); // Status.active (case insensitive by default)
   /// 'unknown'.toEnum(Status.values, defaultValue: Status.pending); // Status.pending
@@ -29,7 +29,7 @@ extension FalconToolEnumStringExtension on String {
       } else {
         final lowerThis = toLowerCase();
         return enumValues.firstWhere(
-          (e) => 
+          (e) =>
               e.toValueString().toLowerCase() == lowerThis ||
               e.toString().toLowerCase() == lowerThis,
         );
@@ -47,11 +47,11 @@ extension FalconToolEnumStringExtension on String {
   }
 
   /// Converts the string to an enum value, returning null if not found.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive, pending }
-  /// 
+  ///
   /// 'active'.toEnumOrNull(Status.values); // Status.active
   /// 'unknown'.toEnumOrNull(Status.values); // null
   /// ```
@@ -66,7 +66,7 @@ extension FalconToolEnumStringExtension on String {
     } else {
       final lowerThis = toLowerCase();
       return enumValues.firstOrNullWhere(
-        (e) => 
+        (e) =>
             e.toValueString().toLowerCase() == lowerThis ||
             e.toString().toLowerCase() == lowerThis,
       );
@@ -74,11 +74,11 @@ extension FalconToolEnumStringExtension on String {
   }
 
   /// Checks if the string matches any enum value.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive }
-  /// 
+  ///
   /// 'active'.isValidEnum(Status.values); // true
   /// 'unknown'.isValidEnum(Status.values); // false
   /// ```
@@ -93,22 +93,22 @@ extension FalconToolEnumStringExtension on String {
 /// Extension methods for Enum types.
 extension FalconEnumExtension on Enum {
   /// Converts the enum to its string value (without the enum name prefix).
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive }
-  /// 
+  ///
   /// Status.active.toValueString(); // 'active'
   /// Status.inactive.toValueString(); // 'inactive'
   /// ```
   String toValueString() => EnumToString.convertToString(this);
 
   /// Converts the enum to a formatted string with custom casing.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { activeUser, inactiveUser }
-  /// 
+  ///
   /// Status.activeUser.toFormattedString(); // 'Active User'
   /// Status.activeUser.toFormattedString(separator: '-'); // 'active-user'
   /// ```
@@ -118,12 +118,14 @@ extension FalconEnumExtension on Enum {
   }) {
     final value = toValueString();
     final words = value.split(RegExp('(?=[A-Z])|_'));
-    
+
     if (capitalize) {
       return words
-          .map((word) => word.isNotEmpty 
-              ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-              : '')
+          .map(
+            (word) => word.isNotEmpty
+                ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+                : '',
+          )
           .join(separator);
     } else {
       return words.map((word) => word.toLowerCase()).join(separator);
@@ -131,22 +133,22 @@ extension FalconEnumExtension on Enum {
   }
 
   /// Gets the enum index.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Priority { low, medium, high }
-  /// 
+  ///
   /// Priority.low.enumIndex; // 0
   /// Priority.high.enumIndex; // 2
   /// ```
   int get enumIndex => index;
 
   /// Checks if this enum value equals another, with null safety.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive }
-  /// 
+  ///
   /// Status? status = Status.active;
   /// status.isEqual(Status.active); // true
   /// status.isEqual(Status.inactive); // false
@@ -154,11 +156,11 @@ extension FalconEnumExtension on Enum {
   bool isEqual(Enum? other) => this == other;
 
   /// Checks if this enum value is in a list of values.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive, pending }
-  /// 
+  ///
   /// Status.active.isIn([Status.active, Status.pending]); // true
   /// Status.inactive.isIn([Status.active, Status.pending]); // false
   /// ```
@@ -171,21 +173,21 @@ extension FalconEnumExtension on Enum {
 /// Extension methods for lists of enum values.
 extension FalconEnumListExtension<T extends Enum> on List<T> {
   /// Converts all enum values to their string representations.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive }
-  /// 
+  ///
   /// Status.values.toValueStrings(); // ['active', 'inactive']
   /// ```
   List<String> toValueStrings() => map((e) => e.toValueString()).toList();
 
   /// Finds an enum by its string value.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive }
-  /// 
+  ///
   /// Status.values.byValue('active'); // Status.active
   /// Status.values.byValue('unknown'); // throws ArgumentError
   /// ```
@@ -199,11 +201,11 @@ extension FalconEnumListExtension<T extends Enum> on List<T> {
   }
 
   /// Gets a map of enum values to their string representations.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive }
-  /// 
+  ///
   /// Status.values.toMap(); // {Status.active: 'active', Status.inactive: 'inactive'}
   /// ```
   Map<T, String> toMap() {
@@ -213,11 +215,11 @@ extension FalconEnumListExtension<T extends Enum> on List<T> {
   }
 
   /// Gets a map of string representations to enum values.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive }
-  /// 
+  ///
   /// Status.values.toReverseMap(); // {'active': Status.active, 'inactive': Status.inactive}
   /// ```
   Map<String, T> toReverseMap() {
@@ -227,11 +229,11 @@ extension FalconEnumListExtension<T extends Enum> on List<T> {
   }
 
   /// Filters enum values by a predicate on their string representation.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// enum Status { active, inactive, archived }
-  /// 
+  ///
   /// Status.values.whereValue((v) => v.startsWith('a')); // [Status.active, Status.archived]
   /// ```
   List<T> whereValue(bool Function(String value) test) {
@@ -245,7 +247,7 @@ extension FalconEnumNullExtension<T extends Enum> on T? {
   String? toValueStringOrNull() => this?.toValueString();
 
   /// Converts the enum to its string value, returning a default if null.
-  String toValueStringOr(String defaultValue) => 
+  String toValueStringOr(String defaultValue) =>
       this?.toValueString() ?? defaultValue;
 
   /// Checks if the nullable enum equals a value.

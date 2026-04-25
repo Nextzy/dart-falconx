@@ -1,58 +1,150 @@
 import 'package:dart_falmodel/dart_falmodel.dart';
 import 'package:dio/dio.dart';
 
+/// Enum of all network error types, covering general connectivity issues and
+/// every standard HTTP 4XX/5XX status code.
 enum NetworkErrorType {
   // ─── General ───
+
+  /// An unrecognized or unclassified error.
   unknown,
 
   // ─── Network / Connection ───
+
+  /// A general network-level error (e.g., socket failure).
   network,
+
+  /// A request or connection timeout.
   timeout,
+
+  /// No internet connection is available.
   noInternet,
+
+  /// A generic 4XX client error.
   clientError,
+
+  /// A generic 5XX server error.
   serverError,
 
   // ─── HTTP 4XX Client Errors ───
+
+  /// HTTP 400 Bad Request.
   badRequest,
+
+  /// HTTP 401 Unauthorized.
   unauthorized,
+
+  /// HTTP 402 Payment Required.
   paymentRequired,
+
+  /// HTTP 403 Forbidden.
   forbidden,
+
+  /// HTTP 404 Not Found.
   notFound,
+
+  /// HTTP 405 Method Not Allowed.
   methodNotAllowed,
+
+  /// HTTP 406 Not Acceptable.
   notAcceptable,
+
+  /// HTTP 407 Proxy Authentication Required.
   proxyAuthRequired,
+
+  /// HTTP 408 Request Timeout.
   requestTimeout,
+
+  /// HTTP 409 Conflict.
   conflict,
+
+  /// HTTP 410 Gone.
   gone,
+
+  /// HTTP 411 Length Required.
   lengthRequired,
+
+  /// HTTP 412 Precondition Failed.
   preconditionFailed,
+
+  /// HTTP 413 Content Too Large.
   contentTooLarge,
+
+  /// HTTP 414 URI Too Long.
   uriTooLong,
+
+  /// HTTP 415 Unsupported Media Type.
   unsupportedMediaType,
+
+  /// HTTP 416 Range Not Satisfiable.
   rangeNotSatisfiable,
+
+  /// HTTP 417 Expectation Failed.
   expectationFailed,
+
+  /// HTTP 421 Misdirected Request.
   misdirectedRequest,
+
+  /// HTTP 422 Unprocessable Content.
   unprocessableContent,
+
+  /// HTTP 423 Locked.
   locked,
+
+  /// HTTP 424 Failed Dependency.
   failedDependency,
+
+  /// HTTP 425 Too Early.
   tooEarly,
+
+  /// HTTP 426 Upgrade Required.
   upgradeRequired,
+
+  /// HTTP 428 Precondition Required.
   preconditionRequired,
+
+  /// HTTP 429 Too Many Requests.
   tooManyRequests,
+
+  /// HTTP 431 Request Header Fields Too Large.
   headerFieldsTooLarge,
+
+  /// HTTP 451 Unavailable For Legal Reasons.
   unavailableForLegal,
 
   // ─── HTTP 5XX Server Errors ───
+
+  /// HTTP 500 Internal Server Error.
   internalServerError,
+
+  /// HTTP 501 Not Implemented.
   notImplemented,
+
+  /// HTTP 502 Bad Gateway.
   badGateway,
+
+  /// HTTP 503 Service Unavailable.
   serviceUnavailable,
+
+  /// HTTP 504 Gateway Timeout.
   gatewayTimeout,
+
+  /// HTTP 505 HTTP Version Not Supported.
   httpVersionNotSupported,
+
+  /// HTTP 506 Variant Also Negotiates.
   variantAlsoNegotiates,
+
+  /// HTTP 507 Insufficient Storage.
   insufficientStorage,
+
+  /// HTTP 508 Loop Detected.
   loopDetected,
+
+  /// HTTP 510 Not Extended.
   notExtended,
+
+  /// HTTP 511 Network Authentication Required.
   networkAuthRequired;
 
   /// Returns a human-readable default message for this error type.
@@ -205,7 +297,10 @@ enum NetworkErrorType {
   bool get isServerError => (statusCode ?? 0) >= 500 && (statusCode ?? 0) < 600;
 }
 
+/// Base exception for all HTTP network errors, extending [CommonException] with
+/// HTTP-specific fields such as [statusCode], [response], and [requestOptions].
 class NetworkException extends CommonException {
+  /// Creates a [NetworkException] with the given [type] and [statusCode].
   const NetworkException({
     required super.type,
     required this.statusCode,
@@ -217,11 +312,19 @@ class NetworkException extends CommonException {
     this.errors,
   });
 
+  /// The HTTP status code returned by the server.
   final int statusCode;
+
+  /// The raw Dio response, if available.
   final Response<dynamic>? response;
+
+  /// The Dio request options that produced this error.
   final RequestOptions? requestOptions;
+
+  /// Optional list of nested network errors (e.g., validation sub-errors).
   final List<NetworkException>? errors;
 
+  /// Converts this exception to a [DioException] for interoperability with Dio.
   DioException toDioException({
     RequestOptions? requestOptions,
     Response<dynamic>? response,

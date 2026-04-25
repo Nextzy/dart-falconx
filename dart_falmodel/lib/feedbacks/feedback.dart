@@ -4,11 +4,18 @@ part 'generated/feedback.freezed.dart';
 
 part 'generated/feedback.g.dart';
 
-/// Severity levels for warnings.
+/// Severity levels for user feedback.
 enum FeedbackLevel {
+  /// Low-priority feedback that can be shown unobtrusively.
   low,
+
+  /// Medium-priority feedback; the default level.
   medium,
+
+  /// High-priority feedback that should be clearly visible.
   high,
+
+  /// Critical feedback that demands immediate user attention.
   critical;
 
   /// Whether this warning should be prominently displayed.
@@ -62,6 +69,7 @@ sealed class UserFeedback with _$UserFeedback {
     @Default(FeedbackLevel.medium) FeedbackLevel level,
   }) = Information;
 
+  /// Deserialises a [UserFeedback] from a JSON map.
   factory UserFeedback.fromJson(
     Map<String, dynamic> json,
   ) => _$UserFeedbackFromJson(json);

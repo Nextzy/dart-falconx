@@ -20,7 +20,7 @@ class _TokenBucket {
   _TokenBucket({
     required this.capacity,
     required this.refillRate,
-  })  : _tokens = capacity,
+  }) : _tokens = capacity,
        _lastRefill = DateTime.now();
 
   final int capacity;
@@ -47,17 +47,12 @@ class _TokenBucket {
     }
 
     // Calculate time until next token
-    final timeSinceLastRefill =
-        DateTime.now().difference(_lastRefill);
-    final tokensToAdd =
-        (timeSinceLastRefill.inMilliseconds /
-                1000 *
-                refillRate)
-            .floor();
+    final timeSinceLastRefill = DateTime.now().difference(_lastRefill);
+    final tokensToAdd = (timeSinceLastRefill.inMilliseconds / 1000 * refillRate)
+        .floor();
 
     if (tokensToAdd < 1) {
-      final millisecondsUntilNextToken =
-          (1000 / refillRate).ceil();
+      final millisecondsUntilNextToken = (1000 / refillRate).ceil();
       return Duration(
         milliseconds: millisecondsUntilNextToken,
       );
@@ -69,16 +64,12 @@ class _TokenBucket {
   /// Refills tokens based on time elapsed.
   void _refill() {
     final now = DateTime.now();
-    final timeSinceLastRefill =
-        now.difference(_lastRefill);
-    final secondsElapsed =
-        timeSinceLastRefill.inMilliseconds / 1000;
+    final timeSinceLastRefill = now.difference(_lastRefill);
+    final secondsElapsed = timeSinceLastRefill.inMilliseconds / 1000;
 
-    final tokensToAdd =
-        (secondsElapsed * refillRate).floor();
+    final tokensToAdd = (secondsElapsed * refillRate).floor();
     if (tokensToAdd > 0) {
-      _tokens =
-          (_tokens + tokensToAdd).clamp(0, capacity);
+      _tokens = (_tokens + tokensToAdd).clamp(0, capacity);
       _lastRefill = now;
     }
   }
@@ -105,6 +96,7 @@ class RateLimitInterceptor extends Interceptor {
     );
   }
 
+  /// Configuration driving rate-limit behavior (enable flag, logging).
   final HttpClientConfig config;
 
   /// Global rate limit (requests per second).
@@ -128,8 +120,7 @@ class RateLimitInterceptor extends Interceptor {
   final Map<String, _TokenBucket> _hostBuckets = {};
 
   // Request queues
-  final Map<String, Queue<_QueuedRequest>>
-      _requestQueues = {};
+  final Map<String, Queue<_QueuedRequest>> _requestQueues = {};
 
   // Request history for monitoring
   final List<_RequestInfo> _requestHistory = [];
@@ -145,8 +136,7 @@ class RateLimitInterceptor extends Interceptor {
     final hostBucket = _getOrCreateHostBucket(host);
 
     // Check if request can proceed immediately
-    if (_globalBucket.tryConsume() &&
-        hostBucket.tryConsume()) {
+    if (_globalBucket.tryConsume() && hostBucket.tryConsume()) {
       _recordRequest(host);
       return handler.next(options);
     }
@@ -282,21 +272,16 @@ class RateLimitInterceptor extends Interceptor {
 
     while (queue.isNotEmpty) {
       // Wait for tokens to be available
-      final globalDelay =
-          _globalBucket.timeUntilNextToken();
-      final hostDelay =
-          hostBucket.timeUntilNextToken();
-      final delay = globalDelay > hostDelay
-          ? globalDelay
-          : hostDelay;
+      final globalDelay = _globalBucket.timeUntilNextToken();
+      final hostDelay = hostBucket.timeUntilNextToken();
+      final delay = globalDelay > hostDelay ? globalDelay : hostDelay;
 
       if (delay > Duration.zero) {
         await Future<void>.delayed(delay);
       }
 
       // Try to consume tokens
-      if (_globalBucket.tryConsume() &&
-          hostBucket.tryConsume()) {
+      if (_globalBucket.tryConsume() && hostBucket.tryConsume()) {
         final queuedRequest = queue.removeFirst();
         _recordRequest(host);
 
@@ -311,8 +296,7 @@ class RateLimitInterceptor extends Interceptor {
         }
 
         // Process the request
-        queuedRequest.handler
-            .next(queuedRequest.options);
+        queuedRequest.handler.next(queuedRequest.options);
         queuedRequest.completer.complete();
       }
     }
@@ -323,7 +307,9 @@ class RateLimitInterceptor extends Interceptor {
     }
   }
 
-  /// Gets current rate limit statistics.
+  /// Returns a snapshot of current rate-limit statistics including global and
+  /// per-host request counts within the sliding [windowSize], plus queue
+  /// lengths.
   Map<String, dynamic> getStatistics() {
     final now = DateTime.now();
     final cutoff = now.subtract(windowSize);
@@ -338,26 +324,24 @@ class RateLimitInterceptor extends Interceptor {
     // Calculate per-host rates
     final hostCounts = <String, int>{};
     for (final request in recentRequests) {
-      hostCounts[request.host] =
-          (hostCounts[request.host] ?? 0) + 1;
+      hostCounts[request.host] = (hostCounts[request.host] ?? 0) + 1;
     }
 
     return {
-      'globalRequestsInWindow':
-          recentRequests.length,
-      'globalRequestsPerSecond':
-          recentRequests.length /
-              windowSize.inSeconds,
+      'globalRequestsInWindow': recentRequests.length,
+      'globalRequestsPerSecond': recentRequests.length / windowSize.inSeconds,
       'hostRequestCounts': hostCounts,
       'queuedRequests': _requestQueues.map(
-        (host, queue) =>
-            MapEntry(host, queue.length),
+        (host, queue) => MapEntry(host, queue.length),
       ),
       'windowSize': windowSize.toString(),
     };
   }
 
-  /// Clears all queued requests.
+  /// Rejects and discards all queued requests across every host.
+  ///
+  /// Each discarded request is rejected with a [DioExceptionType.cancel] error
+  /// and its completer is completed with an error.
   void clearQueues() {
     for (final queue in _requestQueues.values) {
       for (final request in queue) {
@@ -368,8 +352,7 @@ class RateLimitInterceptor extends Interceptor {
             error: 'Rate limit queue cleared',
           ),
         );
-        request.completer
-            .completeError('Queue cleared');
+        request.completer.completeError('Queue cleared');
       }
     }
     _requestQueues.clear();
