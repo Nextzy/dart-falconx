@@ -35,7 +35,7 @@ dart run build_runner build -d
 ### Two Entry Points
 
 - **`lib/lib.dart`** — Internal entry point used within the monorepo. Re-exports `dart_falmodel`, `dart:async`, `dart:convert`, `ansicolor`, `intl`, `yaml`, and `dart_faltool.dart`. Extension source files import this.
-- **`lib/dart_faltool.dart`** — Public entry point for external consumers. Re-exports ~15 third-party packages (fpdart, rxdart, freezed_annotation, equatable, logger, uuid, etc.) plus all extensions, type_def, and utils.
+- **`lib/dart_faltool.dart`** — Public entry point for external consumers. Re-exports ~15 third-party packages (fpdart, rxdart, freezed_annotation, equatable, logger, hashlib, etc.) plus all extensions, type_def, and utils.
 
 When writing extension code in this package, import `lib.dart`. Consumers of this package import `dart_faltool.dart`.
 

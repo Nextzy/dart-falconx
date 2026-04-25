@@ -158,10 +158,11 @@ Three exception systems in dart_falmodel:
 
 ### Linting Rules
 - Base: `very_good_analysis` package
-- Customizations in each `analysis_options.yaml`
+- Single `analysis_options.yaml` at the workspace root applies to every package (consolidated; per-package configs were removed)
+- `strict-casts` and `strict-inference` enabled — no implicit `dynamic`
 - Enforced: `prefer_single_quotes`, `avoid_print`, `avoid_relative_lib_imports`
-- Key relaxed rules: `public_member_api_docs`, `file_names`, `constant_identifier_names`, `avoid_catches_without_on_clauses`, `avoid_positional_boolean_parameters`, and others
-- Generated files excluded from analysis in `dart_falmodel` and `dart_faltool` (`**/generated/**`, `*.g.dart`, `*.freezed.dart`)
+- Key relaxed rules: `public_member_api_docs`, `file_names`, `constant_identifier_names`, `avoid_redundant_argument_values`, and others
+- Generated files excluded globally (`**/*.g.dart`, `**/*.freezed.dart`, `**/*.gen.dart`, `**/generated/**`, `**/build/**`)
 
 ### Build Configuration
 - See `build.yaml` in `dart_falconnect`, `dart_falmodel`, and `dart_faltool`
