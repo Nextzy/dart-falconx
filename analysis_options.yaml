@@ -42,6 +42,6 @@ linter:
     # Very good analysis
     # https://github.com/VeryGoodOpenSource/very_good_analysis/tree/main/lib
     file_names: false
-    public_member_api_docs: false
+    public_member_api_docs: true
     prefer_constructors_over_static_methods: false
     prefer_generic_function_type_aliases: false

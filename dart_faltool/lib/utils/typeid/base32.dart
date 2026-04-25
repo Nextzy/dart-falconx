@@ -10,12 +10,16 @@ import 'dart:typed_data';
 /// Implements base32 encoding and decoding modified to conform with the
 /// [TypeID specification](https://github.com/jetify-com/typeid/tree/main/spec#base32-encoding)
 class Base32 {
+  /// The TypeID base32 alphabet (Crockford-inspired, 32 characters, lowercase).
   static const String alphabet = '0123456789abcdefghjkmnpqrstvwxyz';
 
   /// ASCII code of '7' — the highest valid first character.
   /// Values above this would produce a UUID exceeding 128 bits.
   static const int _maxFirstCharCode = 55;
 
+  /// Pre-computed decode table mapping ASCII code units to 5-bit values.
+  ///
+  /// Unrecognized characters are set to `0xFF` to allow fast validation.
   static final Uint8List dec = (() {
     final dec = List<int>.filled(256, 0xFF);
 

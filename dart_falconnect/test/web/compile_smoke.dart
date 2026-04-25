@@ -6,13 +6,9 @@
 //
 // Success = exit code 0. No runtime execution.
 // If dart2js fails, dart_falconnect has a VM-only code path.
-// ignore: unused_import
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falconnect/lib.dart';
-import 'package:dart_falmodel/dart_falmodel.dart';
-import 'package:dart_falmodel/lib.dart';
-import 'package:dart_faltool/dart_faltool.dart';
 import '_stub_http_client.dart';
 
 void _sink(Object? o) {

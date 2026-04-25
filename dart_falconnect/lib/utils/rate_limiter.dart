@@ -1,4 +1,7 @@
 // TODO(nonthawit): Research rate limit
+/// Placeholder for a future rate-limiting implementation.
+///
+/// All logic is currently commented out — do not use this class.
 class RateLimiter {
   // int _timeout;
   // final int _timeStamp = DateTime

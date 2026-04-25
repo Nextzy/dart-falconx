@@ -1,28 +1,36 @@
 import 'package:dart_falconnect/lib.dart';
 
+/// Transforms a WebSocket stream into a `Result`-typed entity stream with
+/// optional local persistence.
+///
+/// Use [asStream] to wrap a raw socket stream with error handling, optional
+/// response mapping, and conditional saving.
 class SocketBoundResource<EntityType, ResponseType> {
   SocketBoundResource._();
 
+  /// Diagnostic tag used in debug log output.
   static const String TAG = 'SocketBoundResource';
 
-  static Stream<Result<EntityType>>
-      asStream<EntityType, ResponseType>({
+  /// Wraps [createCallStream] in a [Stream] of [Result]<[EntityType]>.
+  ///
+  /// [processResponse] maps each [ResponseType] to [EntityType]; required when
+  /// the two types differ. [whenSave] determines whether [saveCallResult] is
+  /// called. [error] is invoked on failures before emitting a failure result.
+  /// Set [log] to `true` to print debug messages.
+  static Stream<Result<EntityType>> asStream<EntityType, ResponseType>({
     bool Function(EntityType? data)? whenSave,
-    required Stream<ResponseType> Function()
-        createCallStream,
+    required Stream<ResponseType> Function() createCallStream,
     FutureOr<EntityType> Function(
       ResponseType result,
     )?
-        processResponse,
-    Future<void> Function(EntityType item)?
-        saveCallResult,
+    processResponse,
+    Future<void> Function(EntityType item)? saveCallResult,
     VoidErrorCallback? error,
     bool log = false,
   }) {
     assert(
       ResponseType == EntityType ||
-          (!(ResponseType == EntityType) &&
-              processResponse != null),
+          (!(ResponseType == EntityType) && processResponse != null),
       'You need to specify the `processResponse` '
       'when the EntityType and ResponseType types '
       'are different',
@@ -40,10 +48,7 @@ class SocketBoundResource<EntityType, ResponseType> {
         // Catches all exceptions including non-Exception types
         // from external callback code.
         // ignore: avoid_catches_without_on_clauses
-      } catch (
-        callbackException,
-        callbackStackTrace
-      ) {
+      } catch (callbackException, callbackStackTrace) {
         sink.add(
           Result.failure(
             callbackException.toException(
@@ -71,23 +76,19 @@ class SocketBoundResource<EntityType, ResponseType> {
     // End: inner function
 
     return createCallStream().transform(
-      StreamTransformer<ResponseType,
-          Result<EntityType>>.fromHandlers(
+      StreamTransformer<ResponseType, Result<EntityType>>.fromHandlers(
         handleData: (response, sink) async {
           try {
             late EntityType data;
             if (processResponse != null) {
-              final processedData =
-                  await processResponse(response);
+              final processedData = await processResponse(response);
               data = processedData;
             } else {
-              final castData =
-                  response as EntityType;
+              final castData = response as EntityType;
               data = castData;
             }
 
-            if ((whenSave?.call(data) ?? false) &&
-                saveCallResult != null) {
+            if ((whenSave?.call(data) ?? false) && saveCallResult != null) {
               await saveCallResult(data);
               if (log) {
                 // Intentional debug logging for socket operations.
@@ -96,10 +97,7 @@ class SocketBoundResource<EntityType, ResponseType> {
               }
             }
             sink.add(Result.success(data));
-          } on Exception catch (
-            exception,
-            stackTrace
-          ) {
+          } on Exception catch (exception, stackTrace) {
             onHandleException(
               onError: error,
               exception: exception,
@@ -108,8 +106,7 @@ class SocketBoundResource<EntityType, ResponseType> {
             );
           }
         },
-        handleError:
-            (exception, stackTrace, sink) {
+        handleError: (exception, stackTrace, sink) {
           onHandleException(
             onError: error,
             exception: exception,

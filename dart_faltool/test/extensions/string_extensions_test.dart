@@ -22,13 +22,11 @@ void main() {
             'hello world',
           );
           expect(
-            '  multiple   spaces   between  '
-                .normalizeWhitespace,
+            '  multiple   spaces   between  '.normalizeWhitespace,
             'multiple spaces between',
           );
           expect(
-            '\t\ttabs\t\tand\t\tspaces\t\t'
-                .normalizeWhitespace,
+            '\t\ttabs\t\tand\t\tspaces\t\t'.normalizeWhitespace,
             'tabs and spaces',
           );
           expect(
@@ -177,8 +175,7 @@ void main() {
       );
 
       test('toMap parses JSON to Map', () {
-        final map =
-            '{"key": "value", "number": 123}'.toMap();
+        final map = '{"key": "value", "number": 123}'.toMap();
         expect(map['key'], 'value');
         expect(map['number'], 123);
 
@@ -524,6 +521,5 @@ void main() {
         );
       },
     );
-
   });
 }

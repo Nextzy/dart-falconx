@@ -71,8 +71,10 @@ extension FalconToolFutureExtensions<T> on Future<T> {
 
         // Exponential backoff with max delay
         currentDelay = Duration(
-          milliseconds: (currentDelay.inMilliseconds * 2)
-              .clamp(0, maxDelay.inMilliseconds),
+          milliseconds: (currentDelay.inMilliseconds * 2).clamp(
+            0,
+            maxDelay.inMilliseconds,
+          ),
         );
       }
     }
@@ -129,8 +131,10 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   ///     .mapError((error) => CustomException(error.toString()));
   /// ```
   Future<T> mapError(Object Function(Object error) transform) {
-    return catchError((Object error) =>
-        Error.throwWithStackTrace(transform(error), StackTrace.current));
+    return catchError(
+      (Object error) =>
+          Error.throwWithStackTrace(transform(error), StackTrace.current),
+    );
   }
 
   /// Executes a callback regardless of success or failure.
@@ -183,7 +187,9 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   ///     .cancelAfter(Duration(seconds: 10));
   /// ```
   Future<T?> cancelAfter(Duration duration) {
-    return timeout(duration).then<T?>((value) => value).catchError(
+    return timeout(duration)
+        .then<T?>((value) => value)
+        .catchError(
           (Object error) => null,
           test: (error) => error is TimeoutException,
         );

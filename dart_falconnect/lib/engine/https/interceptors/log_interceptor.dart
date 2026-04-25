@@ -7,6 +7,11 @@ import 'package:dart_falconnect/lib.dart';
 /// This is because the execution of interceptors is in the order
 /// of addition.
 class HttpLogInterceptor extends Interceptor {
+  /// Creates an [HttpLogInterceptor].
+  ///
+  /// Each boolean flag controls which parts of the request/response cycle are
+  /// logged. [logPrint] defaults to a chunked console printer that avoids
+  /// truncation on long payloads.
   HttpLogInterceptor({
     this.enabled = true,
     this.request = true,
@@ -24,6 +29,7 @@ class HttpLogInterceptor extends Interceptor {
   final AnsiPen _error = AnsiPen()..red(bold: true);
   final AnsiPen _json = AnsiPen()..green(bold: true);
 
+  /// Whether logging is active. When `false`, all log output is suppressed.
   bool enabled;
 
   /// Print request [Options]
@@ -109,23 +115,23 @@ class HttpLogInterceptor extends Interceptor {
           String prettyPrint;
           if (data is FormData) {
             logPrint(_json('Form Data:'));
-            final newList = data.fields
-                .map(
-                  (e) => {e.key: e.value},
-                )
-                .toList()
-              ..addAll(
-                data.files
+            final newList =
+                data.fields
                     .map(
-                      (e) => {
-                        e.key:
-                            _getMultipartFileString(
-                          e.value,
-                        ),
-                      },
+                      (e) => {e.key: e.value},
                     )
-                    .toList(),
-              );
+                    .toList()
+                  ..addAll(
+                    data.files
+                        .map(
+                          (e) => {
+                            e.key: _getMultipartFileString(
+                              e.value,
+                            ),
+                          },
+                        )
+                        .toList(),
+                  );
             prettyPrint = encoder.convert(newList);
           } else {
             logPrint(_json('Body Data:'));
@@ -193,16 +199,14 @@ class HttpLogInterceptor extends Interceptor {
 
         logPrint('headers:');
         response.headers.forEach(
-          (key, v) =>
-              _printKV(' $key', v.join('\r\n\t')),
+          (key, v) => _printKV(' $key', v.join('\r\n\t')),
         );
       }
       if (responseBody) {
         logPrint(_json('Response Text:'));
         try {
           const encoder = JsonEncoder.withIndent('  ');
-          final prettyPrint =
-              encoder.convert(response.data);
+          final prettyPrint = encoder.convert(response.data);
           _printAll(_json(prettyPrint));
           // Response data may not be JSON-encodable.
           // ignore: avoid_catches_without_on_clauses
@@ -235,8 +239,7 @@ class HttpLogInterceptor extends Interceptor {
 
   static void _logPrintLong(Object? object) {
     const defaultPrintLength = 1020;
-    if (object == null ||
-        object.toString().length <= defaultPrintLength) {
+    if (object == null || object.toString().length <= defaultPrintLength) {
       // Intentional logging for HTTP diagnostics.
       // ignore: avoid_print
       print(object);

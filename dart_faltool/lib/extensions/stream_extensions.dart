@@ -17,12 +17,13 @@ extension FalconToolStreamExtension<T> on Stream<T> {
   Stream<S> mapTransform<S>({
     required void Function(T data, EventSink<S> sink) handleData,
     void Function(Object error, StackTrace stackTrace, EventSink<S> sink)?
-        handleError,
-  }) =>
-      transform<S>(StreamTransformer<T, S>.fromHandlers(
-        handleData: handleData,
-        handleError: handleError,
-      ));
+    handleError,
+  }) => transform<S>(
+    StreamTransformer<T, S>.fromHandlers(
+      handleData: handleData,
+      handleError: handleError,
+    ),
+  );
 
   /// Filters stream events based on a predicate.
   ///
@@ -166,7 +167,8 @@ extension FalconToolStreamExtension<T> on Stream<T> {
     }
     return count;
   }
-  // Note: delay, onErrorReturn, onErrorReturnWith, doOnData, doOnError, 
+
+  // Note: delay, onErrorReturn, onErrorReturnWith, doOnData, doOnError,
   // doOnDone, startWith, endWith methods are provided by RxDart
 }
 

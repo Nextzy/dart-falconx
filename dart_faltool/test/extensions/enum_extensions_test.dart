@@ -3,7 +3,9 @@ import 'package:test/test.dart';
 
 // Test enums
 enum TestStatus { active, inactive, pending }
+
 enum TestPriority { low, medium, high }
+
 enum TestUserType { regularUser, premiumUser, adminUser }
 
 void main() {
@@ -208,21 +210,18 @@ void main() {
 
       test('should format with custom separator', () {
         expect(
-          TestUserType.regularUser
-              .toFormattedString(separator: '-'),
+          TestUserType.regularUser.toFormattedString(separator: '-'),
           'Regular-User',
         );
         expect(
-          TestUserType.premiumUser
-              .toFormattedString(separator: '_'),
+          TestUserType.premiumUser.toFormattedString(separator: '_'),
           'Premium_User',
         );
       });
 
       test('should format without capitalization', () {
         expect(
-          TestUserType.regularUser
-              .toFormattedString(capitalize: false),
+          TestUserType.regularUser.toFormattedString(capitalize: false),
           'regular user',
         );
         expect(
@@ -272,13 +271,11 @@ void main() {
     group('isEqual', () {
       test('should compare enum values correctly', () {
         expect(
-          FalconEnumExtension(TestStatus.active)
-              .isEqual(TestStatus.active),
+          FalconEnumExtension(TestStatus.active).isEqual(TestStatus.active),
           true,
         );
         expect(
-          FalconEnumExtension(TestStatus.active)
-              .isEqual(TestStatus.inactive),
+          FalconEnumExtension(TestStatus.active).isEqual(TestStatus.inactive),
           false,
         );
         expect(
@@ -289,8 +286,7 @@ void main() {
 
       test('should work across different enum types', () {
         expect(
-          FalconEnumExtension(TestStatus.active)
-              .isEqual(TestPriority.low),
+          FalconEnumExtension(TestStatus.active).isEqual(TestPriority.low),
           false,
         );
       });
@@ -482,14 +478,12 @@ void main() {
 
     group('whereValue', () {
       test('should filter enums by value predicate', () {
-        final result =
-            TestStatus.values.whereValue((v) => v.startsWith('a'));
+        final result = TestStatus.values.whereValue((v) => v.startsWith('a'));
         expect(result, [TestStatus.active]);
       });
 
       test('should filter enums by value length', () {
-        final result =
-            TestStatus.values.whereValue((v) => v.length > 6);
+        final result = TestStatus.values.whereValue((v) => v.length > 6);
         expect(
           result,
           [TestStatus.inactive, TestStatus.pending],
@@ -497,8 +491,7 @@ void main() {
       });
 
       test('should return empty list when no matches', () {
-        final result =
-            TestStatus.values.whereValue((v) => v.startsWith('z'));
+        final result = TestStatus.values.whereValue((v) => v.startsWith('z'));
         expect(result, <TestStatus>[]);
       });
 
@@ -539,20 +532,17 @@ void main() {
       test('should compare nullable enum correctly', () {
         TestStatus? status = TestStatus.active;
         expect(
-          FalconEnumNullExtension(status)
-              .isEqual(TestStatus.active),
+          FalconEnumNullExtension(status).isEqual(TestStatus.active),
           true,
         );
         expect(
-          FalconEnumNullExtension(status)
-              .isEqual(TestStatus.inactive),
+          FalconEnumNullExtension(status).isEqual(TestStatus.inactive),
           false,
         );
 
         status = null;
         expect(
-          FalconEnumNullExtension(status)
-              .isEqual(TestStatus.active),
+          FalconEnumNullExtension(status).isEqual(TestStatus.active),
           false,
         );
       });

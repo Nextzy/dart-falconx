@@ -1,5 +1,6 @@
 import 'package:dart_faltool/lib.dart';
 
+/// A collection of pre-compiled regular expressions used for string validation.
 class FormatRegex {
   /// URL validation pattern that matches http and https URLs.
   static final url = RegExp(
@@ -12,17 +13,20 @@ class FormatRegex {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
+  /// HTML tag pattern that matches any `<tag>` element.
   static final RegExp html = RegExp(
     '<[^>]*>',
     multiLine: true,
     caseSensitive: false,
   );
 
+  /// HTML entity pattern that matches encoded entities such as `&amp;`.
   static final RegExp htmlEntities = RegExp(
     '&[^;]+;',
     multiLine: true,
   );
 
+  /// E.164 international phone number validation pattern.
   static final e164 = RegExp(r'^\+[1-9]\d{6,14}$');
 }
 
@@ -42,6 +46,8 @@ extension FalconToolStringValidatorExtension on String {
   /// ```
   String get removeWhiteSpace => replaceAll(RegExp(r'\s+'), '');
 
+  /// Strips all HTML tags and entities from the string, collapsing
+  /// extra whitespace.
   String get removeHtmlTags =>
       replaceAll(
             FormatRegex.html,
@@ -123,7 +129,9 @@ extension FalconToolStringValidatorExtension on String {
   /// Returns true if the string is not valid JSON.
   bool get isNotJson => !isJson;
 
+  /// Returns `true` if the string is a valid E.164 phone number.
   bool get isPhoneNumber => FormatRegex.e164.hasMatch(this);
 
+  /// Returns `true` if the string is not a valid E.164 phone number.
   bool get isNotPhoneNumber => !isPhoneNumber;
 }

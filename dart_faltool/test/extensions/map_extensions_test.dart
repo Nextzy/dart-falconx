@@ -425,8 +425,7 @@ void main() {
       });
 
       test('should create multiple nested levels', () {
-        final config = <String, dynamic>{}
-          ..setPath(['a', 'b', 'c'], 'value');
+        final config = <String, dynamic>{}..setPath(['a', 'b', 'c'], 'value');
         expect(config, {
           'a': {
             'b': {'c': 'value'},
@@ -444,8 +443,7 @@ void main() {
       });
 
       test('should handle single-level path', () {
-        final config = <String, dynamic>{}
-          ..setPath(['key'], 'value');
+        final config = <String, dynamic>{}..setPath(['key'], 'value');
         expect(config, {'key': 'value'});
       });
 
@@ -459,7 +457,7 @@ void main() {
     group('getPath', () {
       test('should get value from nested path', () {
         final config = {
-          'database': {'host': 'localhost', 'port': 5432}
+          'database': {'host': 'localhost', 'port': 5432},
         };
         final host = config.getPath<String>(['database', 'host']);
         expect(host, 'localhost');
@@ -467,7 +465,7 @@ void main() {
 
       test('should return null for non-existent path', () {
         final config = {
-          'database': {'host': 'localhost'}
+          'database': {'host': 'localhost'},
         };
         final value = config.getPath<String>(['database', 'user']);
         expect(value, null);
@@ -475,7 +473,7 @@ void main() {
 
       test('should return null for partially valid path', () {
         final config = {
-          'database': {'host': 'localhost'}
+          'database': {'host': 'localhost'},
         };
         final value = config.getPath<String>(['database', 'host', 'invalid']);
         expect(value, null);
@@ -499,7 +497,7 @@ void main() {
             'maxRetries': 3,
             'timeout': 30.5,
             'enabled': true,
-          }
+          },
         };
         expect(config.getPath<int>(['settings', 'maxRetries']), 3);
         expect(config.getPath<double>(['settings', 'timeout']), 30.5);
@@ -612,9 +610,9 @@ void main() {
           },
         },
       };
-      
+
       final cleaned = removeNullsAndEmptyStrings(data);
-      
+
       expect(cleaned, {
         'user': {
           'name': 'John',
@@ -641,9 +639,9 @@ void main() {
         {'key': 'value', 'empty': ''},
         [1, null, 2],
       ];
-      
+
       final cleaned = removeNullsAndEmptyStrings(list);
-      
+
       expect(cleaned, [
         'valid',
         {'key': 'value'},
@@ -659,7 +657,7 @@ void main() {
         'list': [1, 2, 3],
         'map': {'a': 1, 'b': 2},
       };
-      
+
       final cleaned = removeNullsAndEmptyStrings(data);
       expect(cleaned, data);
     });

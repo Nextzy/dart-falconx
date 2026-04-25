@@ -7,11 +7,24 @@ import 'package:timeago/timeago.dart' as timeago;
 /// formatting, comparisons, calculations, and timezone handling.
 extension FalconToolDateTimeExtensions on DateTime {
   /// Common date format patterns.
+
+  /// ISO 8601 date-time pattern without timezone offset
+  /// (`yyyy-MM-ddTHH:mm:ss`).
   static const String iso8601Pattern = 'yyyy-MM-ddTHH:mm:ss';
+
+  /// Date-only pattern (`yyyy-MM-dd`).
   static const String dateOnlyPattern = 'yyyy-MM-dd';
+
+  /// Time-only pattern (`HH:mm:ss`).
   static const String timeOnlyPattern = 'HH:mm:ss';
+
+  /// Short date pattern (`MMM dd, yyyy`).
   static const String shortDatePattern = 'MMM dd, yyyy';
+
+  /// Full date pattern including weekday (`EEEE, MMMM dd, yyyy`).
   static const String fullDatePattern = 'EEEE, MMMM dd, yyyy';
+
+  /// Month and year pattern (`MMMM yyyy`).
   static const String monthYearPattern = 'MMMM yyyy';
 
   // Date Components

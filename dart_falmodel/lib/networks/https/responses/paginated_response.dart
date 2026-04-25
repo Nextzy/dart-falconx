@@ -1,12 +1,12 @@
 import 'package:dart_falmodel/lib.dart';
 
 /// Generic paginated response for list endpoints.
-/// 
+///
 /// Provides a standardized structure for paginated API responses
 /// with metadata about the current page, total items, and navigation.
-/// 
+///
 /// Type parameter [T] represents the type of items in the list.
-/// 
+///
 /// Example:
 /// ```dart
 /// class UserListResponse extends PaginatedResponse<User> {
@@ -17,7 +17,7 @@ import 'package:dart_falmodel/lib.dart';
 ///     required super.totalItems,
 ///     required super.totalPages,
 ///   });
-///   
+///
 ///   factory UserListResponse.fromJson(Map<String, dynamic> json) {
 ///     return UserListResponse(
 ///       items: (json['users'] as List)
@@ -33,7 +33,7 @@ import 'package:dart_falmodel/lib.dart';
 /// ```
 class PaginatedResponse<T> extends BaseRequest {
   /// Creates a paginated response.
-  /// 
+  ///
   /// [items] is the list of items for the current page.
   /// [page] is the current page number (1-indexed).
   /// [pageSize] is the number of items per page.
@@ -113,7 +113,7 @@ class PaginatedResponse<T> extends BaseRequest {
   }
 
   /// Converts this response to a JSON map.
-  /// 
+  ///
   /// Note: This only includes metadata. Subclasses should override
   /// to include the actual items with proper serialization.
   Map<String, dynamic> toJson() => {
@@ -130,10 +130,10 @@ class PaginatedResponse<T> extends BaseRequest {
 }
 
 /// A paginated response with additional metadata.
-/// 
+///
 /// Extends [PaginatedResponse] to include custom metadata that might
 /// be returned by the API alongside pagination information.
-/// 
+///
 /// Example:
 /// ```dart
 /// class ProductListResponse extends PaginatedResponseWithMetadata<Product> {
@@ -145,11 +145,11 @@ class PaginatedResponse<T> extends BaseRequest {
 ///     required super.totalPages,
 ///     required super.metadata,
 ///   });
-///   
+///
 ///   // Access typed metadata
-///   List<String> get availableFilters => 
+///   List<String> get availableFilters =>
 ///       (metadata['filters'] as List?)?.cast<String>() ?? [];
-///   
+///
 ///   String? get searchQuery => metadata['query'] as String?;
 /// }
 /// ```

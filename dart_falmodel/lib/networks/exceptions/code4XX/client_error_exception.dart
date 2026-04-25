@@ -7,6 +7,7 @@ import 'package:dart_falmodel/lib.dart';
 ///
 /// Ref: https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 class NetworkClientException extends BaseHttpException {
+  /// Creates a [NetworkClientException] with the given [statusCode].
   const NetworkClientException({
     required super.statusCode,
     super.type = NetworkErrorType.clientError,

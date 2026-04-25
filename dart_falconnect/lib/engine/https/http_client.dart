@@ -30,6 +30,7 @@ abstract class BaseHttpClient implements RequestApiService {
   /// needed.
   Dio get dio => _dio;
 
+  /// Gets the base URL currently configured in the underlying Dio instance.
   String get baseUrl => _dio.options.baseUrl;
 
   /// Sets the base URL for all requests.
@@ -56,6 +57,9 @@ abstract class BaseHttpClient implements RequestApiService {
     Interceptors interceptors,
   ) {}
 
+  /// Appends [interceptors] to the Dio interceptor chain at runtime.
+  ///
+  /// Use this to add interceptors after construction without subclassing.
   void addInterceptors(
     Interceptors interceptors,
   ) {

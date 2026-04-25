@@ -9,14 +9,13 @@ environment:
 resolution: workspace
 
 dependencies:
-  dart_falmodel:
-    path: ../dart_falmodel
-
   #PLATFORM: All
   ansicolor: ^2.0.3
   big_decimal: ^0.7.0
-  data: ^0.15.2
+  dart_falmodel:
+    path: ../dart_falmodel
   dartx: ^1.2.0
+  data: ^0.15.2
   enum_to_string: ^2.2.1
   equatable: ^2.0.8
   fpdart: ^1.2.0

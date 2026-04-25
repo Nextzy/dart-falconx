@@ -388,11 +388,11 @@ void main() {
       expect(5.isPositive, true);
       expect(5.isNegative, false);
       expect(5.isZero, false);
-      
+
       expect((-5).isPositive, false);
       expect((-5).isNegative, true);
       expect((-5).isZero, false);
-      
+
       expect(0.isPositive, false);
       expect(0.isNegative, false);
       expect(0.isZero, true);
@@ -409,13 +409,13 @@ void main() {
     test('mapRange maps value from one range to another', () {
       // Map 50 from range 0-100 to range 0-1
       expect(50.mapRange(0, 100, 0, 1), 0.5);
-      
+
       // Map 25 from range 0-100 to range 0-10
       expect(25.mapRange(0, 100, 0, 10), 2.5);
-      
+
       // Map 0.5 from range 0-1 to range 0-255
       expect(0.5.mapRange(0, 1, 0, 255), 127.5);
-      
+
       // Map with negative ranges
       expect(0.mapRange(-10, 10, -1, 1), 0.0);
     });

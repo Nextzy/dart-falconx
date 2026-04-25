@@ -11,10 +11,8 @@ sealed class JsonRpcResponse<RESULT extends JsonRpcResult>
   const factory JsonRpcResponse({
     @JsonKey(includeFromJson: true, includeToJson: true)
     required String jsonrpc,
-    @JsonKey(includeFromJson: true, includeToJson: true)
-    required int id,
-    @JsonKey(includeFromJson: true, includeToJson: true)
-    required RESULT result,
+    @JsonKey(includeFromJson: true, includeToJson: true) required int id,
+    @JsonKey(includeFromJson: true, includeToJson: true) required RESULT result,
   }) = _JsonRpcResponse;
 
   factory JsonRpcResponse.fromJson(
@@ -29,8 +27,7 @@ sealed class JsonRpcErrorResponse with _$JsonRpcErrorResponse {
   const factory JsonRpcErrorResponse({
     @JsonKey(includeFromJson: true, includeToJson: true)
     required String jsonrpc,
-    @JsonKey(includeFromJson: true, includeToJson: true)
-    required int id,
+    @JsonKey(includeFromJson: true, includeToJson: true) required int id,
     @JsonKey(includeFromJson: true, includeToJson: true)
     required List<JsonRpcError> errors,
   }) = _JsonRpcErrorResponse;

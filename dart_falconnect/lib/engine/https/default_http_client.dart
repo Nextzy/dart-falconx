@@ -1,5 +1,7 @@
 import 'package:dart_falconnect/lib.dart';
 
+/// A ready-to-use singleton [BaseHttpClient] with JSON content type,
+/// 20-second timeouts, and [DefaultNetworkExceptionHandlerInterceptor].
 class DefaultHttpClient extends BaseHttpClient {
   DefaultHttpClient._singleton({required super.dio});
 

@@ -1,6 +1,12 @@
 import 'package:dart_falmodel/lib.dart';
 
+/// Exception that originates in the domain layer (use cases, business logic).
+///
+/// Use this instead of [CommonException] when the failure site is a use case
+/// or domain service, giving callers a way to distinguish domain-layer errors
+/// from data-layer errors via `is` checks.
 class DomainLayerException extends CommonException {
+  /// Creates a [DomainLayerException].
   const DomainLayerException({
     required super.type,
     super.userMessage,

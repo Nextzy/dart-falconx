@@ -12,6 +12,10 @@ class Result<T> extends Equatable {
   factory Result.failure(CommonException exception) =>
       Result._failure(exception);
 
+  /// Creates a failed result whose exception is a `DataLayerException`.
+  ///
+  /// [code] becomes the exception `type`; the remaining parameters are
+  /// forwarded directly to `DataLayerException`.
   factory Result.dataFailure({
     required Object code,
     String? userMessage,
@@ -28,6 +32,10 @@ class Result<T> extends Equatable {
     ),
   );
 
+  /// Creates a failed result whose exception is a `DomainLayerException`.
+  ///
+  /// [code] becomes the exception `type`; the remaining parameters are
+  /// forwarded directly to `DomainLayerException`.
   factory Result.domainFailure({
     required Object code,
     String? userMessage,
@@ -211,6 +219,9 @@ class Result<T> extends Equatable {
     }
   }
 
+  /// Returns a copy of this result with the failure messages replaced.
+  ///
+  /// Has no effect when the result is successful.
   Result<T> updateFailMessage({
     String? userMessage,
     String? developerMessage,

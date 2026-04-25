@@ -132,9 +132,7 @@ String _uuidBytesToString(Uint8List bytes) {
       'UUID bytes must be exactly 16, got ${bytes.length}',
     );
   }
-  final hex = bytes
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   return '${hex.substring(0, 8)}-'
       '${hex.substring(8, 12)}-'
       '${hex.substring(12, 16)}-'

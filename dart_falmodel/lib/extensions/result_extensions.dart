@@ -1,13 +1,13 @@
 import 'package:dart_falmodel/lib.dart';
 
+/// Extensions on `Future<DATA>` that wrap the result in a [Result] type.
 extension FalconFutureResultDataExtensions<DATA> on Future<DATA> {
   /// Converts a `Future<DATA>` to `Future<Result<DATA>>`.
   ///
   /// Catches any errors and wraps them in a `Result.failure`.
   /// Optionally transforms caught exceptions using [mapException].
   Future<Result<DATA>> toResult([
-    CommonException Function(CommonException exception)?
-        mapException,
+    CommonException Function(CommonException exception)? mapException,
   ]) {
     return then(Result<DATA>.success).catchError(
       (Object e, StackTrace stackTrace) {
@@ -20,14 +20,14 @@ extension FalconFutureResultDataExtensions<DATA> on Future<DATA> {
   }
 }
 
+/// Extensions on `Future<Result<DATA>>` for chaining and transforming results.
 extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
   /// Transforms the data inside the Result if successful.
   ///
   /// Optionally transforms the exception if the Result is a failure.
   Future<Result<R>> mapResult<R>(
     R Function(DATA data) transform, [
-    CommonException Function(CommonException exception)?
-        mapException,
+    CommonException Function(CommonException exception)? mapException,
   ]) {
     return then((result) {
       final mapped = result.map(transform);
@@ -60,8 +60,7 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
 
   /// Transforms the exception if the Result is a failure.
   Future<Result<DATA>> mapResultException(
-    CommonException Function(CommonException exception)
-        transform,
+    CommonException Function(CommonException exception) transform,
   ) {
     return then((result) => result.mapException(transform));
   }
@@ -157,6 +156,7 @@ extension FalconFutureResultExtensions<DATA> on Future<Result<DATA>> {
   }
 }
 
+/// Extensions on `Stream<DATA>` that wrap each emitted value in a [Result].
 extension FalconStreamResultDataExtensions<DATA> on Stream<DATA> {
   /// Converts a `Stream<DATA>` to `Stream<Result<DATA>>`.
   ///
@@ -164,8 +164,7 @@ extension FalconStreamResultDataExtensions<DATA> on Stream<DATA> {
   /// Errors are caught and converted to failure Results.
   /// Optionally transforms caught exceptions using [mapException].
   Stream<Result<DATA>> toResult([
-    CommonException Function(CommonException exception)?
-        mapException,
+    CommonException Function(CommonException exception)? mapException,
   ]) {
     return map(Result<DATA>.success).handleError(
       (Object error, StackTrace stackTrace) {
@@ -178,14 +177,15 @@ extension FalconStreamResultDataExtensions<DATA> on Stream<DATA> {
   }
 }
 
+/// Extensions on `Stream<Result<DATA>>` for chaining, filtering, and
+/// collecting results.
 extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
   /// Transforms the data inside each Result if successful.
   ///
   /// Optionally transforms the exception if the Result is a failure.
   Stream<Result<R>> mapResult<R>(
     R Function(DATA data) transform, [
-    CommonException Function(CommonException exception)?
-        mapException,
+    CommonException Function(CommonException exception)? mapException,
   ]) {
     return map((result) {
       final mapped = result.map(transform);
@@ -212,8 +212,7 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
 
   /// Transforms exceptions in failed Results.
   Stream<Result<DATA>> mapResultException(
-    CommonException Function(CommonException exception)
-        transform,
+    CommonException Function(CommonException exception) transform,
   ) {
     return map((result) => result.mapException(transform));
   }
@@ -230,14 +229,14 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
 
   /// Maps to a stream of successful values only, discarding failures.
   Stream<DATA> successOnly() {
-    return where((result) => result.isSuccess)
-        .map((result) => result.value);
+    return where((result) => result.isSuccess).map((result) => result.value);
   }
 
   /// Maps to a stream of exceptions only, discarding successes.
   Stream<CommonException> failureOnly() {
-    return where((result) => result.isFailure)
-        .map((result) => result.exception);
+    return where(
+      (result) => result.isFailure,
+    ).map((result) => result.exception);
   }
 
   /// Executes a callback for each successful Result.
@@ -298,7 +297,6 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
       return defaultValue(result.exception);
     });
   }
-
 
   /// Partitions the stream into successes and failures.
   ///

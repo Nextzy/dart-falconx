@@ -2,12 +2,12 @@ import 'dart:math' as math;
 import 'package:dart_faltool/lib.dart';
 
 /// Extension methods for List type with enhanced functionality.
-/// 
+///
 /// Provides comprehensive utilities for list operations including
 /// safe transformations, efficient modifications, and advanced filtering.
 extension FalconToolListExtensions<V> on List<V> {
   /// Removes all null values from the list.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final items = [1, null, 2, null, 3];
@@ -16,7 +16,7 @@ extension FalconToolListExtensions<V> on List<V> {
   List<V> removeNulls() => removeNullsFromList(this).cast<V>();
 
   /// Maps each element to a future and waits for all to complete.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final urls = ['url1', 'url2', 'url3'];
@@ -26,7 +26,7 @@ extension FalconToolListExtensions<V> on List<V> {
       Future.wait(map(toElement));
 
   /// Creates a shallow copy of the list.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final original = [1, 2, 3];
@@ -36,7 +36,7 @@ extension FalconToolListExtensions<V> on List<V> {
   List<V> copy() => toList();
 
   /// Creates a deep copy of the list using a copy function.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final users = [User('Alice'), User('Bob')];
@@ -47,9 +47,9 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Edits the first element matching the predicate.
-  /// 
+  ///
   /// Returns true if an element was edited, false otherwise.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final users = [User('Alice', 25), User('Bob', 30)];
@@ -59,7 +59,9 @@ extension FalconToolListExtensions<V> on List<V> {
   /// ); // true, Alice's age is now 26
   /// ```
   bool edit(
-      bool Function(V element) toElement, V Function(V oldData) editData) {
+    bool Function(V element) toElement,
+    V Function(V oldData) editData,
+  ) {
     final index = indexWhere(toElement);
     if (index != -1) {
       this[index] = editData(this[index]);
@@ -69,9 +71,9 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Edits all elements matching the predicate.
-  /// 
+  ///
   /// Returns the count of edited elements.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final scores = [80, 90, 75, 95];
@@ -81,7 +83,9 @@ extension FalconToolListExtensions<V> on List<V> {
   /// ); // count = 1, list is now [80, 90, 80, 95]
   /// ```
   int editAll(
-      bool Function(V element) toElement, V Function(V oldData) editData) {
+    bool Function(V element) toElement,
+    V Function(V oldData) editData,
+  ) {
     var count = 0;
     for (var i = 0; i < length; i++) {
       if (toElement(this[i])) {
@@ -93,10 +97,10 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Safely gets the element at index, returning null if out of bounds.
-  /// 
+  ///
   /// This method is now provided by dartx package.
   /// Use: list.elementAtOrNull(index)
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = [1, 2, 3];
@@ -104,7 +108,7 @@ extension FalconToolListExtensions<V> on List<V> {
   /// ```
 
   /// Gets the element at index or returns a default value.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = [1, 2, 3];
@@ -115,9 +119,9 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Removes the first element matching the predicate.
-  /// 
+  ///
   /// Returns true if an element was removed.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final numbers = [1, 2, 3, 4, 5];
@@ -134,9 +138,9 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Removes all elements matching the predicate.
-  /// 
+  ///
   /// Returns the count of removed elements.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final numbers = [1, 2, 3, 4, 5];
@@ -150,7 +154,7 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Removes duplicate elements while preserving order.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final numbers = [1, 2, 2, 3, 1, 4];
@@ -162,7 +166,7 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Removes duplicates based on a key function.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final users = [User('Alice', 25), User('Bob', 30), User('Alice', 35)];
@@ -175,10 +179,10 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Swaps two elements at the given indices.
-  /// 
+  ///
   /// This method is now provided by dartx package.
   /// Use: list.swap(index1, index2)
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = ['a', 'b', 'c'];
@@ -186,27 +190,29 @@ extension FalconToolListExtensions<V> on List<V> {
   /// ```
 
   /// Moves an element from one index to another.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = ['a', 'b', 'c', 'd'];
   /// list.move(0, 2); // ['b', 'c', 'a', 'd']
   /// ```
   void move(int fromIndex, int toIndex) {
-    if (fromIndex < 0 || fromIndex >= length || 
-        toIndex < 0 || toIndex >= length) {
+    if (fromIndex < 0 ||
+        fromIndex >= length ||
+        toIndex < 0 ||
+        toIndex >= length) {
       throw RangeError('Index out of range');
     }
     if (fromIndex == toIndex) return;
-    
+
     final element = removeAt(fromIndex);
     insert(toIndex, element);
   }
 
   /// Rotates the list by the specified number of positions.
-  /// 
+  ///
   /// Positive values rotate right, negative values rotate left.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = [1, 2, 3, 4, 5];
@@ -217,7 +223,7 @@ extension FalconToolListExtensions<V> on List<V> {
     if (isEmpty) return copy();
     final normalizedPositions = positions % length;
     if (normalizedPositions == 0) return copy();
-    
+
     return [
       ...sublist(length - normalizedPositions),
       ...sublist(0, length - normalizedPositions),
@@ -225,7 +231,7 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Splits the list into two lists at the specified index.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = [1, 2, 3, 4, 5];
@@ -239,7 +245,7 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Returns the indices of all elements matching the predicate.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final numbers = [1, 2, 3, 2, 4, 2];
@@ -256,9 +262,9 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Inserts an element if it doesn't already exist.
-  /// 
+  ///
   /// Returns true if the element was inserted.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final set = [1, 2, 3];
@@ -274,13 +280,13 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Binary search for a sorted list.
-  /// 
+  ///
   /// This method is now provided by dartx package.
   /// Use: list.binarySearch(element, compare: (a, b) => a.compareTo(b))
-  /// 
+  ///
   /// Returns the index of the element, or -1 if not found.
   /// The list must be sorted according to the comparator.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final sorted = [1, 3, 5, 7, 9];
@@ -288,7 +294,7 @@ extension FalconToolListExtensions<V> on List<V> {
   /// ```
 
   /// Inserts an element in a sorted list maintaining order.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final sorted = [1, 3, 5, 7];
@@ -297,16 +303,16 @@ extension FalconToolListExtensions<V> on List<V> {
   void insertSorted(V element, [int Function(V a, V b)? compare]) {
     final comparator = compare ?? _defaultCompare<V>;
     var index = 0;
-    
+
     while (index < length && comparator(this[index], element) < 0) {
       index++;
     }
-    
+
     insert(index, element);
   }
 
   /// Pads the list to a minimum length with a value.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = [1, 2, 3];
@@ -318,7 +324,7 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Pads the list at the beginning to a minimum length.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final list = [1, 2, 3];
@@ -330,7 +336,7 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Counts occurrences of elements.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final items = ['a', 'b', 'a', 'c', 'b', 'a'];
@@ -345,7 +351,7 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 
   /// Finds the most common element(s).
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final items = ['a', 'b', 'a', 'c', 'b', 'a'];
@@ -353,10 +359,10 @@ extension FalconToolListExtensions<V> on List<V> {
   /// ```
   List<V> mode() {
     if (isEmpty) return [];
-    
+
     final counts = countBy();
     final maxCount = counts.values.reduce(math.max);
-    
+
     return counts.entries
         .where((entry) => entry.value == maxCount)
         .map((entry) => entry.key)
@@ -371,23 +377,24 @@ extension FalconToolListExtensions<V> on List<V> {
   }
 }
 
+/// Extension methods for nullable List type with null-safe utilities.
 extension FalconToolListNullableExtensions<V> on List<V>? {
-
   /// Maps each element to a future or value asynchronously.
-  /// 
+  ///
   /// Returns an empty list if the original list is null.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final urls = ['url1', 'url2', 'url3'];
   /// final responses = await urls.futureAsyncMap((url) => fetchData(url));
   /// ```
   Future<List<T>> futureAsyncMap<T>(
-      FutureOr<T> Function(V element) toElement) async {
+    FutureOr<T> Function(V element) toElement,
+  ) async {
     return this != null
-        ? await Stream.fromIterable(this!)
-            .asyncMap((event) => toElement(event))
-            .toList()
+        ? await Stream.fromIterable(
+            this!,
+          ).asyncMap((event) => toElement(event)).toList()
         : [];
   }
 
@@ -395,7 +402,7 @@ extension FalconToolListNullableExtensions<V> on List<V>? {
   List<V> get orEmpty => this ?? [];
 
   /// Safely gets an element at index, returning null if out of bounds or null.
-  /// 
+  ///
   /// For non-null lists, use dartx's elementAtOrNull(index) instead.
   V? getOrNull(int index) {
     if (this == null || index < 0 || index >= this!.length) return null;

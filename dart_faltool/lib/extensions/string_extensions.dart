@@ -125,8 +125,6 @@ extension FalconToolStringExtension on String {
   /// or empty map if parsing fails.
   Map<String, dynamic> toMapOrEmpty() => toMapOrNull() ?? {};
 
-
-
   /// Converts the string to bytes using UTF-8 encoding.
   Uint8List toBytes() => Uint8List.fromList(utf8.encode(this));
 
@@ -199,7 +197,6 @@ extension FalconToolStringExtension on String {
         .replaceAll('&quot;', '"')
         .replaceAll('&#39;', "'");
   }
-
 }
 
 /// Extension methods for nullable String manipulation and validation.
@@ -242,5 +239,4 @@ extension FalconStringNullExtension on String? {
 
   /// Safely normalizes whitespace.
   String? get normalizeWhitespace => this?.normalizeWhitespace;
-
 }

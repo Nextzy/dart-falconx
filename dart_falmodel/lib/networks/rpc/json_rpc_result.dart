@@ -1,4 +1,3 @@
-
 /// Base class for all JSON-RPC result objects.
 ///
 /// Every `Remote...Result` freezed class implements this interface,
@@ -6,6 +5,7 @@
 /// protocol boundary.
 // ignore: one_member_abstracts
 abstract class JsonRpcResult {
+  /// Serializes this result to a JSON-compatible map.
   Map<String, dynamic> toJson();
 }
 
