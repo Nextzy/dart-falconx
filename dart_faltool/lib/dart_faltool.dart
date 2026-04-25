@@ -21,6 +21,7 @@ export 'package:equatable/equatable.dart';
 export 'package:fpdart/fpdart.dart' hide State, Task;
 export 'package:freezed_annotation/freezed_annotation.dart';
 export 'package:hashlib/hashlib.dart';
+export 'package:hashlib/random.dart';
 export 'package:intl/intl.dart';
 export 'package:json_annotation/json_annotation.dart';
 export 'package:logger/web.dart'
