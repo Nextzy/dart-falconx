@@ -16,4 +16,19 @@ class TodoException<T> extends CommonException {
     super.originalException,
     super.stackTrace,
   });
+
+  @override
+  TodoException<T> copyWith({
+    Object? type,
+    String? userMessage,
+    String? developerMessage,
+    Exception? originalException,
+    StackTrace? stackTrace,
+  }) => TodoException<T>(
+    type: type ?? this.type,
+    userMessage: userMessage ?? this.userMessage,
+    developerMessage: developerMessage ?? this.developerMessage,
+    originalException: originalException ?? this.originalException,
+    stackTrace: stackTrace ?? this.stackTrace,
+  );
 }
