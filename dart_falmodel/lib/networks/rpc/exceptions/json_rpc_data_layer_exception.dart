@@ -2,7 +2,7 @@ import 'package:dart_falmodel/lib.dart';
 
 /// JSON-RPC exception that originates in the data layer
 /// (repositories, data sources).
-class JsonRpcDataLayerException extends CommonException {
+class JsonRpcDataLayerException extends JsonRpcCommonException {
   /// Creates a [JsonRpcDataLayerException].
   const JsonRpcDataLayerException({
     required super.type,

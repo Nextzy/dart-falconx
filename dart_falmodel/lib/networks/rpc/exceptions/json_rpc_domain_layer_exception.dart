@@ -2,7 +2,7 @@ import 'package:dart_falmodel/lib.dart';
 
 /// JSON-RPC exception that originates in the domain layer
 /// (use cases, business logic).
-class JsonRpcDomainLayerException extends CommonException {
+class JsonRpcDomainLayerException extends JsonRpcCommonException {
   /// Creates a [JsonRpcDomainLayerException].
   const JsonRpcDomainLayerException({
     required super.type,
