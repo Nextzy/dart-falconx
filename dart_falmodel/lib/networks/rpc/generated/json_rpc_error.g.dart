@@ -12,6 +12,7 @@ _JsonRpcError _$JsonRpcErrorFromJson(Map<String, dynamic> json) =>
       code: json['code'] as String,
       userMessage: json['userMessage'] as String?,
       developerMessage: json['developerMessage'] as String?,
+      data: json['data'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$JsonRpcErrorToJson(_JsonRpcError instance) =>
@@ -20,6 +21,7 @@ Map<String, dynamic> _$JsonRpcErrorToJson(_JsonRpcError instance) =>
       'code': instance.code,
       'userMessage': instance.userMessage,
       'developerMessage': ?instance.developerMessage,
+      'data': ?instance.data,
     };
 
 const _$JsonRpcErrorCategoryEnumMap = {

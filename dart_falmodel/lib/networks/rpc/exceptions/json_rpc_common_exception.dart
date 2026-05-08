@@ -10,6 +10,7 @@ class JsonRpcCommonException extends CommonException {
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -19,12 +20,14 @@ class JsonRpcCommonException extends CommonException {
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcCommonException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );

@@ -15,6 +15,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     required String code,
     String? userMessage,
     @JsonKey(includeIfNull: false) String? developerMessage,
+    @JsonKey(includeIfNull: false) Map<String, dynamic>? data,
   }) = _JsonRpcError;
 
   const JsonRpcError._();
@@ -27,33 +28,39 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     required String code,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
   }) => JsonRpcError(
     category: JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
     code: code,
     userMessage: userMessage,
     developerMessage: developerMessage,
+    data: data,
   );
 
   factory JsonRpcError.external({
     required String code,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
   }) => JsonRpcError(
     category: JsonRpcErrorCategory.EXTERNAL_API_ERROR,
     code: code,
     userMessage: userMessage,
     developerMessage: developerMessage,
+    data: data,
   );
 
   /// Convenience factory for method-not-found errors.
   factory JsonRpcError.methodNotImplement({
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
   }) => JsonRpcError(
     category: JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
     code: JsonRpcApiErrorTypeEnum.METHOD_NOT_IMPLEMENTED.name,
     userMessage: userMessage,
     developerMessage: developerMessage,
+    data: data,
   );
 
   /// Convenience factory for invalid-params errors.
@@ -61,11 +68,13 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     required String code,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
   }) => JsonRpcError(
     category: JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
     code: code,
     userMessage: userMessage,
     developerMessage: developerMessage,
+    data: data,
   );
 
   /// Convenience factory for [JsonRpcErrorCategory.API_ERROR].
@@ -73,10 +82,12 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     String? code,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
   }) => JsonRpcError(
     category: JsonRpcErrorCategory.API_ERROR,
     code: code ?? JsonRpcApiErrorTypeEnum.INTERNAL_SERVER_ERROR.name,
     userMessage: userMessage,
     developerMessage: developerMessage,
+    data: data,
   );
 }

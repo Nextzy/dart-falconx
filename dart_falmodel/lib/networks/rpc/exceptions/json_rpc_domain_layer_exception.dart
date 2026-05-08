@@ -8,6 +8,7 @@ class JsonRpcDomainLayerException extends JsonRpcCommonException {
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -17,12 +18,14 @@ class JsonRpcDomainLayerException extends JsonRpcCommonException {
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcDomainLayerException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
@@ -39,6 +42,7 @@ class JsonRpcInternalApiDomainLayerException
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -48,12 +52,14 @@ class JsonRpcInternalApiDomainLayerException
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcInternalApiDomainLayerException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
@@ -71,6 +77,7 @@ class JsonRpcExternalApiDomainLayerException
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -80,12 +87,14 @@ class JsonRpcExternalApiDomainLayerException
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcExternalApiDomainLayerException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
@@ -102,6 +111,7 @@ class JsonRpcInvalidRequestDomainLayerException
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -111,12 +121,14 @@ class JsonRpcInvalidRequestDomainLayerException
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcInvalidRequestDomainLayerException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
@@ -132,6 +144,7 @@ class JsonRpcBadRequestDomainLayerException
   const JsonRpcBadRequestDomainLayerException({
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   }) : super(type: JsonRpcRequestErrorTypeEnum.BAD_REQUEST);
@@ -146,11 +159,13 @@ class JsonRpcBadRequestDomainLayerException
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcBadRequestDomainLayerException(
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
