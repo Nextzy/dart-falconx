@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$JsonRpcError {
 
- JsonRpcErrorCategory get category; String get code; String? get userMessage;@JsonKey(includeIfNull: false) String? get developerMessage;
+ JsonRpcErrorCategory get category; String get code; String? get userMessage;@JsonKey(includeIfNull: false) String? get developerMessage;@JsonKey(includeIfNull: false) Map<String, dynamic>? get data;
 /// Create a copy of JsonRpcError
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $JsonRpcErrorCopyWith<JsonRpcError> get copyWith => _$JsonRpcErrorCopyWithImpl<J
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcError&&(identical(other.category, category) || other.category == category)&&(identical(other.code, code) || other.code == code)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcError&&(identical(other.category, category) || other.category == category)&&(identical(other.code, code) || other.code == code)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage)&&const DeepCollectionEquality().equals(other.data, data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,category,code,userMessage,developerMessage);
+int get hashCode => Object.hash(runtimeType,category,code,userMessage,developerMessage,const DeepCollectionEquality().hash(data));
 
 @override
 String toString() {
-  return 'JsonRpcError(category: $category, code: $code, userMessage: $userMessage, developerMessage: $developerMessage)';
+  return 'JsonRpcError(category: $category, code: $code, userMessage: $userMessage, developerMessage: $developerMessage, data: $data)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $JsonRpcErrorCopyWith<$Res>  {
   factory $JsonRpcErrorCopyWith(JsonRpcError value, $Res Function(JsonRpcError) _then) = _$JsonRpcErrorCopyWithImpl;
 @useResult
 $Res call({
- JsonRpcErrorCategory category, String code, String? userMessage,@JsonKey(includeIfNull: false) String? developerMessage
+ JsonRpcErrorCategory category, String code, String? userMessage,@JsonKey(includeIfNull: false) String? developerMessage,@JsonKey(includeIfNull: false) Map<String, dynamic>? data
 });
 
 
@@ -65,13 +65,14 @@ class _$JsonRpcErrorCopyWithImpl<$Res>
 
 /// Create a copy of JsonRpcError
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? category = null,Object? code = null,Object? userMessage = freezed,Object? developerMessage = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? category = null,Object? code = null,Object? userMessage = freezed,Object? developerMessage = freezed,Object? data = freezed,}) {
   return _then(_self.copyWith(
 category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as JsonRpcErrorCategory,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,userMessage: freezed == userMessage ? _self.userMessage : userMessage // ignore: cast_nullable_to_non_nullable
 as String?,developerMessage: freezed == developerMessage ? _self.developerMessage : developerMessage // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,
   ));
 }
 
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( JsonRpcErrorCategory category,  String code,  String? userMessage, @JsonKey(includeIfNull: false)  String? developerMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( JsonRpcErrorCategory category,  String code,  String? userMessage, @JsonKey(includeIfNull: false)  String? developerMessage, @JsonKey(includeIfNull: false)  Map<String, dynamic>? data)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _JsonRpcError() when $default != null:
-return $default(_that.category,_that.code,_that.userMessage,_that.developerMessage);case _:
+return $default(_that.category,_that.code,_that.userMessage,_that.developerMessage,_that.data);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.category,_that.code,_that.userMessage,_that.developerMessa
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( JsonRpcErrorCategory category,  String code,  String? userMessage, @JsonKey(includeIfNull: false)  String? developerMessage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( JsonRpcErrorCategory category,  String code,  String? userMessage, @JsonKey(includeIfNull: false)  String? developerMessage, @JsonKey(includeIfNull: false)  Map<String, dynamic>? data)  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcError():
-return $default(_that.category,_that.code,_that.userMessage,_that.developerMessage);}
+return $default(_that.category,_that.code,_that.userMessage,_that.developerMessage,_that.data);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -191,10 +192,10 @@ return $default(_that.category,_that.code,_that.userMessage,_that.developerMessa
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( JsonRpcErrorCategory category,  String code,  String? userMessage, @JsonKey(includeIfNull: false)  String? developerMessage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( JsonRpcErrorCategory category,  String code,  String? userMessage, @JsonKey(includeIfNull: false)  String? developerMessage, @JsonKey(includeIfNull: false)  Map<String, dynamic>? data)?  $default,) {final _that = this;
 switch (_that) {
 case _JsonRpcError() when $default != null:
-return $default(_that.category,_that.code,_that.userMessage,_that.developerMessage);case _:
+return $default(_that.category,_that.code,_that.userMessage,_that.developerMessage,_that.data);case _:
   return null;
 
 }
@@ -206,13 +207,22 @@ return $default(_that.category,_that.code,_that.userMessage,_that.developerMessa
 @JsonSerializable()
 
 class _JsonRpcError extends JsonRpcError {
-  const _JsonRpcError({required this.category, required this.code, this.userMessage, @JsonKey(includeIfNull: false) this.developerMessage}): super._();
+  const _JsonRpcError({required this.category, required this.code, this.userMessage, @JsonKey(includeIfNull: false) this.developerMessage, @JsonKey(includeIfNull: false) final  Map<String, dynamic>? data}): _data = data,super._();
   factory _JsonRpcError.fromJson(Map<String, dynamic> json) => _$JsonRpcErrorFromJson(json);
 
 @override final  JsonRpcErrorCategory category;
 @override final  String code;
 @override final  String? userMessage;
 @override@JsonKey(includeIfNull: false) final  String? developerMessage;
+ final  Map<String, dynamic>? _data;
+@override@JsonKey(includeIfNull: false) Map<String, dynamic>? get data {
+  final value = _data;
+  if (value == null) return null;
+  if (_data is EqualUnmodifiableMapView) return _data;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
 
 /// Create a copy of JsonRpcError
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +237,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcError&&(identical(other.category, category) || other.category == category)&&(identical(other.code, code) || other.code == code)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcError&&(identical(other.category, category) || other.category == category)&&(identical(other.code, code) || other.code == code)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage)&&const DeepCollectionEquality().equals(other._data, _data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,category,code,userMessage,developerMessage);
+int get hashCode => Object.hash(runtimeType,category,code,userMessage,developerMessage,const DeepCollectionEquality().hash(_data));
 
 @override
 String toString() {
-  return 'JsonRpcError(category: $category, code: $code, userMessage: $userMessage, developerMessage: $developerMessage)';
+  return 'JsonRpcError(category: $category, code: $code, userMessage: $userMessage, developerMessage: $developerMessage, data: $data)';
 }
 
 
@@ -247,7 +257,7 @@ abstract mixin class _$JsonRpcErrorCopyWith<$Res> implements $JsonRpcErrorCopyWi
   factory _$JsonRpcErrorCopyWith(_JsonRpcError value, $Res Function(_JsonRpcError) _then) = __$JsonRpcErrorCopyWithImpl;
 @override @useResult
 $Res call({
- JsonRpcErrorCategory category, String code, String? userMessage,@JsonKey(includeIfNull: false) String? developerMessage
+ JsonRpcErrorCategory category, String code, String? userMessage,@JsonKey(includeIfNull: false) String? developerMessage,@JsonKey(includeIfNull: false) Map<String, dynamic>? data
 });
 
 
@@ -264,13 +274,14 @@ class __$JsonRpcErrorCopyWithImpl<$Res>
 
 /// Create a copy of JsonRpcError
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? category = null,Object? code = null,Object? userMessage = freezed,Object? developerMessage = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? category = null,Object? code = null,Object? userMessage = freezed,Object? developerMessage = freezed,Object? data = freezed,}) {
   return _then(_JsonRpcError(
 category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as JsonRpcErrorCategory,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,userMessage: freezed == userMessage ? _self.userMessage : userMessage // ignore: cast_nullable_to_non_nullable
 as String?,developerMessage: freezed == developerMessage ? _self.developerMessage : developerMessage // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,data: freezed == data ? _self._data : data // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,
   ));
 }
 

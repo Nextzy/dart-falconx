@@ -220,10 +220,13 @@ class CommonException implements Exception {
   ///
   /// [type] is required and identifies the error category.
   /// [userMessage] is shown to end users; [developerMessage] is for logs.
+  /// [data] carries an optional structured payload (forwarded into
+  /// [JsonRpcError.data] when serialised).
   const CommonException({
     required this.type,
     this.userMessage,
     this.developerMessage,
+    this.data,
     this.originalException,
     this.stackTrace,
   });
@@ -236,6 +239,10 @@ class CommonException implements Exception {
 
   /// Optional message intended for developer logs or debugging.
   final String? developerMessage;
+
+  /// Optional structured payload (e.g. `{'providers': ['GOOGLE']}`)
+  /// surfaced to the client through `JsonRpcError.data`.
+  final Map<String, dynamic>? data;
 
   /// The underlying exception that caused this error, if any.
   final Object? originalException;
@@ -278,12 +285,14 @@ class CommonException implements Exception {
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => CommonException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
@@ -296,6 +305,9 @@ class CommonException implements Exception {
     }
     if (developerMessage != null && developerMessage!.isNotEmpty) {
       buffer.write('\n | Dev: $developerMessage');
+    }
+    if (data != null) {
+      buffer.write('\n | Data: $data');
     }
     if (originalException != null) {
       buffer.write('\n | Original: $originalException');
@@ -326,6 +338,7 @@ class CommonException implements Exception {
           this.userMessage ??
           'Something went wrong. Please try again.',
       developerMessage: developerMessage ?? this.developerMessage,
+      data: data,
     );
   }
 

@@ -8,6 +8,7 @@ class JsonRpcDataLayerException extends JsonRpcCommonException {
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -17,12 +18,14 @@ class JsonRpcDataLayerException extends JsonRpcCommonException {
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcDataLayerException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
@@ -35,6 +38,7 @@ class JsonRpcDatabaseException extends JsonRpcDataLayerException {
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -44,12 +48,14 @@ class JsonRpcDatabaseException extends JsonRpcDataLayerException {
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcDatabaseException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
@@ -62,6 +68,7 @@ class JsonRpcExternalApiDataLayerException extends JsonRpcDataLayerException {
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -71,12 +78,14 @@ class JsonRpcExternalApiDataLayerException extends JsonRpcDataLayerException {
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => JsonRpcExternalApiDataLayerException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );

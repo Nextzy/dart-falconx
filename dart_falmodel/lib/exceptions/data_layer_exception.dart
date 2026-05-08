@@ -11,6 +11,7 @@ class DataLayerException extends CommonException {
     required super.type,
     super.userMessage,
     super.developerMessage,
+    super.data,
     super.originalException,
     super.stackTrace,
   });
@@ -20,12 +21,14 @@ class DataLayerException extends CommonException {
     Object? type,
     String? userMessage,
     String? developerMessage,
+    Map<String, dynamic>? data,
     Exception? originalException,
     StackTrace? stackTrace,
   }) => DataLayerException(
     type: type ?? this.type,
     userMessage: userMessage ?? this.userMessage,
     developerMessage: developerMessage ?? this.developerMessage,
+    data: data ?? this.data,
     originalException: originalException ?? this.originalException,
     stackTrace: stackTrace ?? this.stackTrace,
   );
