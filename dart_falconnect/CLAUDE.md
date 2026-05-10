@@ -92,15 +92,15 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 
 ## Web Support
 
-This package is verified to compile and run on web. To verify:
+This package is verified to compile and run on web. Two gates (run from `dart_falconnect/`):
 
 ```bash
-melos run verify:web
-```
+# 1. Compile-time: every public engine type compiles to JavaScript
+dart compile js test/web/compile_smoke.dart -o /tmp/compile_smoke.js
 
-This runs two gates:
-1. `dart compile js` against `test/web/compile_smoke.dart` — ensures every public engine type compiles to JavaScript.
-2. `dart test -p chrome test/web/engine_web_test.dart` — instantiates HTTP client, interceptors, and JSON-RPC service in a real browser (mocked, no network).
+# 2. Runtime: instantiate HTTP client, interceptors, JSON-RPC service in a real browser (mocked, no network)
+dart test -p chrome test/web/engine_web_test.dart
+```
 
 **Known caveats on web:**
 - `PerformanceInterceptor.RequestMetrics` timing fields (`dnsLookupTime`, `connectionTime`, `tlsHandshakeTime`, `timeToFirstByte`, `downloadTime`) are always `null` — browsers do not expose XHR timing breakdowns to dio.

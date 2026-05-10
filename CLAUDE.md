@@ -83,6 +83,21 @@ dart fix --apply
 dart format .
 ```
 
+### Custom Melos Scripts (root `pubspec.yaml`)
+
+| Script                         | Purpose                                                                      |
+|--------------------------------|------------------------------------------------------------------------------|
+| `melos run analyze`            | `dart analyze` with `analysis_options.ci.yaml --fatal-infos` (concurrency 4) |
+| `melos run format`             | `dart format --set-exit-if-changed .`                                        |
+| `melos run fix`                | `dart fix --apply` with curated `--code=` allowlist                          |
+| `melos run fix:format`         | Run `fix` then `format`                                                      |
+| `melos run test`               | `dart test` in packages with a `test/` dir, fail-fast                        |
+| `melos run build_runner`       | `build --delete-conflicting-outputs` (use after merges)                      |
+| `melos run build_runner:fast`  | `build` only, reuses incremental cache (use when adding fields)              |
+| `melos run build_runner:watch` | Watch mode                                                                   |
+| `melos run get` / `upgrade`    | `dart pub get` / `pub upgrade` across packages                               |
+| `melos run check`              | Run `analyze` then `test`                                                    |
+
 ## High-Level Architecture
 
 ### Core Components
@@ -174,3 +189,53 @@ Three exception systems in dart_falmodel:
 - Dart SDK: `>=3.9.0 <4.0.0`
 - Workspace resolution enabled for monorepo
 - Melos: `^7.5.1` for workspace management
+
+## Third-Party Packages
+
+Packages flow upward: `dart_faltool` re-exports many of these via `dart_faltool.dart`, so consumers of `dart_falconx` get them transitively.
+
+### Networking (`dart_falconnect`, `dart_falmodel`)
+
+| Package                                 | Purpose                                                             |
+|-----------------------------------------|---------------------------------------------------------------------|
+| `dio`                                   | HTTP client — base of `BaseHttpClient`, JSON-RPC, interceptor chain |
+| `dio_cache_interceptor`                 | Response caching strategy for `CacheInterceptor`                    |
+| `retrofit` + `retrofit_generator`       | Annotation-driven REST client codegen                               |
+| `web_socket_channel`                    | Cross-platform WebSocket — auto-resolves to `IO`/`Html` channel     |
+| `freezed_annotation` + `freezed`        | Sealed unions / immutable models (request/response, errors)         |
+| `json_annotation` + `json_serializable` | JSON serialization codegen                                          |
+| `ansicolor`                             | ANSI-colored log output for `LogInterceptor`                        |
+
+### Utilities (`dart_faltool`, re-exported)
+
+| Package          | Purpose                                                                           |
+|------------------|-----------------------------------------------------------------------------------|
+| `rxdart`         | Reactive streams (`PublishSubject`, operators) — used by `SocketClient`           |
+| `fpdart`         | Functional types (`Either`, `Option`, `Task`) for `Result` patterns               |
+| `equatable`      | Value equality without boilerplate                                                |
+| `dartx`          | Kotlin-style extensions; some members hidden to avoid clash with local extensions |
+| `meta`           | Dart annotations (`@immutable`, `@protected`, etc.)                               |
+| `logger`         | Structured/pretty log printer                                                     |
+| `intl`           | i18n plus locale-aware date/number formatting                                     |
+| `timeago`        | Human-readable relative time (`5 minutes ago`)                                    |
+| `numeral`        | Compact number formatting (`1.2k`, `3.4m`)                                        |
+| `big_decimal`    | Arbitrary-precision decimal arithmetic                                            |
+| `hashlib`        | Crypto / non-crypto hash digests (used by TypeID)                                 |
+| `retry`          | Generic retry-with-backoff helper                                                 |
+| `stack_trace`    | Stack-trace parsing / formatting                                                  |
+| `version`        | SemVer parsing (used by `AppInfo`)                                                |
+| `yaml`           | YAML parser (used by `AppInfo` to read `pubspec.yaml`)                            |
+| `universal_io`   | Cross-platform `dart:io` substitute (web-safe `File`, `Platform`, `HttpClient`)   |
+| `web`            | Modern `package:web` JS interop bindings                                          |
+| `enum_to_string` | Enum to/from string helpers                                                       |
+| `data`           | Data-structure / buffer helpers                                                   |
+
+### Dev / Tooling
+
+| Package              | Purpose                                                   |
+|----------------------|-----------------------------------------------------------|
+| `melos`              | Monorepo orchestrator (workspace, scripts)                |
+| `build_runner`       | Codegen runner                                            |
+| `very_good_analysis` | Opinionated lint preset (base of `analysis_options.yaml`) |
+| `lints`              | Stock Dart lints                                          |
+| `test`               | Dart test framework                                       |
