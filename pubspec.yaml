@@ -18,7 +18,7 @@ melos:
   scripts:
     analyze:
       description: Run dart analyze across all packages.
-      run: dart analyze --fatal-infos
+      run: dart analyze --options analysis_options.ci.yaml --fatal-infos
       exec:
         concurrency: 4
 
@@ -94,6 +94,12 @@ melos:
     get:
       description: Get all packages.
       run: dart pub get
+      exec:
+        concurrency: 5
+
+    upgrade:
+      description: Upgrade all packages.
+      run: dart pub upgrade
       exec:
         concurrency: 5
 
