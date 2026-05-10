@@ -1,6 +1,5 @@
 // Ignore because is not necessary
 // ignore_for_file: only_throw_errors, omit_local_variable_types
-// ignore_for_file: inference_failure_on_function_return_type
 // ignore_for_file: cascade_invocations
 // ignore_for_file: avoid_dynamic_calls
 
