@@ -54,7 +54,6 @@ extension FalconExceptionExtensions<T> on Exception? {
   /// [type] defaults to [SystemErrorType.unknown] when not provided.
   /// [developerMessage] defaults to `toString()` of this exception.
   Result<Never> toCommonResultFailure({
-    Object? category,
     Object? type,
     String? userMessage,
     String? developerMessage,
@@ -80,7 +79,6 @@ extension FalconObjectExceptionExtensions on Object? {
   /// appropriate [NetworkException]), standard [Exception], and bare [Error]
   /// objects. The [type] is inferred from the runtime type when not provided.
   CommonException toException({
-    Object? category,
     Object? type,
     String? userMessage,
     String? developerMessage,
