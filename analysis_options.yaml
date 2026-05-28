@@ -13,14 +13,17 @@ analyzer:
     invalid_annotation_target: ignore
     depend_on_referenced_packages: ignore
     invalid_use_of_internal_member: warning
+    missing_dependency: ignore
   exclude:
     - "**/build/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "**/*.gen.dart"
     - "**/generated/**"
+    - "docs/**"
     - ".dart_tool/**"
     - ".worktrees/**"
+    - ".claude/worktrees/**"
     - "**/coverage/**"
     - "**/.dart_frog/**"
     - "**/test/**.mocks.dart"

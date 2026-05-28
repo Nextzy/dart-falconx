@@ -122,6 +122,27 @@ void main() {
         expect('{"key": "value"}'.isNotJson, false);
         expect('not json'.isNotJson, true);
       });
+
+      test('isTime validates 24-hour HH:mm strings', () {
+        // Valid times
+        expect('00:00'.isTime, true);
+        expect('09:05'.isTime, true);
+        expect('14:30'.isTime, true);
+        expect('23:59'.isTime, true);
+
+        // Invalid times
+        expect('24:00'.isTime, false);
+        expect('23:60'.isTime, false);
+        expect('9:05'.isTime, false);
+        expect('14:30:00'.isTime, false);
+        expect('not a time'.isTime, false);
+        expect(''.isTime, false);
+      });
+
+      test('isNotTime is opposite of isTime', () {
+        expect('14:30'.isNotTime, false);
+        expect('24:00'.isNotTime, true);
+      });
     });
 
     group('Conversion Methods', () {

@@ -28,6 +28,9 @@ class FormatRegex {
 
   /// E.164 international phone number validation pattern.
   static final e164 = RegExp(r'^\+[1-9]\d{6,14}$');
+
+  /// HH:mm format (24-hour UTC).
+  static final timePattern = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
 }
 
 /// Extension methods for String manipulation and validation.
@@ -134,4 +137,18 @@ extension FalconToolStringValidatorExtension on String {
 
   /// Returns `true` if the string is not a valid E.164 phone number.
   bool get isNotPhoneNumber => !isPhoneNumber;
+
+  /// Returns `true` if the string is a valid 24-hour time in `HH:mm` format.
+  ///
+  /// Example:
+  /// ```dart
+  /// '14:30'.isTime; // true
+  /// '23:59'.isTime; // true
+  /// '24:00'.isTime; // false
+  /// '9:05'.isTime; // false (hour must be zero-padded)
+  /// ```
+  bool get isTime => FormatRegex.timePattern.hasMatch(this);
+
+  /// Returns `true` if the string is not a valid 24-hour `HH:mm` time.
+  bool get isNotTime => !isTime;
 }

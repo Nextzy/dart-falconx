@@ -413,18 +413,18 @@ packages:
     dependency: transitive
     description:
       name: json_annotation
-      sha256: cb09e7dac6210041fad964ed7fbee004f14258b4eca4040f72d1234062ace4c8
+      sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
       url: "https://pub.dev"
     source: hosted
-    version: "4.11.0"
+    version: "4.12.0"
   json_serializable:
     dependency: transitive
     description:
       name: json_serializable
-      sha256: "2c15e78e1cc6e62aadecf59f81566fd56829713d96a8c4177699e2b2e17f20db"
+      sha256: ffcd10cde35a93b2abbbcc26bd9971f4ca93763e8abe78d855e3c4177797e501
       url: "https://pub.dev"
     source: hosted
-    version: "6.13.2"
+    version: "6.14.0"
   lints:
     dependency: transitive
     description:
@@ -461,10 +461,10 @@ packages:
     dependency: "direct dev"
     description:
       name: melos
-      sha256: "2f7381d209ab7554203c51481a6a57c7896593b7f06190a06a467aa5bfd693c5"
+      sha256: "6dfe6cdf24863ef125bfe75d6b7b1eb192430570a27722e539a453f2cf9704e7"
       url: "https://pub.dev"
     source: hosted
-    version: "7.5.1"
+    version: "7.7.0"
   meta:
     dependency: transitive
     description:
@@ -613,10 +613,10 @@ packages:
     dependency: transitive
     description:
       name: retrofit_generator
-      sha256: b6beaca9c62acfa24e2185c238d627fd265b0d4a5b117d0fbc27223bb724cbea
+      sha256: "7b7a7bbd61da2f2cac0646fc852515886c958cafad3c7f01f25b5b2bc451405b"
       url: "https://pub.dev"
     source: hosted
-    version: "10.2.5"
+    version: "10.2.6"
   retry:
     dependency: transitive
     description:
@@ -625,6 +625,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  rrule:
+    dependency: transitive
+    description:
+      name: rrule
+      sha256: f6f6ad5bf7b19d218d4c985d6055d3c9717f1d6efd5d1c0127b1146f1eb3640c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.18"
   rxdart:
     dependency: transitive
     description:
