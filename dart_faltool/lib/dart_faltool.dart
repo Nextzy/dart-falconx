@@ -29,6 +29,7 @@ export 'package:logger/web.dart'
 export 'package:meta/meta.dart';
 export 'package:numeral/numeral.dart';
 export 'package:retry/retry.dart';
+export 'package:rrule/rrule.dart' hide DateTimeRrule;
 export 'package:rxdart/rxdart.dart';
 export 'package:stack_trace/stack_trace.dart';
 export 'package:version/version.dart';
