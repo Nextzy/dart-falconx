@@ -1,11 +1,14 @@
 import 'package:dart_falmodel/lib.dart';
 
-class RequestTimeoutException extends ClientNetworkException {
-  const RequestTimeoutException({
+/// Exception representing HTTP 408 Request Timeout responses.
+///
+/// Raised when the server timed out waiting for the client's request.
+class NetworkTimeoutException extends NetworkClientException {
+  /// Creates a [NetworkTimeoutException].
+  const NetworkTimeoutException({
     super.statusCode = 408,
-    super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.type = NetworkErrorType.requestTimeout,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
@@ -14,5 +17,6 @@ class RequestTimeoutException extends ClientNetworkException {
     this.timeout,
   });
 
-  final int? timeout;
+  /// The duration after which the request was considered timed out.
+  final Duration? timeout;
 }

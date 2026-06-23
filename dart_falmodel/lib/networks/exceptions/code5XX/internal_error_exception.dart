@@ -1,11 +1,15 @@
 import 'package:dart_falmodel/lib.dart';
 
-class InternalServerErrorException extends ServerNetworkException {
-  const InternalServerErrorException({
+/// Exception representing HTTP 500 Internal Server Error responses.
+///
+/// Raised when the server encountered an unexpected condition that prevented
+/// it from fulfilling the request.
+class NetworkInternalServerException extends NetworkServerException {
+  /// Creates a [NetworkInternalServerException].
+  const NetworkInternalServerException({
     super.statusCode = 500,
-    super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.type = NetworkErrorType.internalServerError,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,

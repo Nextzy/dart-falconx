@@ -1,6 +1,15 @@
 import 'package:dart_falconnect/lib.dart';
 
+/// [SocketInterceptor] that logs socket requests, responses, and errors.
+///
+/// Output is ANSI-coloured and long payloads are split across multiple print
+/// calls to avoid platform log-length limits. Logging is a no-op when
+/// [enabled] is `false`.
 class SocketLogInterceptor extends SocketInterceptor {
+  /// Creates a [SocketLogInterceptor].
+  ///
+  /// Pass `enabled: false` to silence all output. Use [logPrint] to redirect
+  /// output to a custom sink instead of `print`.
   SocketLogInterceptor({
     this.enabled = true,
     this.requestBody = true,
@@ -15,6 +24,7 @@ class SocketLogInterceptor extends SocketInterceptor {
   final AnsiPen _error = AnsiPen()..red(bold: true);
   final AnsiPen _json = AnsiPen()..green(bold: true);
 
+  /// Whether logging is active. Set to `false` to suppress all output.
   bool enabled;
 
   /// Print request data
@@ -26,21 +36,25 @@ class SocketLogInterceptor extends SocketInterceptor {
   /// Print error message
   bool error;
 
+  /// Callback used to emit each log line. Defaults to a chunked `print`.
   void Function(Object? object) logPrint;
 
   @override
-  Future<void> onRequest(SocketOptions options) async {
+  Future<void> onRequest(
+    SocketOptions options,
+  ) async {
     if (enabled) {
-      logPrint(_title('*** Socket Request ↗️ ***'));
+      logPrint(
+        _title('*** Socket Request ***'),
+      );
       _printKV('URL', options.uri);
       _printKV('Protocol', options.protocol);
 
       if (requestBody) {
         final data = options.data;
         const encoder = JsonEncoder.withIndent('  ');
-        String prettyPrint;
         logPrint(_json('Body Data:'));
-        prettyPrint = encoder.convert(data);
+        final prettyPrint = encoder.convert(data);
         _printAll(_json(prettyPrint));
       }
       logPrint('');
@@ -48,18 +62,25 @@ class SocketLogInterceptor extends SocketInterceptor {
   }
 
   @override
-  Future<void> onResponse(SocketResponse response) async {
+  Future<void> onResponse(
+    SocketResponse response,
+  ) async {
     if (enabled) {
-      logPrint(_title('*** Socket Response ↙️ ***'));
+      logPrint(
+        _title('*** Socket Response ***'),
+      );
       _printResponse(response);
     }
   }
 
   @override
-  Future<void> onError(SocketException err, SocketOptions options) async {
+  Future<void> onError(
+    SocketException err,
+    SocketOptions options,
+  ) async {
     if (enabled) {
       if (error) {
-        logPrint(_error('*** DioError ❌ ***:'));
+        logPrint(_error('*** DioError ***:'));
         logPrint('URL: ${options.uri}');
         logPrint('$err');
         final response = err.response;
@@ -73,8 +94,14 @@ class SocketLogInterceptor extends SocketInterceptor {
 
   void _printResponse(SocketResponse response) {
     if (enabled) {
-      _printKV('URL', response.requestOptions.uri);
-      _printKV('Protocol', response.requestOptions.protocol);
+      _printKV(
+        'URL',
+        response.requestOptions.uri,
+      );
+      _printKV(
+        'Protocol',
+        response.requestOptions.protocol,
+      );
       if (responseBody) {
         logPrint(_json('Response Text:'));
         const encoder = JsonEncoder.withIndent('  ');
@@ -97,9 +124,13 @@ class SocketLogInterceptor extends SocketInterceptor {
     }
   }
 
-  static void _logPrintLong(Object? object) async {
+  static Future<void> _logPrintLong(
+    Object? object,
+  ) async {
     const defaultPrintLength = 1020;
     if (object == null || object.toString().length <= defaultPrintLength) {
+      // Intentional logging for socket diagnostics.
+      // ignore: avoid_print
       print(object);
     } else {
       final log = object.toString();
@@ -108,12 +139,16 @@ class SocketLogInterceptor extends SocketInterceptor {
       final logLength = log.length;
       var tmpLogLength = log.length;
       while (endIndex < logLength) {
+        // Intentional logging for socket diagnostics.
+        // ignore: avoid_print
         print(log.substring(start, endIndex));
         endIndex += defaultPrintLength;
         start += defaultPrintLength;
         tmpLogLength -= defaultPrintLength;
       }
       if (tmpLogLength > 0) {
+        // Intentional logging for socket diagnostics.
+        // ignore: avoid_print
         print(log.substring(start, logLength));
       }
     }

@@ -11,10 +11,9 @@ abstract class BaseHttpException extends NetworkException {
   /// All HTTP exceptions should extend this class to inherit
   /// common functionality and ensure consistent behavior.
   const BaseHttpException({
+    required super.type,
     required super.statusCode,
-    super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,
@@ -27,17 +26,6 @@ abstract class BaseHttpException extends NetworkException {
     if (statusCode >= 400 && statusCode < 500) return '4XX';
     if (statusCode >= 500 && statusCode < 600) return '5XX';
     return 'Unknown';
-  }
-
-  /// Returns a user-friendly error message based on the status code.
-  String get userFriendlyMessage {
-    if (statusCode >= 400 && statusCode < 500) {
-      return 'The request could not be processed. Please check your input and try again.';
-    }
-    if (statusCode >= 500 && statusCode < 600) {
-      return 'The server encountered an error. Please try again later.';
-    }
-    return 'An unexpected error occurred. Please try again.';
   }
 
   /// Checks if this is a client error (4XX).
@@ -59,33 +47,35 @@ abstract class BaseHttpException extends NetworkException {
     return retryableClientErrors.contains(statusCode);
   }
 
-  /// Returns the recommended retry delay in milliseconds.
+  /// Returns the recommended retry delay.
   ///
   /// For rate limiting (429), checks the Retry-After header.
   /// For other retryable errors, returns a default delay.
-  int get recommendedRetryDelay {
-    if (!isRetryable) return 0;
+  Duration get recommendedRetryDelay {
+    if (!isRetryable) return Duration.zero;
 
     // Check for Retry-After header (429 errors)
     if (statusCode == 429 && response?.headers != null) {
       final retryAfter = response!.headers.value('retry-after');
       if (retryAfter != null) {
         final seconds = int.tryParse(retryAfter);
-        if (seconds != null) return seconds * 1000;
+        if (seconds != null) return Duration(seconds: seconds);
       }
     }
 
     // Default retry delays
-    if (statusCode == 429) return 60000; // 1 minute for rate limiting
-    if (isServerError) return 5000; // 5 seconds for server errors
-    return 3000; // 3 seconds for other retryable errors
+    if (statusCode == 429) return const Duration(minutes: 1);
+    if (isServerError) return const Duration(seconds: 5);
+    return const Duration(seconds: 3);
   }
 
   /// Extracts error details from various response formats.
   ///
   /// Attempts to extract error information from common API error
   /// response formats including JSON and plain text.
-  static Map<String, String?> extractErrorDetails(Response? response) {
+  static Map<String, String?> extractErrorDetails(
+    Response<dynamic>? response,
+  ) {
     final result = <String, String?>{
       'type': null,
       'message': null,
@@ -99,25 +89,28 @@ abstract class BaseHttpException extends NetworkException {
     // Handle JSON responses
     if (data is Map<String, dynamic>) {
       // Common error message fields
-      result['message'] = (data['message'] ??
-              data['error'] ??
-              data['error_message'] ??
-              data['detail'])
-          ?.toString();
+      result['message'] =
+          (data['message'] ??
+                  data['error'] ??
+                  data['error_message'] ??
+                  data['detail'])
+              ?.toString();
 
       // Developer/debug message fields
-      result['developerMessage'] = (data['developerMessage'] ??
-              data['developer_message'] ??
-              data['debug_message'] ??
-              data['debug'])
-          ?.toString();
+      result['developerMessage'] =
+          (data['developerMessage'] ??
+                  data['developer_message'] ??
+                  data['debug_message'] ??
+                  data['debug'])
+              ?.toString();
 
       // Error type/code fields
-      result['type'] = (data['type'] ??
-              data['error_type'] ??
-              data['error_code'] ??
-              data['code'])
-          ?.toString();
+      result['type'] =
+          (data['type'] ??
+                  data['error_type'] ??
+                  data['error_code'] ??
+                  data['code'])
+              ?.toString();
     }
     // Handle string responses
     else if (data is String) {
@@ -137,16 +130,16 @@ abstract class BaseHttpException extends NetworkException {
       ..writeln('Status Code: $statusCode ($statusCategory)');
 
     if (requestOptions != null) {
-      buffer
-          .writeln('Request: ${requestOptions!.method} ${requestOptions!.uri}');
+      buffer.writeln(
+        'Request: ${requestOptions!.method} ${requestOptions!.uri}',
+      );
     }
 
-    if (type != null) buffer.writeln('Type: $type');
-    if (errorMessage != null) buffer.writeln('Error: $errorMessage');
+    buffer.writeln('Type: $type');
+    if (userMessage != null) buffer.writeln('Error: $userMessage');
     if (developerMessage != null) {
       buffer.writeln('Developer Message: $developerMessage');
     }
-    if (statusMessage != null) buffer.writeln('Status Message: $statusMessage');
 
     return buffer.toString();
   }

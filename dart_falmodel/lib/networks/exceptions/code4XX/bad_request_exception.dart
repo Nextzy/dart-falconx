@@ -1,11 +1,14 @@
 import 'package:dart_falmodel/lib.dart';
 
-class BadRequestException extends ClientNetworkException {
-  const BadRequestException({
+/// Exception representing HTTP 400 Bad Request responses.
+///
+/// Raised when the server cannot process the request due to malformed syntax.
+class NetworkBadRequestException extends NetworkClientException {
+  /// Creates a [NetworkBadRequestException].
+  const NetworkBadRequestException({
     super.statusCode = 400,
-    super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.type = NetworkErrorType.badRequest,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,

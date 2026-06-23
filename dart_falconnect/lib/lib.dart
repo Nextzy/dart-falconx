@@ -1,6 +1,5 @@
 export 'dart:async';
 export 'dart:convert';
-export 'dart:io' hide HttpResponse, SocketException;
 
 export 'package:ansicolor/ansicolor.dart';
 export 'package:dart_falmodel/dart_falmodel.dart';

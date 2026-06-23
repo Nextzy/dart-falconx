@@ -1,4 +1,27 @@
-import 'package:dart_faltool/lib.dart';
+/// Extension methods for `Map<String, dynamic>` with deep-merge support.
+extension FalconToolMapJsonExtension on Map<String, dynamic> {
+  /// Recursively merges [patch] into this map, overriding existing keys.
+  ///
+  /// Nested maps are merged recursively; null values in [patch] are skipped.
+  /// Returns a new map — the original is not modified.
+  Map<String, dynamic> deepMerge(
+    Map<String, dynamic>? patch,
+  ) {
+    if (patch == null) return this;
+
+    final out = Map<String, dynamic>.of(this);
+    patch.forEach((key, value) {
+      if (value == null) return;
+      final existing = out[key];
+      if (value is Map<String, dynamic> && existing is Map<String, dynamic>) {
+        out[key] = existing.deepMerge(value);
+      } else {
+        out[key] = value;
+      }
+    });
+    return out;
+  }
+}
 
 /// Extension methods for Map type with enhanced functionality.
 ///
@@ -21,15 +44,19 @@ extension FalconToolMapExtension<K, V> on Map<K, V> {
   /// // {'name': 'John', 'address': {'city': 'NYC'}}
   /// ```
   Map<K, V> removeNullOrEmptyString() => Map<K, V>.fromEntries(
-        entries
-            .where((entry) =>
-                !_isNullOrEmptyString(entry.key) &&
-                !_isNullOrEmptyString(entry.value))
-            .map((entry) => MapEntry(
-                  entry.key,
-                  _removeNullsDeep(entry.value) as V,
-                )),
-      );
+    entries
+        .where(
+          (entry) =>
+              !_isNullOrEmptyString(entry.key) &&
+              !_isNullOrEmptyString(entry.value),
+        )
+        .map(
+          (entry) => MapEntry(
+            entry.key,
+            _removeNullsDeep(entry.value) as V,
+          ),
+        ),
+  );
 
   /// Gets a value by key with a default if not found or null.
   ///
@@ -375,13 +402,17 @@ Map<K, V> removeNullsFromMap<K, V>(Map<K, V> map) {
 
   return Map<K, V>.fromEntries(
     map.entries
-        .where((entry) =>
-            !_isNullOrEmptyString(entry.key) &&
-            !_isNullOrEmptyString(entry.value))
-        .map((entry) => MapEntry(
-              entry.key,
-              _removeNullsDeep(entry.value) as V,
-            )),
+        .where(
+          (entry) =>
+              !_isNullOrEmptyString(entry.key) &&
+              !_isNullOrEmptyString(entry.value),
+        )
+        .map(
+          (entry) => MapEntry(
+            entry.key,
+            _removeNullsDeep(entry.value) as V,
+          ),
+        ),
   );
 }
 

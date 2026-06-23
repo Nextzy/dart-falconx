@@ -1,34 +1,35 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:dio/dio.dart';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dio/dio.dart';
 
 /// Request information for rate limiting.
 class _RequestInfo {
-  final DateTime timestamp;
-  final String host;
-
   _RequestInfo({
     required this.timestamp,
     required this.host,
   });
+
+  final DateTime timestamp;
+  final String host;
 }
 
 /// Token bucket for rate limiting.
 class _TokenBucket {
-  final int capacity;
-  final int refillRate; // tokens per second
-  int _tokens;
-  DateTime _lastRefill;
-
   _TokenBucket({
     required this.capacity,
     required this.refillRate,
   }) : _tokens = capacity,
        _lastRefill = DateTime.now();
 
-  /// Tries to consume a token. Returns true if successful.
+  final int capacity;
+  final int refillRate; // tokens per second
+  int _tokens;
+  DateTime _lastRefill;
+
+  /// Tries to consume a token. Returns true if
+  /// successful.
   bool tryConsume() {
     _refill();
     if (_tokens > 0) {
@@ -52,7 +53,9 @@ class _TokenBucket {
 
     if (tokensToAdd < 1) {
       final millisecondsUntilNextToken = (1000 / refillRate).ceil();
-      return Duration(milliseconds: millisecondsUntilNextToken);
+      return Duration(
+        milliseconds: millisecondsUntilNextToken,
+      );
     }
 
     return Duration.zero;
@@ -72,11 +75,28 @@ class _TokenBucket {
   }
 }
 
-/// Interceptor that implements rate limiting for outgoing requests.
+/// Interceptor that implements rate limiting for outgoing
+/// requests.
 ///
-/// This interceptor uses a token bucket algorithm to limit the rate
-/// of requests per host and globally.
+/// This interceptor uses a token bucket algorithm to limit
+/// the rate of requests per host and globally.
 class RateLimitInterceptor extends Interceptor {
+  /// Creates a new rate limit interceptor.
+  RateLimitInterceptor({
+    required this.config,
+    this.globalRateLimit = 100,
+    this.perHostRateLimit = 10,
+    this.windowSize = const Duration(minutes: 1),
+    this.queueRequests = true,
+    this.maxQueueSize = 50,
+  }) {
+    _globalBucket = _TokenBucket(
+      capacity: globalRateLimit * 10,
+      refillRate: globalRateLimit,
+    );
+  }
+
+  /// Configuration driving rate-limit behavior (enable flag, logging).
   final HttpClientConfig config;
 
   /// Global rate limit (requests per second).
@@ -88,7 +108,8 @@ class RateLimitInterceptor extends Interceptor {
   /// Window size for sliding window rate limiting.
   final Duration windowSize;
 
-  /// Whether to queue requests that exceed the rate limit.
+  /// Whether to queue requests that exceed the rate
+  /// limit.
   final bool queueRequests;
 
   /// Maximum queue size per host.
@@ -104,23 +125,8 @@ class RateLimitInterceptor extends Interceptor {
   // Request history for monitoring
   final List<_RequestInfo> _requestHistory = [];
 
-  /// Creates a new rate limit interceptor.
-  RateLimitInterceptor({
-    required this.config,
-    this.globalRateLimit = 100, // 100 requests per second globally
-    this.perHostRateLimit = 10, // 10 requests per second per host
-    this.windowSize = const Duration(minutes: 1),
-    this.queueRequests = true,
-    this.maxQueueSize = 50,
-  }) {
-    _globalBucket = _TokenBucket(
-      capacity: globalRateLimit * 10, // 10 second burst capacity
-      refillRate: globalRateLimit,
-    );
-  }
-
   @override
-  void onRequest(
+  Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
@@ -139,7 +145,12 @@ class RateLimitInterceptor extends Interceptor {
     if (!queueRequests) {
       // Reject immediately
       if (config.enableLogging) {
-        print('[RateLimitInterceptor] Rate limit exceeded for $host');
+        // Intentional logging for rate limit diagnostics.
+        // ignore: avoid_print
+        print(
+          '[RateLimitInterceptor] '
+          'Rate limit exceeded for $host',
+        );
       }
 
       handler.reject(
@@ -147,7 +158,7 @@ class RateLimitInterceptor extends Interceptor {
           requestOptions: options,
           type: DioExceptionType.unknown,
           error: 'Rate limit exceeded',
-          response: Response(
+          response: Response<dynamic>(
             requestOptions: options,
             statusCode: 429,
             statusMessage: 'Too Many Requests',
@@ -166,7 +177,7 @@ class RateLimitInterceptor extends Interceptor {
     return _hostBuckets.putIfAbsent(
       host,
       () => _TokenBucket(
-        capacity: perHostRateLimit * 10, // 10 second burst capacity
+        capacity: perHostRateLimit * 10,
         refillRate: perHostRateLimit,
       ),
     );
@@ -175,11 +186,15 @@ class RateLimitInterceptor extends Interceptor {
   /// Records a request for monitoring.
   void _recordRequest(String host) {
     final now = DateTime.now();
-    _requestHistory.add(_RequestInfo(timestamp: now, host: host));
+    _requestHistory.add(
+      _RequestInfo(timestamp: now, host: host),
+    );
 
     // Clean old entries
     final cutoff = now.subtract(windowSize);
-    _requestHistory.removeWhere((info) => info.timestamp.isBefore(cutoff));
+    _requestHistory.removeWhere(
+      (info) => info.timestamp.isBefore(cutoff),
+    );
   }
 
   /// Queues a request that exceeded the rate limit.
@@ -191,13 +206,18 @@ class RateLimitInterceptor extends Interceptor {
     // Get or create queue for host
     final queue = _requestQueues.putIfAbsent(
       host,
-      () => Queue<_QueuedRequest>(),
+      Queue<_QueuedRequest>.new,
     );
 
     // Check queue size
     if (queue.length >= maxQueueSize) {
       if (config.enableLogging) {
-        print('[RateLimitInterceptor] Request queue full for $host');
+        // Intentional logging for rate limit diagnostics.
+        // ignore: avoid_print
+        print(
+          '[RateLimitInterceptor] '
+          'Request queue full for $host',
+        );
       }
 
       handler.reject(
@@ -205,7 +225,7 @@ class RateLimitInterceptor extends Interceptor {
           requestOptions: options,
           type: DioExceptionType.unknown,
           error: 'Rate limit queue full',
-          response: Response(
+          response: Response<dynamic>(
             requestOptions: options,
             statusCode: 429,
             statusMessage: 'Too Many Requests',
@@ -225,8 +245,12 @@ class RateLimitInterceptor extends Interceptor {
     queue.add(queuedRequest);
 
     if (config.enableLogging) {
+      // Intentional logging for rate limit diagnostics.
+      // ignore: avoid_print
       print(
-        '[RateLimitInterceptor] Request queued for $host (queue size: ${queue.length})',
+        '[RateLimitInterceptor] '
+        'Request queued for $host '
+        '(queue size: ${queue.length})',
       );
     }
 
@@ -253,7 +277,7 @@ class RateLimitInterceptor extends Interceptor {
       final delay = globalDelay > hostDelay ? globalDelay : hostDelay;
 
       if (delay > Duration.zero) {
-        await Future.delayed(delay);
+        await Future<void>.delayed(delay);
       }
 
       // Try to consume tokens
@@ -262,8 +286,11 @@ class RateLimitInterceptor extends Interceptor {
         _recordRequest(host);
 
         if (config.enableLogging) {
+          // Intentional logging for rate limit diagnostics.
+          // ignore: avoid_print
           print(
-            '[RateLimitInterceptor] Processing queued request for $host '
+            '[RateLimitInterceptor] '
+            'Processing queued request for $host '
             '(remaining: ${queue.length})',
           );
         }
@@ -280,14 +307,18 @@ class RateLimitInterceptor extends Interceptor {
     }
   }
 
-  /// Gets current rate limit statistics.
+  /// Returns a snapshot of current rate-limit statistics including global and
+  /// per-host request counts within the sliding [windowSize], plus queue
+  /// lengths.
   Map<String, dynamic> getStatistics() {
     final now = DateTime.now();
     final cutoff = now.subtract(windowSize);
 
     // Calculate global rate
     final recentRequests = _requestHistory
-        .where((info) => info.timestamp.isAfter(cutoff))
+        .where(
+          (info) => info.timestamp.isAfter(cutoff),
+        )
         .toList();
 
     // Calculate per-host rates
@@ -307,7 +338,10 @@ class RateLimitInterceptor extends Interceptor {
     };
   }
 
-  /// Clears all queued requests.
+  /// Rejects and discards all queued requests across every host.
+  ///
+  /// Each discarded request is rejected with a [DioExceptionType.cancel] error
+  /// and its completer is completed with an error.
   void clearQueues() {
     for (final queue in _requestQueues.values) {
       for (final request in queue) {
@@ -327,13 +361,13 @@ class RateLimitInterceptor extends Interceptor {
 
 /// A queued request waiting for rate limit.
 class _QueuedRequest {
-  final RequestOptions options;
-  final RequestInterceptorHandler handler;
-  final Completer<void> completer;
-
   _QueuedRequest({
     required this.options,
     required this.handler,
     required this.completer,
   });
+
+  final RequestOptions options;
+  final RequestInterceptorHandler handler;
+  final Completer<void> completer;
 }

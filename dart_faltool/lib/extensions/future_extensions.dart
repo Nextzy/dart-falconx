@@ -67,12 +67,14 @@ extension FalconToolFutureExtensions<T> on Future<T> {
           rethrow;
         }
 
-        await Future.delayed(currentDelay);
+        await Future<void>.delayed(currentDelay);
 
         // Exponential backoff with max delay
         currentDelay = Duration(
-          milliseconds: (currentDelay.inMilliseconds * 2)
-              .clamp(0, maxDelay.inMilliseconds),
+          milliseconds: (currentDelay.inMilliseconds * 2).clamp(
+            0,
+            maxDelay.inMilliseconds,
+          ),
         );
       }
     }
@@ -87,6 +89,8 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   Future<void> ignoreErrors() async {
     try {
       await this;
+      // Generic catch needed to suppress all error types.
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       // Errors are intentionally ignored
     }
@@ -127,8 +131,10 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   ///     .mapError((error) => CustomException(error.toString()));
   /// ```
   Future<T> mapError(Object Function(Object error) transform) {
-    return catchError((Object error) =>
-        Error.throwWithStackTrace(transform(error), StackTrace.current));
+    return catchError(
+      (Object error) =>
+          Error.throwWithStackTrace(transform(error), StackTrace.current),
+    );
   }
 
   /// Executes a callback regardless of success or failure.
@@ -168,7 +174,7 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   ///     .delayed(Duration(seconds: 2));
   /// ```
   Future<T> delayed(Duration duration) {
-    return Future.delayed(duration).then((_) => this);
+    return Future<void>.delayed(duration).then((_) => this);
   }
 
   /// Cancels the future if it takes longer than the specified duration.
@@ -181,7 +187,9 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   ///     .cancelAfter(Duration(seconds: 10));
   /// ```
   Future<T?> cancelAfter(Duration duration) {
-    return timeout(duration).then<T?>((value) => value).catchError(
+    return timeout(duration)
+        .then<T?>((value) => value)
+        .catchError(
           (Object error) => null,
           test: (error) => error is TimeoutException,
         );
@@ -231,6 +239,8 @@ extension FalconToolEitherFutureExtensions<L, R> on Future<R> {
     try {
       final value = await this;
       return Right(value);
+      // Generic catch needed to convert any error into Either.Left.
+      // ignore: avoid_catches_without_on_clauses
     } catch (error) {
       return Left(onError(error));
     }

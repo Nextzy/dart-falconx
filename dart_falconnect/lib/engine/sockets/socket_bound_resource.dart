@@ -1,23 +1,39 @@
 import 'package:dart_falconnect/lib.dart';
 
+/// Transforms a WebSocket stream into a `Result`-typed entity stream with
+/// optional local persistence.
+///
+/// Use [asStream] to wrap a raw socket stream with error handling, optional
+/// response mapping, and conditional saving.
 class SocketBoundResource<EntityType, ResponseType> {
   SocketBoundResource._();
 
+  /// Diagnostic tag used in debug log output.
   static const String TAG = 'SocketBoundResource';
 
-  static Stream<Either<Failure, EntityType>>
-  asStream<EntityType, ResponseType>({
+  /// Wraps [createCallStream] in a [Stream] of [Result]<[EntityType]>.
+  ///
+  /// [processResponse] maps each [ResponseType] to [EntityType]; required when
+  /// the two types differ. [whenSave] determines whether [saveCallResult] is
+  /// called. [error] is invoked on failures before emitting a failure result.
+  /// Set [log] to `true` to print debug messages.
+  static Stream<Result<EntityType>> asStream<EntityType, ResponseType>({
     bool Function(EntityType? data)? whenSave,
     required Stream<ResponseType> Function() createCallStream,
-    FutureOr<EntityType> Function(ResponseType result)? processResponse,
-    Future Function(EntityType item)? saveCallResult,
+    FutureOr<EntityType> Function(
+      ResponseType result,
+    )?
+    processResponse,
+    Future<void> Function(EntityType item)? saveCallResult,
     VoidErrorCallback? error,
     bool log = false,
   }) {
     assert(
       ResponseType == EntityType ||
           (!(ResponseType == EntityType) && processResponse != null),
-      'You need to specify the `processResponse` when the EntityType and ResponseType types are different',
+      'You need to specify the `processResponse` '
+      'when the EntityType and ResponseType types '
+      'are different',
     );
 
     // Start: inner function
@@ -25,38 +41,43 @@ class SocketBoundResource<EntityType, ResponseType> {
       required VoidErrorCallback? onError,
       required Object exception,
       required StackTrace? stackTrace,
-      required EventSink<Either<Failure, EntityType>> sink,
+      required EventSink<Result<EntityType>> sink,
     }) {
-      if (exception is Failure) {
-        sink.add(Left(exception));
-      } else if (exception is Exception) {
-        try {
-          onError?.call(exception, stackTrace);
-        } catch (newException, stackTrace) {
-          if (newException is Failure) {
-            sink.add(Left(newException));
-          } else if (newException is Exception) {
-            sink.add(
-              Left(
-                Failure(
-                  message: newException.toString(),
-                  exception: newException,
-                  stackTrace: stackTrace,
-                ),
-              ),
-            );
-          }
-        }
-        if (log) {
-          print('Operation failed $exception');
-        }
+      try {
+        onError?.call(exception, stackTrace);
+        // Catches all exceptions including non-Exception types
+        // from external callback code.
+        // ignore: avoid_catches_without_on_clauses
+      } catch (callbackException, callbackStackTrace) {
+        sink.add(
+          Result.failure(
+            callbackException.toException(
+              stackTrace: callbackStackTrace,
+            ),
+          ),
+        );
+        return;
+      }
+
+      sink.add(
+        Result.failure(
+          exception.toException(
+            stackTrace: stackTrace,
+          ),
+        ),
+      );
+
+      if (log) {
+        // Intentional debug logging for socket operations.
+        // ignore: avoid_print
+        print('Operation failed $exception');
       }
     }
     // End: inner function
 
     return createCallStream().transform(
-      StreamTransformer<ResponseType, Either<Failure, EntityType>>.fromHandlers(
-        handleData: (ResponseType response, sink) async {
+      StreamTransformer<ResponseType, Result<EntityType>>.fromHandlers(
+        handleData: (response, sink) async {
           try {
             late EntityType data;
             if (processResponse != null) {
@@ -70,10 +91,12 @@ class SocketBoundResource<EntityType, ResponseType> {
             if ((whenSave?.call(data) ?? false) && saveCallResult != null) {
               await saveCallResult(data);
               if (log) {
+                // Intentional debug logging for socket operations.
+                // ignore: avoid_print
                 print('Success save result data');
               }
             }
-            sink.add(Right(data));
+            sink.add(Result.success(data));
           } on Exception catch (exception, stackTrace) {
             onHandleException(
               onError: error,

@@ -15,7 +15,10 @@ class RetryInterceptor extends Interceptor {
     required this.dio,
   });
 
+  /// Configuration used to determine retry limits and delays.
   final HttpClientConfig config;
+
+  /// The [Dio] instance used to re-execute failed requests.
   final Dio dio;
   final Random _random = Random();
 
@@ -43,18 +46,23 @@ class RetryInterceptor extends Interceptor {
 
     // Log retry attempt
     if (config.enableLogging) {
+      // Intentional logging for retry diagnostics.
+      // ignore: avoid_print
       print(
-        '[RetryInterceptor] Retrying request ${retryCount + 1}/'
-        '${config.maxRetryAttempts} after ${delay.inMilliseconds}ms: '
-        '${err.requestOptions.method} ${err.requestOptions.uri}',
+        '[RetryInterceptor] Retrying request '
+        '${retryCount + 1}/'
+        '${config.maxRetryAttempts} after '
+        '${delay.inMilliseconds}ms: '
+        '${err.requestOptions.method} '
+        '${err.requestOptions.uri}',
       );
     }
 
     // Wait before retrying
-    await Future.delayed(delay);
+    await Future<void>.delayed(delay);
 
     try {
-      // Clone the request with updated retry information
+      // Clone the request with updated retry info
       final options = Options(
         method: err.requestOptions.method,
         headers: err.requestOptions.headers,
@@ -76,7 +84,7 @@ class RetryInterceptor extends Interceptor {
       );
 
       // Retry the request
-      final response = await dio.request(
+      final response = await dio.request<dynamic>(
         err.requestOptions.path,
         data: err.requestOptions.data,
         queryParameters: err.requestOptions.queryParameters,
@@ -98,7 +106,10 @@ class RetryInterceptor extends Interceptor {
   }
 
   /// Determines if a request should be retried.
-  bool _shouldRetry(DioException err, int retryCount) {
+  bool _shouldRetry(
+    DioException err,
+    int retryCount,
+  ) {
     // Don't retry if we've exceeded max attempts
     if (retryCount >= config.maxRetryAttempts) {
       return false;
@@ -109,7 +120,7 @@ class RetryInterceptor extends Interceptor {
       return false;
     }
 
-    // Check if it's a network error (connection issues)
+    // Check if it's a network error
     if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.sendTimeout ||
         err.type == DioExceptionType.receiveTimeout ||
@@ -134,8 +145,12 @@ class RetryInterceptor extends Interceptor {
     return false;
   }
 
-  /// Calculates the delay before the next retry attempt.
-  Duration _calculateDelay(DioException err, int retryCount) {
+  /// Calculates the delay before the next retry
+  /// attempt.
+  Duration _calculateDelay(
+    DioException err,
+    int retryCount,
+  ) {
     // Check for Retry-After header
     if (err.response != null && err.response!.statusCode == 429) {
       final retryAfter = err.response!.headers.value('retry-after');
@@ -150,7 +165,8 @@ class RetryInterceptor extends Interceptor {
     // Calculate exponential backoff with jitter
     final baseDelay = config.retryDelay.inMilliseconds;
     final exponentialDelay = (baseDelay * pow(2, retryCount)).round();
-    final jitter = _random.nextInt(1000); // Add up to 1 second of jitter
+    // Add up to 1 second of jitter
+    final jitter = _random.nextInt(1000);
     final totalDelay = exponentialDelay + jitter;
 
     // Cap at max delay

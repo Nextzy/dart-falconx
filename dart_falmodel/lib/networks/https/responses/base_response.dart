@@ -1,12 +1,12 @@
 import 'package:dart_falmodel/lib.dart';
 
 /// Generic base response class for all HTTP responses.
-/// 
+///
 /// This class provides a type-safe wrapper around Dio's [Response] class
 /// with improved type inference and documentation.
-/// 
+///
 /// Type parameter [T] represents the data type of the response body.
-/// 
+///
 /// Example:
 /// ```dart
 /// // For a simple value response
@@ -15,7 +15,7 @@ import 'package:dart_falmodel/lib.dart';
 ///   statusCode: 200,
 ///   requestOptions: requestOptions,
 /// );
-/// 
+///
 /// // For a complex object response
 /// final userResponse = BaseResponse<User>(
 ///   data: User(id: 1, name: 'John'),
@@ -25,7 +25,7 @@ import 'package:dart_falmodel/lib.dart';
 /// ```
 class BaseResponse<T> extends Response<T> {
   /// Creates a base response with the given parameters.
-  /// 
+  ///
   /// [data] is the response body of type [T].
   /// [statusCode] is the HTTP status code.
   /// [statusMessage] is the HTTP status message.
@@ -73,13 +73,16 @@ class BaseResponse<T> extends Response<T> {
   }
 
   /// Whether the response was successful (2xx status code).
-  bool get isSuccessful => statusCode != null && statusCode! >= 200 && statusCode! < 300;
+  bool get isSuccessful =>
+      statusCode != null && statusCode! >= 200 && statusCode! < 300;
 
   /// Whether the response was a client error (4xx status code).
-  bool get isClientError => statusCode != null && statusCode! >= 400 && statusCode! < 500;
+  bool get isClientError =>
+      statusCode != null && statusCode! >= 400 && statusCode! < 500;
 
   /// Whether the response was a server error (5xx status code).
-  bool get isServerError => statusCode != null && statusCode! >= 500 && statusCode! < 600;
+  bool get isServerError =>
+      statusCode != null && statusCode! >= 500 && statusCode! < 600;
 }
 
 /// Type aliases for common response types to maintain backward compatibility

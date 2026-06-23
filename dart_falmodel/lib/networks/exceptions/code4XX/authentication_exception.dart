@@ -1,11 +1,14 @@
 import 'package:dart_falmodel/lib.dart';
 
-class AuthenticationException extends ClientNetworkException {
-  const AuthenticationException({
+/// Exception representing HTTP 401 Unauthorized responses.
+///
+/// Raised when a request requires authentication and none was provided.
+class NetworkAuthenticationException extends NetworkClientException {
+  /// Creates a [NetworkAuthenticationException].
+  const NetworkAuthenticationException({
     super.statusCode = 401,
-    super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.type = NetworkErrorType.unauthorized,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,

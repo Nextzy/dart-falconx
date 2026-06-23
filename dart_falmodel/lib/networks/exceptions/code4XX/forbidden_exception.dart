@@ -1,11 +1,14 @@
 import 'package:dart_falmodel/lib.dart';
 
-class ForbiddenException extends ClientNetworkException {
-  const ForbiddenException({
+/// Exception representing HTTP 403 Forbidden responses.
+///
+/// Raised when the server understands the request but refuses to authorize it.
+class NetworkForbiddenException extends NetworkClientException {
+  /// Creates a [NetworkForbiddenException].
+  const NetworkForbiddenException({
     super.statusCode = 403,
-    super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.type = NetworkErrorType.forbidden,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,

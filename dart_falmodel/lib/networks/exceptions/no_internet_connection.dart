@@ -1,38 +1,18 @@
 import 'package:dart_falmodel/lib.dart';
 
-class NoInternetConnectException implements Exception {
+/// Exception raised when no internet connection is available.
+///
+/// Uses status code 0 to indicate the absence of a server response.
+class NoInternetConnectException extends NetworkException {
+  /// Creates a [NoInternetConnectException].
   const NoInternetConnectException({
-    this.message,
-    this.requestOptions,
-    this.stackTrace,
+    super.statusCode = 0,
+    super.type = NetworkErrorType.noInternet,
+    super.userMessage,
+    super.developerMessage,
+    super.response,
+    super.requestOptions,
+    super.stackTrace,
+    super.errors,
   });
-
-  final String? message;
-  final RequestOptions? requestOptions;
-  final StackTrace? stackTrace;
-
-  DioException toDioException({
-    RequestOptions? requestOptions,
-    Response? response,
-    StackTrace? stackTrace,
-    DioExceptionType? type,
-    String? message,
-  }) =>
-      DioException(
-        requestOptions:
-            requestOptions ?? this.requestOptions ?? RequestOptions(),
-        error: this,
-        stackTrace: stackTrace ?? this.stackTrace ?? StackTrace.current,
-        type: type ?? DioExceptionType.unknown,
-        message: message ?? this.message,
-      );
-
-  @override
-  String toString() {
-    var msg = '';
-    if (message != null && message!.isNotEmpty) {
-      msg += '>>Message: $message\n';
-    }
-    return msg;
-  }
 }

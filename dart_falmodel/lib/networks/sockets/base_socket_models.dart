@@ -136,7 +136,7 @@ class SocketResponse extends BaseSocketResponse<String> {
 
 /// Socket response for JSON data.
 ///
-/// Automatically parses JSON strings into Map<String, dynamic>
+/// Automatically parses JSON strings into `Map<String, dynamic>`
 /// for easier manipulation of structured data.
 class JsonSocketResponse extends BaseSocketResponse<Map<String, dynamic>> {
   /// Creates a JSON socket response.
@@ -166,6 +166,8 @@ class JsonSocketResponse extends BaseSocketResponse<Map<String, dynamic>> {
   T? getValue<T>(String key) {
     try {
       return data[key] as T?;
+      // Type cast may fail for any type T
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       return null;
     }

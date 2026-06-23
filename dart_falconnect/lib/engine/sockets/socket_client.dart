@@ -1,6 +1,16 @@
 import 'package:dart_falconnect/lib.dart';
 
+/// Abstract WebSocket client with automatic retry, interceptor support, and
+/// reactive response streaming.
+///
+/// Subclasses must implement [setupConfig] to configure [SocketOptions].
+/// Override [setupInterceptors] to add [SocketInterceptor] instances. The
+/// channel is opened lazily on the first [request] call.
 abstract class SocketClient implements RequestSocketService {
+  /// Creates a [SocketClient] connected to [baseUrl].
+  ///
+  /// Initialises internal state, calls [setupConfig] with the default options,
+  /// and calls [setupInterceptors] with the empty interceptor list.
   SocketClient(String baseUrl) {
     _tmpOptions = SocketOptions(uri: baseUrl);
     _replaySubject = PublishSubject<SocketResponse>();
@@ -10,25 +20,39 @@ abstract class SocketClient implements RequestSocketService {
     setupInterceptors(interceptors);
   }
 
+  /// Diagnostic tag for this client.
   static const TAG = 'SocketChannel';
   late SocketOptions _tmpOptions;
   late PublishSubject<SocketResponse> _replaySubject;
   late int _retryLimitCounter;
+
+  /// The ordered list of interceptors applied to every socket event.
   late final SocketInterceptors interceptors;
 
   WebSocketChannel? _channel;
   bool _isClose = true;
-  StreamSubscription? _subscription;
+  StreamSubscription<dynamic>? _subscription;
 
+  /// Whether the underlying WebSocket channel is currently closed.
   bool get isClose => _isClose;
 
+  /// Directly sets the closed state of the channel.
   set setIsClose(bool isClose) => _isClose = isClose;
 
+  /// Current [SocketOptions] reflecting the latest request configuration.
   SocketOptions get options => _tmpOptions;
 
+  /// Configures [SocketOptions] for this client before the first connection.
+  ///
+  /// Override to set the URI, protocol, retry limit, and other options.
   void setupConfig(SocketOptions configs);
 
-  void setupInterceptors(SocketInterceptors interceptors) {}
+  /// Registers interceptors on [interceptors] before the first connection.
+  ///
+  /// The default implementation is a no-op; override to add interceptors.
+  void setupInterceptors(
+    SocketInterceptors interceptors,
+  ) {}
 
   @override
   Future<void> createChannel() async {
@@ -37,7 +61,9 @@ abstract class SocketClient implements RequestSocketService {
       _isClose = true;
     }
 
-    _channel = WebSocketChannel.connect(Uri.parse(_tmpOptions.uri));
+    _channel = WebSocketChannel.connect(
+      Uri.parse(_tmpOptions.uri),
+    );
     _subscription = _channel?.stream.listen(
       _onResponse,
       onError: _onError,
@@ -51,15 +77,19 @@ abstract class SocketClient implements RequestSocketService {
     await closeChannel();
   }
 
-  void _onError(Exception? error, StackTrace? stackTrace) async {
+  Future<void> _onError(
+    Exception? error,
+    StackTrace? stackTrace,
+  ) async {
     if (_retryLimitCounter > 0) {
       _executeInterceptorOnError(
-          exception: SocketRetryException(
-            retryCount: _retryLimitCounter,
-            exception: error,
-            stackTrace: stackTrace,
-          ),
-          options: _tmpOptions.copyWith());
+        exception: SocketRetryException(
+          retryCount: _retryLimitCounter,
+          exception: error,
+          stackTrace: stackTrace,
+        ),
+        options: _tmpOptions.copyWith(),
+      );
       _isClose = false;
       _retryLimitCounter--;
       if (_tmpOptions.data != null) {
@@ -67,20 +97,24 @@ abstract class SocketClient implements RequestSocketService {
       }
     } else {
       _executeInterceptorOnError(
-          exception: SocketException(
-            exception: error,
-            stackTrace: stackTrace,
-          ),
-          options: _tmpOptions.copyWith());
+        exception: SocketException(
+          exception: error,
+          stackTrace: stackTrace,
+        ),
+        options: _tmpOptions.copyWith(),
+      );
       _isClose = true;
-      _replaySubject.addError(error as Object, stackTrace);
+      _replaySubject.addError(
+        error!,
+        stackTrace,
+      );
       await _subscription?.cancel();
     }
   }
 
   @override
   Future<void> closeChannel() async {
-    if (_isClose == false) {
+    if (!_isClose) {
       await _channel?.sink.close();
       await _subscription?.cancel();
       _isClose = true;
@@ -88,17 +122,20 @@ abstract class SocketClient implements RequestSocketService {
     }
   }
 
-  /// Create channel automatically when first call request.
+  /// Create channel automatically when first call
+  /// request.
   @override
-  void request(String data) async {
-    if (_channel == null || isClose == true) {
+  Future<void> request(String data) async {
+    if (_channel == null || isClose) {
       await createChannel();
     }
     _tmpOptions = _tmpOptions.copyWith(
       protocol: _channel?.protocol,
       data: data,
     );
-    _executeInterceptorOnRequest(options: _tmpOptions);
+    _executeInterceptorOnRequest(
+      options: _tmpOptions,
+    );
     _channel?.sink.add(_tmpOptions.data);
   }
 
@@ -107,20 +144,20 @@ abstract class SocketClient implements RequestSocketService {
     bool Function(SocketResponse response)? filter,
     required T Function(SocketResponse response) converter,
   }) =>
-      _replaySubject.stream
-          .where(filter ?? (data) => true)
-          .asyncMap((response) => converter(response));
+      _replaySubject.stream.where(filter ?? (data) => true).asyncMap(converter);
 
   @override
   Stream<SocketResponse> getRawStream({
     bool Function(SocketResponse response)? filter,
-  }) =>
-      _replaySubject.stream.where(filter ?? (data) => true);
+  }) => _replaySubject.stream.where(filter ?? (data) => true);
 
+  /// Sends a `ping` frame to verify the connection is still alive.
+  ///
+  /// Calls [createChannel] if the ping throws, re-establishing the connection.
   Future<void> checkConnection() async {
     try {
       _channel?.sink.add('ping');
-    } on StateError catch (error, stackTrace) {
+    } on Exception catch (_) {
       await createChannel();
     }
   }
@@ -131,14 +168,16 @@ abstract class SocketClient implements RequestSocketService {
       data: response as String,
       requestOptions: _tmpOptions.copyWith(),
     );
-    _executeInterceptorOnResponse(response: responseWrap);
+    _executeInterceptorOnResponse(
+      response: responseWrap,
+    );
     _replaySubject.add(responseWrap);
   }
 
   void _executeInterceptorOnRequest({
     required SocketOptions options,
   }) {
-    for (var interceptor in interceptors) {
+    for (final interceptor in interceptors) {
       interceptor.onRequest(options);
     }
   }
@@ -146,7 +185,7 @@ abstract class SocketClient implements RequestSocketService {
   void _executeInterceptorOnResponse({
     required SocketResponse response,
   }) {
-    for (var interceptor in interceptors) {
+    for (final interceptor in interceptors) {
       interceptor.onResponse(response);
     }
   }
@@ -155,14 +194,15 @@ abstract class SocketClient implements RequestSocketService {
     required SocketException exception,
     required SocketOptions options,
   }) {
-    for (var interceptor in interceptors) {
+    for (final interceptor in interceptors) {
       interceptor.onError(exception, options);
     }
   }
 
   void _logCloseReason() {
-    final protocol = _channel?.protocol;
-    final closeCode = _channel?.closeCode;
-    final closeReason = _channel?.closeReason;
+    // Close reason info available via:
+    // _channel?.protocol
+    // _channel?.closeCode
+    // _channel?.closeReason
   }
 }

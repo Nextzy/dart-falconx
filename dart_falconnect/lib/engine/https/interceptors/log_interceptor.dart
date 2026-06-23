@@ -1,10 +1,17 @@
 import 'package:dart_falconnect/lib.dart';
 
 /// [LogInterceptor] is used to print logs during network requests.
-/// It's better to add [LogInterceptor] to the tail of the interceptors queue,
-/// otherwise the changes made in the interceptors behind A will not be printed out.
-/// This is because the execution of interceptors is in the order of addition.
+/// It's better to add [LogInterceptor] to the tail of the
+/// interceptors queue, otherwise the changes made in the
+/// interceptors behind A will not be printed out.
+/// This is because the execution of interceptors is in the order
+/// of addition.
 class HttpLogInterceptor extends Interceptor {
+  /// Creates an [HttpLogInterceptor].
+  ///
+  /// Each boolean flag controls which parts of the request/response cycle are
+  /// logged. [logPrint] defaults to a chunked console printer that avoids
+  /// truncation on long payloads.
   HttpLogInterceptor({
     this.enabled = true,
     this.request = true,
@@ -22,6 +29,7 @@ class HttpLogInterceptor extends Interceptor {
   final AnsiPen _error = AnsiPen()..red(bold: true);
   final AnsiPen _json = AnsiPen()..green(bold: true);
 
+  /// Whether logging is active. When `false`, all log output is suppressed.
   bool enabled;
 
   /// Print request [Options]
@@ -48,7 +56,9 @@ class HttpLogInterceptor extends Interceptor {
   ///```dart
   ///  var file=File("./log.txt");
   ///  var sink=file.openWrite();
-  ///  dio.interceptors.add(LogInterceptor(logPrint: sink.writeln));
+  ///  dio.interceptors.add(
+  ///    LogInterceptor(logPrint: sink.writeln),
+  ///  );
   ///  ...
   ///  await sink.close();
   ///```
@@ -60,17 +70,29 @@ class HttpLogInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) {
     if (enabled) {
-      logPrint(_title('*** Request ↗️ ***'));
+      logPrint(_title('*** Request ***'));
       _printKV('URL', options.uri);
       //options.headers;
 
       if (request) {
         _printKV('method', _title(options.method));
-        _printKV('responseType', options.responseType.toString());
-        _printKV('followRedirects', options.followRedirects);
-        _printKV('connectTimeout', options.connectTimeout);
+        _printKV(
+          'responseType',
+          options.responseType.toString(),
+        );
+        _printKV(
+          'followRedirects',
+          options.followRedirects,
+        );
+        _printKV(
+          'connectTimeout',
+          options.connectTimeout,
+        );
         _printKV('sendTimeout', options.sendTimeout);
-        _printKV('receiveTimeout', options.receiveTimeout);
+        _printKV(
+          'receiveTimeout',
+          options.receiveTimeout,
+        );
         _printKV(
           'receiveDataWhenStatusError',
           options.receiveDataWhenStatusError,
@@ -95,13 +117,17 @@ class HttpLogInterceptor extends Interceptor {
             logPrint(_json('Form Data:'));
             final newList =
                 data.fields
-                    .map((MapEntry<String, String> e) => {e.key: e.value})
+                    .map(
+                      (e) => {e.key: e.value},
+                    )
                     .toList()
                   ..addAll(
                     data.files
                         .map(
-                          (MapEntry<String, MultipartFile> e) => {
-                            e.key: _getMultipartFileString(e.value),
+                          (e) => {
+                            e.key: _getMultipartFileString(
+                              e.value,
+                            ),
                           },
                         )
                         .toList(),
@@ -112,8 +138,12 @@ class HttpLogInterceptor extends Interceptor {
             prettyPrint = encoder.convert(data);
           }
           _printAll(_json(prettyPrint));
+          // Data may not be JSON-encodable.
+          // ignore: avoid_catches_without_on_clauses
         } catch (e) {
-          _printAll(_json(data?.toString() ?? ''));
+          _printAll(
+            _json(data?.toString() ?? ''),
+          );
         }
       }
       logPrint('');
@@ -123,19 +153,25 @@ class HttpLogInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     if (enabled) {
-      logPrint(_title('*** Response ↙️ ***'));
+      logPrint(_title('*** Response ***'));
       _printResponse(response);
     }
     handler.next(response);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) {
     if (enabled) {
       if (error) {
-        logPrint(_error('*** DioError ❌ ***:'));
+        logPrint(_error('*** DioError ***:'));
         logPrint('URL: ${err.requestOptions.uri}');
         logPrint('$err');
         final response = err.response;
@@ -149,12 +185,15 @@ class HttpLogInterceptor extends Interceptor {
     handler.next(err);
   }
 
-  void _printResponse(Response response) {
+  void _printResponse(Response<dynamic> response) {
     if (enabled) {
       _printKV('URL', response.requestOptions.uri);
       if (responseHeader) {
-        _printKV('statusCode', response.statusCode ?? 0);
-        if (response.isRedirect == true) {
+        _printKV(
+          'statusCode',
+          response.statusCode ?? 0,
+        );
+        if (response.isRedirect) {
           _printKV('redirect', response.realUri);
         }
 
@@ -169,6 +208,8 @@ class HttpLogInterceptor extends Interceptor {
           const encoder = JsonEncoder.withIndent('  ');
           final prettyPrint = encoder.convert(response.data);
           _printAll(_json(prettyPrint));
+          // Response data may not be JSON-encodable.
+          // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           _printAll(response.data.toString());
         }
@@ -199,6 +240,8 @@ class HttpLogInterceptor extends Interceptor {
   static void _logPrintLong(Object? object) {
     const defaultPrintLength = 1020;
     if (object == null || object.toString().length <= defaultPrintLength) {
+      // Intentional logging for HTTP diagnostics.
+      // ignore: avoid_print
       print(object);
     } else {
       final log = object.toString();
@@ -207,12 +250,16 @@ class HttpLogInterceptor extends Interceptor {
       final logLength = log.length;
       var tmpLogLength = log.length;
       while (endIndex < logLength) {
+        // Intentional logging for HTTP diagnostics.
+        // ignore: avoid_print
         print(log.substring(start, endIndex));
         endIndex += defaultPrintLength;
         start += defaultPrintLength;
         tmpLogLength -= defaultPrintLength;
       }
       if (tmpLogLength > 0) {
+        // Intentional logging for HTTP diagnostics.
+        // ignore: avoid_print
         print(log.substring(start, logLength));
       }
     }

@@ -1,15 +1,15 @@
 import 'package:dart_falmodel/lib.dart';
 
 /// Base class for models that interact with Firebase.
-/// 
+///
 /// Provides common functionality for Firebase documents including:
 /// - Conversion to Map for Firestore storage via [toMap]
 /// - Equality comparison through [EquatableMixin]
 /// - String representation for debugging
-/// 
+///
 /// Consider extending [FirebaseTimestampModel] if you need automatic
 /// timestamp tracking for created/updated times.
-/// 
+///
 /// Example:
 /// ```dart
 /// class UserProfile extends FirebaseModel {
@@ -18,11 +18,11 @@ import 'package:dart_falmodel/lib.dart';
 ///     required this.displayName,
 ///     required this.email,
 ///   });
-///   
+///
 ///   final String uid;
 ///   final String displayName;
 ///   final String email;
-///   
+///
 ///   @override
 ///   Map<String, dynamic> toMap() {
 ///     return {
@@ -31,7 +31,7 @@ import 'package:dart_falmodel/lib.dart';
 ///       'email': email,
 ///     };
 ///   }
-///   
+///
 ///   factory UserProfile.fromMap(Map<String, dynamic> map) {
 ///     return UserProfile(
 ///       uid: map['uid'] as String,
@@ -39,7 +39,7 @@ import 'package:dart_falmodel/lib.dart';
 ///       email: map['email'] as String,
 ///     );
 ///   }
-///   
+///
 ///   @override
 ///   List<Object?> get props => [uid, displayName, email];
 /// }
@@ -49,7 +49,7 @@ abstract class FirebaseModel with EquatableMixin {
   const FirebaseModel();
 
   /// Converts this model to a Map for storage in Firestore.
-  /// 
+  ///
   /// The returned map should contain only types that Firestore supports:
   /// - String, int, double, bool, null
   /// - List, Map
@@ -62,10 +62,10 @@ abstract class FirebaseModel with EquatableMixin {
 }
 
 /// Extended Firebase model with automatic timestamp tracking.
-/// 
+///
 /// Provides [createdAt] and [updatedAt] fields that should be managed
 /// by Firebase Functions or client-side code.
-/// 
+///
 /// Example:
 /// ```dart
 /// class Article extends FirebaseTimestampModel {
@@ -76,11 +76,11 @@ abstract class FirebaseModel with EquatableMixin {
 ///     super.createdAt,
 ///     super.updatedAt,
 ///   });
-///   
+///
 ///   final String id;
 ///   final String title;
 ///   final String content;
-///   
+///
 ///   @override
 ///   Map<String, dynamic> toMap() {
 ///     return {
@@ -91,7 +91,7 @@ abstract class FirebaseModel with EquatableMixin {
 ///       'updatedAt': updatedAt?.millisecondsSinceEpoch,
 ///     };
 ///   }
-///   
+///
 ///   @override
 ///   List<Object?> get props => [id, title, content, createdAt, updatedAt];
 /// }
