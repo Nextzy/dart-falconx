@@ -39,7 +39,7 @@ dev_dependencies:
   build_runner: ^2.15.0
   freezed: ^3.2.5
   test: ^1.31.1
-  very_good_analysis: ^10.2.0
+  very_good_analysis: ^10.3.0
 ```
 
 - [ ] **Step 2: Create build.yaml for generated file output paths**

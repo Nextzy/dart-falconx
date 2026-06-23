@@ -111,7 +111,7 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.12.0
   logger: ^2.7.0
-  meta: ^1.18.2
+  meta: ^1.18.3
   numeral: ^3.1.2
   retry: ^3.1.2
   rxdart: ^0.28.0
