@@ -3,18 +3,17 @@ import 'package:dart_faltool/lib.dart';
 
 /// Extension methods for int type with null safety.
 extension FalconToolIntExtensions on int {
-
   /// Returns the absolute value.
-  /// 
+  ///
   /// This is just a wrapper for the built-in abs() method.
   /// Consider using abs() directly.
   int get absolute => abs();
 
   /// Clamps the value between min and max.
-  /// 
+  ///
   /// This is just a wrapper for the built-in clamp() method.
   /// Consider using clamp() directly.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 10.clamp(0, 5); // 5
@@ -23,9 +22,9 @@ extension FalconToolIntExtensions on int {
   int clampValue(int min, int max) => clamp(min, max).toInt();
 
   /// Returns the value or the provided minimum if less than min.
-  /// 
+  ///
   /// Similar to dartx's coerceAtLeast method.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 5.atLeast(10); // 10
@@ -34,9 +33,9 @@ extension FalconToolIntExtensions on int {
   int atLeast(int min) => math.max(this, min);
 
   /// Returns the value or the provided maximum if greater than max.
-  /// 
+  ///
   /// Similar to dartx's coerceAtMost method.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 5.atMost(10); // 5
@@ -45,7 +44,7 @@ extension FalconToolIntExtensions on int {
   int atMost(int max) => math.min(this, max);
 
   /// Checks if the integer is within the given range (inclusive).
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 5.inRange(1, 10); // true
@@ -53,8 +52,8 @@ extension FalconToolIntExtensions on int {
   /// ```
   bool inRange(int min, int max) => this >= min && this <= max;
 
-  /// Executes the given function [n] times.
-  /// 
+  /// Executes the given function `n` times.
+  ///
   /// Example:
   /// ```dart
   /// 3.times((i) => print('Count: $i'));
@@ -63,13 +62,13 @@ extension FalconToolIntExtensions on int {
   /// // Count: 2
   /// ```
   void times(void Function(int index) action) {
-    for (int i = 0; i < this; i++) {
+    for (var i = 0; i < this; i++) {
       action(i);
     }
   }
 
-  /// Creates a list by executing the given function [n] times.
-  /// 
+  /// Creates a list by executing the given function `n` times.
+  ///
   /// Example:
   /// ```dart
   /// 3.generate<int>((i) => i * 2); // [0, 2, 4]
@@ -115,7 +114,7 @@ extension FalconToolIntNullExtensions on int? {
 /// Extension methods for double type.
 extension FalconToolDoubleExtensions on double {
   /// Rounds to the specified number of decimal places.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 3.14159.roundToPlaces(2); // 3.14
@@ -142,7 +141,7 @@ extension FalconToolDoubleExtensions on double {
   bool inRange(double min, double max) => this >= min && this <= max;
 
   /// Checks if the double represents a whole number.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 3.0.isWhole; // true
@@ -151,7 +150,7 @@ extension FalconToolDoubleExtensions on double {
   bool get isWhole => this == truncateToDouble();
 
   /// Formats the double with the specified number of decimal places.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 3.14159.formatDecimal(2); // '3.14'
@@ -162,7 +161,7 @@ extension FalconToolDoubleExtensions on double {
   }
 
   /// Formats the double as a percentage.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 0.1234.toPercentage(); // '12.34%'
@@ -179,7 +178,7 @@ extension FalconToolDoubleExtensions on double {
   double get toRadians => this * (math.pi / 180.0);
 
   /// Returns the fractional part of the double.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 3.14.fractionalPart; // 0.14
@@ -218,7 +217,6 @@ extension FalconToolDoubleNullExtensions on double? {
 
 /// Extension methods for num type.
 extension FalconToolNumExtensions on num {
-
   /// Returns the absolute value.
   num get absolute => abs();
 
@@ -238,9 +236,9 @@ extension FalconToolNumExtensions on num {
   bool get isZero => this == 0;
 
   /// Linearly interpolates between this number and another.
-  /// 
+  ///
   /// [t] should be between 0.0 and 1.0.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 10.lerp(20, 0.5); // 15.0
@@ -251,7 +249,7 @@ extension FalconToolNumExtensions on num {
   }
 
   /// Maps the number from one range to another.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// // Map 50 from range 0-100 to range 0-1

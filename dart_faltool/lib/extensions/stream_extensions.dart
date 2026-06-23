@@ -17,12 +17,13 @@ extension FalconToolStreamExtension<T> on Stream<T> {
   Stream<S> mapTransform<S>({
     required void Function(T data, EventSink<S> sink) handleData,
     void Function(Object error, StackTrace stackTrace, EventSink<S> sink)?
-        handleError,
-  }) =>
-      transform<S>(StreamTransformer<T, S>.fromHandlers(
-        handleData: handleData,
-        handleError: handleError,
-      ));
+    handleError,
+  }) => transform<S>(
+    StreamTransformer<T, S>.fromHandlers(
+      handleData: handleData,
+      handleError: handleError,
+    ),
+  );
 
   /// Filters stream events based on a predicate.
   ///
@@ -59,7 +60,8 @@ extension FalconToolStreamExtension<T> on Stream<T> {
   }
 
   // Note: retryWhen method is provided by RxDart
-  // Use: stream.retryWhen((error, attempt) => Stream.value(null).delay(Duration(seconds: attempt)))
+  // Use: stream.retryWhen((error, attempt) =>
+  //   Stream.value(null).delay(Duration(seconds: attempt)))
 
   /// Combines the latest values from two streams.
   ///
@@ -109,8 +111,8 @@ extension FalconToolStreamExtension<T> on Stream<T> {
     );
 
     controller.onCancel = () {
-      subscription1.cancel();
-      subscription2.cancel();
+      unawaited(subscription1.cancel());
+      unawaited(subscription2.cancel());
     };
 
     return controller.stream;
@@ -165,11 +167,12 @@ extension FalconToolStreamExtension<T> on Stream<T> {
     }
     return count;
   }
-  // Note: delay, onErrorReturn, onErrorReturnWith, doOnData, doOnError, 
+
+  // Note: delay, onErrorReturn, onErrorReturnWith, doOnData, doOnError,
   // doOnDone, startWith, endWith methods are provided by RxDart
 }
 
-/// Extension methods for Stream<T>? (nullable stream).
+/// Extension methods for `Stream<T>?` (nullable stream).
 extension FalconToolStreamNullExtension<T> on Stream<T>? {
   /// Returns true if the stream is null.
   bool get isNull => this == null;

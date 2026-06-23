@@ -1,24 +1,33 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter analyze:*)",
+      "Bash(cat:*)",
       "Bash(ls:*)",
       "Bash(find:*)",
-      "Bash(melos get:*)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:pub.dev)",
-      "Bash(dart analyze:*)",
-      "Bash(touch:*)",
-      "Bash(mv:*)",
-      "mcp__ide__getDiagnostics",
-      "Bash(flutter test:*)",
       "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(echo:*)",
+      "Bash(pwd:*)",
+      "Bash(which:*)",
+      "Bash(tree:*)",
+      "Bash(file:*)",
+      "Bash(diff:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(env:*)",
+      "Bash(dart run build_runner:*)",
+      "Bash(dart analyze:*)",
+      "Bash(mkdir:*)",
       "Bash(dart pub:*)",
-      "Bash(dart:*)",
-      "Bash(rm:*)",
-      "Bash(flutter pub:*)",
-      "Bash(sed:*)"
+      "Bash(git commit:*)",
+      "WebFetch(*)",
+      "mcp__serena__*",
+      "mcp__plugin_serena_serena__activate_project",
+      "mcp__plugin_serena_serena__write_memory"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   }
 }

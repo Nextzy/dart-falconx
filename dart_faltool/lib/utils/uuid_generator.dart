@@ -1,7 +1,7 @@
-import 'package:uuid/uuid.dart';
+import 'package:hashlib/random.dart';
 
-class UuidGenerator{
-  static const Uuid _uuid = Uuid();
-
-  static String getV4() => _uuid.v4();
+/// Utility class for generating universally unique identifiers (UUIDs).
+class UuidGenerator {
+  /// Generates a random UUID version 4 string.
+  static String getV4() => uuid.v4();
 }

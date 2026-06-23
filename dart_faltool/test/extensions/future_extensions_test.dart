@@ -36,7 +36,7 @@ void main() {
           const Duration(milliseconds: 200),
           () => 'success',
         );
-        
+
         final result = await future.timeoutWithCallback(
           const Duration(milliseconds: 100),
           onTimeout: () {
@@ -44,29 +44,32 @@ void main() {
             return 'timeout';
           },
         );
-        
+
         expect(result, 'timeout');
         expect(callbackExecuted, true);
       });
 
-      test('should not execute callback when completed in time', () async {
-        var callbackExecuted = false;
-        final future = Future.delayed(
-          const Duration(milliseconds: 100),
-          () => 'success',
-        );
-        
-        final result = await future.timeoutWithCallback(
-          const Duration(milliseconds: 200),
-          onTimeout: () {
-            callbackExecuted = true;
-            return 'timeout';
-          },
-        );
-        
-        expect(result, 'success');
-        expect(callbackExecuted, false);
-      });
+      test(
+        'should not execute callback when completed in time',
+        () async {
+          var callbackExecuted = false;
+          final future = Future.delayed(
+            const Duration(milliseconds: 100),
+            () => 'success',
+          );
+
+          final result = await future.timeoutWithCallback(
+            const Duration(milliseconds: 200),
+            onTimeout: () {
+              callbackExecuted = true;
+              return 'timeout';
+            },
+          );
+
+          expect(result, 'success');
+          expect(callbackExecuted, false);
+        },
+      );
     });
 
     group('retryWithBackoff', () {
@@ -76,16 +79,15 @@ void main() {
           attempts++;
           return 'success';
         });
-        
+
         final result = await future.retryWithBackoff();
         expect(result, 'success');
         expect(attempts, 1);
       });
 
       test('should work with pre-completed futures', () async {
-        // retryWithBackoff on an already-started future just returns the result
         final future = Future.value('success');
-        
+
         final result = await future.retryWithBackoff(
           maxAttempts: 3,
           delay: const Duration(milliseconds: 10),
@@ -94,12 +96,10 @@ void main() {
       });
 
       test('should fail after max attempts', () async {
-        var attempts = 0;
         final future = Future(() {
-          attempts++;
           throw Exception('Always fail');
         });
-        
+
         expect(
           () => future.retryWithBackoff(
             maxAttempts: 3,
@@ -109,21 +109,21 @@ void main() {
         );
       });
 
-      test('should fail immediately with retryIf returning false', () async {
-        final future = Future<String>.error(Exception('Not retryable'));
-        
-        expect(
-          () => future.retryWithBackoff(
-            maxAttempts: 3,
-            delay: const Duration(milliseconds: 10),
-            retryIf: (error) => false,
-          ),
-          throwsException,
-        );
-      });
+      test(
+        'should fail immediately with retryIf returning false',
+        () async {
+          final future = Future<String>.error(Exception('Not retryable'));
 
-      // Note: Exponential backoff test removed because retryWithBackoff
-      // operates on already-started futures and cannot truly retry the computation
+          expect(
+            () => future.retryWithBackoff(
+              maxAttempts: 3,
+              delay: const Duration(milliseconds: 10),
+              retryIf: (error) => false,
+            ),
+            throwsException,
+          );
+        },
+      );
     });
 
     group('ignoreErrors', () {
@@ -132,19 +132,22 @@ void main() {
         await expectLater(future.ignoreErrors(), completes);
       });
 
-      test('should complete successfully for non-error futures', () async {
-        final future = Future.value('success');
-        await expectLater(future.ignoreErrors(), completes);
-      });
+      test(
+        'should complete successfully for non-error futures',
+        () async {
+          final future = Future.value('success');
+          await expectLater(future.ignoreErrors(), completes);
+        },
+      );
     });
 
     group('onErrorDo', () {
       test('should execute callback on error and rethrow', () async {
-        var callbackError;
-        var callbackStackTrace;
-        
+        Object? callbackError;
+        StackTrace? callbackStackTrace;
+
         final future = Future<String>.error(Exception('Test error'));
-        
+
         expect(
           () => future.onErrorDo((error, stackTrace) {
             callbackError = error;
@@ -152,22 +155,24 @@ void main() {
           }),
           throwsException,
         );
-        
+
         // Wait for the future to complete
-        await Future.delayed(const Duration(milliseconds: 10));
-        
+        await Future<void>.delayed(
+          const Duration(milliseconds: 10),
+        );
+
         expect(callbackError, isException);
         expect(callbackStackTrace, isNotNull);
       });
 
       test('should not execute callback on success', () async {
         var callbackExecuted = false;
-        
+
         final future = Future.value('success');
         final result = await future.onErrorDo((error, stackTrace) {
           callbackExecuted = true;
         });
-        
+
         expect(result, 'success');
         expect(callbackExecuted, false);
       });
@@ -180,22 +185,27 @@ void main() {
         expect(result, 10);
       });
 
-      test('should propagate errors without transformation', () async {
-        final future = Future<int>.error(Exception('Error'));
-        expect(
-          () => future.mapSuccess((value) => value * 2),
-          throwsException,
-        );
-      });
+      test(
+        'should propagate errors without transformation',
+        () async {
+          final future = Future<int>.error(Exception('Error'));
+          expect(
+            () => future.mapSuccess((value) => value * 2),
+            throwsException,
+          );
+        },
+      );
     });
 
     group('mapError', () {
       test('should transform error', () async {
         final future = Future<String>.error(Exception('Original'));
-        
+
         try {
           await future.mapError((error) => Exception('Transformed'));
           fail('Should have thrown');
+          // Generic catch needed to verify error transformation.
+          // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           expect(e.toString(), contains('Transformed'));
         }
@@ -203,7 +213,9 @@ void main() {
 
       test('should not transform successful results', () async {
         final future = Future.value('success');
-        final result = await future.mapError((error) => Exception('Should not run'));
+        final result = await future.mapError(
+          (error) => Exception('Should not run'),
+        );
         expect(result, 'success');
       });
     });
@@ -212,11 +224,11 @@ void main() {
       test('should execute action on success', () async {
         var actionExecuted = false;
         final future = Future.value('success');
-        
+
         final result = await future.whenCompleteDo(() {
           actionExecuted = true;
         });
-        
+
         expect(result, 'success');
         expect(actionExecuted, true);
       });
@@ -224,114 +236,147 @@ void main() {
       test('should execute action on error', () async {
         var actionExecuted = false;
         final future = Future<String>.error(Exception('Error'));
-        
+
         try {
           await future.whenCompleteDo(() {
             actionExecuted = true;
           });
+          // Generic catch needed to handle expected error.
+          // ignore: avoid_catches_without_on_clauses
         } catch (_) {
           // Expected
         }
-        
+
         expect(actionExecuted, true);
       });
     });
 
     group('guard', () {
-      test('should execute future when condition is true', () async {
-        final future = Future.value('success');
-        final result = await future.guard(
-          () => true,
-          fallback: 'fallback',
-        );
-        expect(result, 'success');
-      });
+      test(
+        'should execute future when condition is true',
+        () async {
+          final future = Future.value('success');
+          final result = await future.guard(
+            () => true,
+            fallback: 'fallback',
+          );
+          expect(result, 'success');
+        },
+      );
 
-      test('should return fallback when condition is false', () async {
-        final future = Future.value('success');
-        final result = await future.guard(
-          () => false,
-          fallback: 'fallback',
-        );
-        expect(result, 'fallback');
-      });
+      test(
+        'should return fallback when condition is false',
+        () async {
+          final future = Future.value('success');
+          final result = await future.guard(
+            () => false,
+            fallback: 'fallback',
+          );
+          expect(result, 'fallback');
+        },
+      );
     });
 
     group('delayed', () {
       test('should delay future execution', () async {
         final start = DateTime.now();
         final future = Future.value('success');
-        final result = await future.delayed(const Duration(milliseconds: 100));
+        final result = await future.delayed(
+          const Duration(milliseconds: 100),
+        );
         final duration = DateTime.now().difference(start);
-        
+
         expect(result, 'success');
-        expect(duration.inMilliseconds, greaterThanOrEqualTo(100));
+        expect(
+          duration.inMilliseconds,
+          greaterThanOrEqualTo(100),
+        );
       });
     });
 
     group('cancelAfter', () {
-      test('should return value when completed within timeout', () async {
-        final future = Future.delayed(
-          const Duration(milliseconds: 50),
-          () => 'success',
-        );
-        final result = await future.cancelAfter(const Duration(milliseconds: 100));
-        expect(result, 'success');
-      });
+      test(
+        'should return value when completed within timeout',
+        () async {
+          final future = Future.delayed(
+            const Duration(milliseconds: 50),
+            () => 'success',
+          );
+          final result = await future.cancelAfter(
+            const Duration(milliseconds: 100),
+          );
+          expect(result, 'success');
+        },
+      );
 
       test('should return null on timeout', () async {
         final future = Future.delayed(
           const Duration(milliseconds: 150),
           () => 'success',
         );
-        final result = await future.cancelAfter(const Duration(milliseconds: 100));
+        final result = await future.cancelAfter(
+          const Duration(milliseconds: 100),
+        );
         expect(result, null);
       });
     });
 
     group('timed', () {
-      test('should measure execution time for successful future', () async {
-        Duration? measuredDuration;
-        final future = Future.delayed(
-          const Duration(milliseconds: 100),
-          () => 'success',
-        );
-        
-        final result = await future.timed((duration) {
-          measuredDuration = duration;
-        });
-        
-        expect(result, 'success');
-        expect(measuredDuration, isNotNull);
-        expect(measuredDuration!.inMilliseconds, greaterThanOrEqualTo(100));
-      });
+      test(
+        'should measure execution time for successful future',
+        () async {
+          Duration? measuredDuration;
+          final future = Future.delayed(
+            const Duration(milliseconds: 100),
+            () => 'success',
+          );
 
-      test('should measure execution time for failed future', () async {
-        Duration? measuredDuration;
-        final future = Future.delayed(
-          const Duration(milliseconds: 100),
-          () => throw Exception('Error'),
-        );
-        
-        try {
-          await future.timed((duration) {
+          final result = await future.timed((duration) {
             measuredDuration = duration;
           });
-          fail('Should have thrown');
-        } catch (_) {
-          // Expected
-        }
-        
-        expect(measuredDuration, isNotNull);
-        expect(measuredDuration!.inMilliseconds, greaterThanOrEqualTo(100));
-      });
+
+          expect(result, 'success');
+          expect(measuredDuration, isNotNull);
+          expect(
+            measuredDuration!.inMilliseconds,
+            greaterThanOrEqualTo(100),
+          );
+        },
+      );
+
+      test(
+        'should measure execution time for failed future',
+        () async {
+          Duration? measuredDuration;
+          final future = Future.delayed(
+            const Duration(milliseconds: 100),
+            () => throw Exception('Error'),
+          );
+
+          try {
+            await future.timed((duration) {
+              measuredDuration = duration;
+            });
+            // Generic catch needed to handle expected error.
+            // ignore: avoid_catches_without_on_clauses
+          } catch (_) {
+            // Expected
+          }
+
+          expect(measuredDuration, isNotNull);
+          expect(
+            measuredDuration!.inMilliseconds,
+            greaterThanOrEqualTo(100),
+          );
+        },
+      );
     });
 
     group('toStream', () {
       test('should convert future to stream', () async {
         final future = Future.value('success');
         final stream = future.toStream();
-        
+
         final events = await stream.toList();
         expect(events, ['success']);
       });
@@ -339,7 +384,7 @@ void main() {
       test('should propagate errors to stream', () async {
         final future = Future<String>.error(Exception('Error'));
         final stream = future.toStream();
-        
+
         expect(stream, emitsError(isException));
       });
     });
@@ -350,7 +395,7 @@ void main() {
       test('should wrap successful result in Right', () async {
         final future = Future.value('success');
         final either = await future.toEither((error) => 'Error: $error');
-        
+
         expect(either.isRight(), true);
         expect(either.isLeft(), false);
         either.fold(
@@ -359,17 +404,25 @@ void main() {
         );
       });
 
-      test('should wrap error in Left using error mapper', () async {
-        final future = Future<String>.error(Exception('Test error'));
-        final either = await future.toEither((error) => 'Error: $error');
-        
-        expect(either.isLeft(), true);
-        expect(either.isRight(), false);
-        either.fold(
-          (left) => expect(left, contains('Error: Exception: Test error')),
-          (right) => fail('Should not be right'),
-        );
-      });
+      test(
+        'should wrap error in Left using error mapper',
+        () async {
+          final future = Future<String>.error(
+            Exception('Test error'),
+          );
+          final either = await future.toEither((error) => 'Error: $error');
+
+          expect(either.isLeft(), true);
+          expect(either.isRight(), false);
+          either.fold(
+            (left) => expect(
+              left,
+              contains('Error: Exception: Test error'),
+            ),
+            (right) => fail('Should not be right'),
+          );
+        },
+      );
 
       test('should handle different error types', () async {
         final future = Future<int>.error('String error');
@@ -379,7 +432,7 @@ void main() {
           }
           return 'Unknown: $error';
         });
-        
+
         expect(either.isLeft(), true);
         either.fold(
           (left) => expect(left, 'String: String error'),
@@ -393,7 +446,7 @@ void main() {
           () => 'delayed success',
         );
         final either = await future.toEither((error) => 'Error: $error');
-        
+
         expect(either.isRight(), true);
         either.fold(
           (left) => fail('Should not be left'),
@@ -407,10 +460,13 @@ void main() {
           () => throw Exception('Delayed error'),
         );
         final either = await future.toEither((error) => 'Error: $error');
-        
+
         expect(either.isLeft(), true);
         either.fold(
-          (left) => expect(left, contains('Error: Exception: Delayed error')),
+          (left) => expect(
+            left,
+            contains('Error: Exception: Delayed error'),
+          ),
           (right) => fail('Should not be right'),
         );
       });
@@ -420,13 +476,13 @@ void main() {
   group('FalconToolFutureNullExtensions', () {
     group('orDefault', () {
       test('should return future when not null', () async {
-        final Future<String>? future = Future.value('success');
+        final future = Future.value('success');
         final result = await future.orDefault('default');
         expect(result, 'success');
       });
 
       test('should return default future when null', () async {
-        final Future<String>? future = null;
+        const Future<String>? future = null;
         final result = await future.orDefault('default');
         expect(result, 'default');
       });
@@ -434,13 +490,13 @@ void main() {
 
     group('orNull', () {
       test('should return future when not null', () async {
-        final Future<String>? future = Future.value('success');
+        final future = Future.value('success');
         final result = await future.orNull();
         expect(result, 'success');
       });
 
       test('should return null future when null', () async {
-        final Future<String>? future = null;
+        const Future<String>? future = null;
         final result = await future.orNull();
         expect(result, null);
       });
@@ -448,13 +504,13 @@ void main() {
 
     group('whenNotNull', () {
       test('should return future when not null', () async {
-        final Future<String>? future = Future.value('success');
+        final future = Future.value('success');
         final result = await future.whenNotNull(orElse: () => 'default');
         expect(result, 'success');
       });
 
       test('should return orElse value when null', () async {
-        final Future<String>? future = null;
+        const Future<String>? future = null;
         final result = await future.whenNotNull(orElse: () => 'default');
         expect(result, 'default');
       });
@@ -491,17 +547,23 @@ void main() {
     });
 
     group('where', () {
-      test('should return value when predicate is true', () async {
-        final future = Future<int?>.value(5);
-        final result = await future.where((value) => value > 3);
-        expect(result, 5);
-      });
+      test(
+        'should return value when predicate is true',
+        () async {
+          final future = Future<int?>.value(5);
+          final result = await future.where((value) => value > 3);
+          expect(result, 5);
+        },
+      );
 
-      test('should return null when predicate is false', () async {
-        final future = Future<int?>.value(2);
-        final result = await future.where((value) => value > 3);
-        expect(result, null);
-      });
+      test(
+        'should return null when predicate is false',
+        () async {
+          final future = Future<int?>.value(2);
+          final result = await future.where((value) => value > 3);
+          expect(result, null);
+        },
+      );
 
       test('should return null when value is null', () async {
         final future = Future<int?>.value(null);

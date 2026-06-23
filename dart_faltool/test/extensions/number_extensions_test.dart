@@ -62,22 +62,25 @@ void main() {
     test('times executes function n times', () {
       // Using dartx's times method
       final results = <int>[];
-      3.times((i) => results.add(i));
+      3.times(results.add);
       expect(results, [0, 1, 2]);
-      
-      int count = 0;
+
+      var count = 0;
       5.times((_) => count++);
       expect(count, 5);
-      
+
       // Edge case: 0 times
       final zeroResults = <int>[];
-      0.times((i) => zeroResults.add(i));
+      0.times(zeroResults.add);
       expect(zeroResults, isEmpty);
     });
 
     test('generate creates list with generator function', () {
       expect(3.generate<int>((i) => i * 2), [0, 2, 4]);
-      expect(4.generate<String>((i) => 'item$i'), ['item0', 'item1', 'item2', 'item3']);
+      expect(
+        4.generate<String>((i) => 'item$i'),
+        ['item0', 'item1', 'item2', 'item3'],
+      );
       expect(0.generate<int>((i) => i), isEmpty);
     });
   });
@@ -85,33 +88,33 @@ void main() {
   group('FalconToolIntNullExtensions', () {
     test('toDoubleOrZero converts to double or returns 0.0', () {
       int? nullInt;
-      int? validInt = 5;
-      
+      const validInt = 5;
+
       expect(nullInt.toDoubleOrZero(), 0.0);
       expect(validInt.toDoubleOrZero(), 5.0);
     });
 
     test('toDoubleOrNull converts to double or returns null', () {
       int? nullInt;
-      int? validInt = 5;
-      
+      const validInt = 5;
+
       expect(nullInt.toDoubleOrNull(), null);
       expect(validInt.toDoubleOrNull(), 5.0);
     });
 
     test('orDefault returns value or default', () {
       int? nullInt;
-      int? validInt = 5;
-      
+      const validInt = 5;
+
       expect(nullInt.orDefault(10), 10);
       expect(validInt.orDefault(10), 5);
     });
 
     test('orZero returns value or 0', () {
       int? nullInt;
-      int? validInt = 5;
-      int? zeroInt = 0;
-      
+      const validInt = 5;
+      const zeroInt = 0;
+
       expect(nullInt.orZero, 0);
       expect(validInt.orZero, 5);
       expect(zeroInt.orZero, 0);
@@ -119,9 +122,9 @@ void main() {
 
     test('isNullOrZero checks for null or zero', () {
       int? nullInt;
-      int? zeroInt = 0;
-      int? validInt = 5;
-      
+      const zeroInt = 0;
+      const validInt = 5;
+
       expect(nullInt.isNullOrZero, true);
       expect(zeroInt.isNullOrZero, true);
       expect(validInt.isNullOrZero, false);
@@ -129,9 +132,9 @@ void main() {
 
     test('isNotNullOrZero is opposite of isNullOrZero', () {
       int? nullInt;
-      int? zeroInt = 0;
-      int? validInt = 5;
-      
+      const zeroInt = 0;
+      const validInt = 5;
+
       expect(nullInt.isNotNullOrZero, false);
       expect(zeroInt.isNotNullOrZero, false);
       expect(validInt.isNotNullOrZero, true);
@@ -139,9 +142,9 @@ void main() {
 
     test('isEvenOrFalse and isOddOrFalse handle null safely', () {
       int? nullInt;
-      int? evenInt = 4;
-      int? oddInt = 5;
-      
+      const evenInt = 4;
+      const oddInt = 5;
+
       expect(nullInt.isEvenOrFalse, false);
       expect(nullInt.isOddOrFalse, false);
       expect(evenInt.isEvenOrFalse, true);
@@ -152,10 +155,10 @@ void main() {
 
     test('isPositive and isNegative handle null safely', () {
       int? nullInt;
-      int? positiveInt = 5;
-      int? negativeInt = -5;
-      int? zeroInt = 0;
-      
+      const positiveInt = 5;
+      const negativeInt = -5;
+      const zeroInt = 0;
+
       expect(nullInt.isPositive, false);
       expect(nullInt.isNegative, false);
       expect(positiveInt.isPositive, true);
@@ -261,25 +264,25 @@ void main() {
   group('FalconToolDoubleNullExtensions', () {
     test('toDoubleOrZero returns value or 0.0', () {
       double? nullDouble;
-      double? validDouble = 3.14;
-      
+      const validDouble = 3.14;
+
       expect(nullDouble.toDoubleOrZero(), 0.0);
       expect(validDouble.toDoubleOrZero(), 3.14);
     });
 
     test('orDefault returns value or default', () {
       double? nullDouble;
-      double? validDouble = 3.14;
-      
+      const validDouble = 3.14;
+
       expect(nullDouble.orDefault(2.71), 2.71);
       expect(validDouble.orDefault(2.71), 3.14);
     });
 
     test('orZero returns value or 0.0', () {
       double? nullDouble;
-      double? validDouble = 3.14;
-      double? zeroDouble = 0.0;
-      
+      const validDouble = 3.14;
+      const zeroDouble = 0.0;
+
       expect(nullDouble.orZero, 0.0);
       expect(validDouble.orZero, 3.14);
       expect(zeroDouble.orZero, 0.0);
@@ -287,9 +290,9 @@ void main() {
 
     test('isNullOrZero checks for null or zero', () {
       double? nullDouble;
-      double? zeroDouble = 0.0;
-      double? validDouble = 3.14;
-      
+      const zeroDouble = 0.0;
+      const validDouble = 3.14;
+
       expect(nullDouble.isNullOrZero, true);
       expect(zeroDouble.isNullOrZero, true);
       expect(validDouble.isNullOrZero, false);
@@ -297,9 +300,9 @@ void main() {
 
     test('isNotNullOrZero is opposite of isNullOrZero', () {
       double? nullDouble;
-      double? zeroDouble = 0.0;
-      double? validDouble = 3.14;
-      
+      const zeroDouble = 0.0;
+      const validDouble = 3.14;
+
       expect(nullDouble.isNotNullOrZero, false);
       expect(zeroDouble.isNotNullOrZero, false);
       expect(validDouble.isNotNullOrZero, true);
@@ -307,80 +310,74 @@ void main() {
 
     test('roundToPlaces handles null safely', () {
       double? nullDouble;
-      double? validDouble = 3.14159;
-      
+      const validDouble = 3.14159;
+
       expect(nullDouble.roundToPlaces(2), null);
       expect(validDouble.roundToPlaces(2), 3.14);
     });
 
     test('format handles null safely', () {
       double? nullDouble;
-      double? validDouble = 3.14159;
-      
+      const validDouble = 3.14159;
+
       expect(nullDouble.format(2), null);
       expect(validDouble.formatDecimal(2), '3.14');
     });
 
     test('toPercentage handles null safely', () {
       double? nullDouble;
-      double? validDouble = 0.1234;
-      
+      const validDouble = 0.1234;
+
       expect(nullDouble.toPercentage(), null);
       expect(validDouble.toPercentage(), '12.34%');
-      expect(validDouble.toPercentage(decimalPlaces: 1), '12.3%');
+      expect(
+        validDouble.toPercentage(decimalPlaces: 1),
+        '12.3%',
+      );
     });
   });
 
   group('FalconToolNumExtensions', () {
     test('toDouble converts num to double', () {
-      num intNum = 5;
-      num doubleNum = 3.14;
-      
-      expect(intNum.toDouble(), 5.0);
-      expect(doubleNum.toDouble(), 3.14);
+      expect((5 as num).toDouble(), 5.0);
+      expect((3.14 as num).toDouble(), 3.14);
     });
 
     test('toInt converts num to int', () {
-      num intNum = 5;
-      num doubleNum = 3.14;
-      
-      expect(intNum.toInt(), 5);
-      expect(doubleNum.toInt(), 3);
+      expect((5 as num).toInt(), 5);
+      expect((3.14 as num).toInt(), 3);
     });
 
     test('absolute returns absolute value', () {
-      num positive = 5.5;
-      num negative = -5.5;
-      
-      expect(positive.absolute, 5.5);
-      expect(negative.absolute, 5.5);
+      expect((5.5 as num).absolute, 5.5);
+      expect((-5.5 as num).absolute, 5.5);
     });
 
     test('clampValue clamps value between min and max', () {
       num value = 10.5;
       expect(value.clampValue(0, 5), 5);
-      
+
       value = -5.5;
       expect(value.clampValue(0, 10), 0);
-      
+
       value = 5.5;
       expect(value.clampValue(0, 10), 5.5);
     });
 
     test('atLeast returns maximum of value and min', () {
-      num value = 5.5;
+      const value = 5.5;
       expect(value.atLeast(10), 10);
       expect(value.atLeast(3), 5.5);
     });
 
     test('atMost returns minimum of value and max', () {
-      num value = 15.5;
+      const value = 15.5;
       expect(value.atMost(10), 10);
       expect(value.atMost(20), 15.5);
     });
 
     test('inRange checks if value is within range', () {
-      num value = 5.5;
+      const value = 5.5;
       expect(value.inRange(1, 10), true);
       expect(value.inRange(6, 10), false);
       expect(value.inRange(1, 5), false);
@@ -391,11 +388,11 @@ void main() {
       expect(5.isPositive, true);
       expect(5.isNegative, false);
       expect(5.isZero, false);
-      
+
       expect((-5).isPositive, false);
       expect((-5).isNegative, true);
       expect((-5).isZero, false);
-      
+
       expect(0.isPositive, false);
       expect(0.isNegative, false);
       expect(0.isZero, true);
@@ -412,13 +409,13 @@ void main() {
     test('mapRange maps value from one range to another', () {
       // Map 50 from range 0-100 to range 0-1
       expect(50.mapRange(0, 100, 0, 1), 0.5);
-      
+
       // Map 25 from range 0-100 to range 0-10
       expect(25.mapRange(0, 100, 0, 10), 2.5);
-      
+
       // Map 0.5 from range 0-1 to range 0-255
       expect(0.5.mapRange(0, 1, 0, 255), 127.5);
-      
+
       // Map with negative ranges
       expect(0.mapRange(-10, 10, -1, 1), 0.0);
     });
@@ -427,9 +424,9 @@ void main() {
   group('FalconToolNumNullExtensions', () {
     test('toDoubleOrZero converts to double or returns 0.0', () {
       num? nullNum;
-      num? intNum = 5;
-      num? doubleNum = 3.14;
-      
+      const intNum = 5;
+      const doubleNum = 3.14;
+
       expect(nullNum.toDoubleOrZero(), 0.0);
       expect(intNum.toDoubleOrZero(), 5.0);
       expect(doubleNum.toDoubleOrZero(), 3.14);
@@ -437,9 +434,9 @@ void main() {
 
     test('toIntOrZero converts to int or returns 0', () {
       num? nullNum;
-      num? intNum = 5;
-      num? doubleNum = 3.14;
-      
+      const intNum = 5;
+      const doubleNum = 3.14;
+
       expect(nullNum.toIntOrZero(), 0);
       expect(intNum.toIntOrZero(), 5);
       expect(doubleNum.toIntOrZero(), 3);
@@ -447,17 +444,17 @@ void main() {
 
     test('orDefault returns value or default', () {
       num? nullNum;
-      num? validNum = 5.5;
-      
+      const validNum = 5.5;
+
       expect(nullNum.orDefault(10), 10);
       expect(validNum.orDefault(10), 5.5);
     });
 
     test('orZero returns value or 0', () {
       num? nullNum;
-      num? validNum = 5.5;
-      num? zeroNum = 0;
-      
+      const validNum = 5.5;
+      const zeroNum = 0;
+
       expect(nullNum.orZero, 0);
       expect(validNum.orZero, 5.5);
       expect(zeroNum.orZero, 0);
@@ -465,10 +462,10 @@ void main() {
 
     test('isNullOrZero checks for null or zero', () {
       num? nullNum;
-      num? zeroIntNum = 0;
-      num? zeroDoubleNum = 0.0;
-      num? validNum = 5.5;
-      
+      const zeroIntNum = 0;
+      const zeroDoubleNum = 0.0;
+      const validNum = 5.5;
+
       expect(nullNum.isNullOrZero, true);
       expect(zeroIntNum.isNullOrZero, true);
       expect(zeroDoubleNum.isNullOrZero, true);
@@ -477,9 +474,9 @@ void main() {
 
     test('isNotNullOrZero is opposite of isNullOrZero', () {
       num? nullNum;
-      num? zeroNum = 0;
-      num? validNum = 5.5;
-      
+      const zeroNum = 0;
+      const validNum = 5.5;
+
       expect(nullNum.isNotNullOrZero, false);
       expect(zeroNum.isNotNullOrZero, false);
       expect(validNum.isNotNullOrZero, true);
@@ -487,10 +484,10 @@ void main() {
 
     test('isPositive and isNegative handle null safely', () {
       num? nullNum;
-      num? positiveNum = 5.5;
-      num? negativeNum = -5.5;
-      num? zeroNum = 0;
-      
+      const positiveNum = 5.5;
+      const negativeNum = -5.5;
+      const zeroNum = 0;
+
       expect(nullNum.isPositive, false);
       expect(nullNum.isNegative, false);
       expect(positiveNum.isPositive, true);

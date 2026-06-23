@@ -1,11 +1,14 @@
 import 'package:dart_falmodel/lib.dart';
 
-class NotFoundException extends ClientNetworkException {
-  const NotFoundException({
+/// Exception representing HTTP 404 Not Found responses.
+///
+/// Raised when the server cannot find the requested resource.
+class NetworkNotFoundException extends NetworkClientException {
+  /// Creates a [NetworkNotFoundException].
+  const NetworkNotFoundException({
     super.statusCode = 404,
-    super.type,
-    super.statusMessage,
-    super.errorMessage,
+    super.type = NetworkErrorType.notFound,
+    super.userMessage,
     super.developerMessage,
     super.response,
     super.requestOptions,

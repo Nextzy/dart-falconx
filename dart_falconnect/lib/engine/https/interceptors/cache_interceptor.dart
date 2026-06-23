@@ -1,19 +1,27 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dio/dio.dart';
 
 /// Response cache entry.
 class CacheEntry {
+  /// Creates a cache entry with the given [response], creation [timestamp],
+  /// and cache [maxAge].
   CacheEntry({
     required this.response,
     required this.timestamp,
     required this.maxAge,
   });
 
-  final Response response;
+  /// The cached HTTP response.
+  final Response<dynamic> response;
+
+  /// The time at which this entry was stored.
   final DateTime timestamp;
+
+  /// The maximum duration this entry remains valid.
   final Duration maxAge;
 
+  /// Returns `true` if the entry has exceeded its [maxAge].
   bool get isExpired {
     final age = DateTime.now().difference(timestamp);
     return age > maxAge;
@@ -22,14 +30,15 @@ class CacheEntry {
 
 /// Interceptor that caches HTTP responses.
 ///
-/// This interceptor implements a simple in-memory cache for GET requests
-/// with configurable cache duration and size limits.
+/// This interceptor implements a simple in-memory cache for GET
+/// requests with configurable cache duration and size limits.
 class CacheInterceptor extends Interceptor {
   /// Creates a new cache interceptor.
   CacheInterceptor({
     required this.config,
   });
 
+  /// Configuration driving cache behavior (enable flag, duration, size limit).
   final HttpClientConfig config;
   final Map<String, CacheEntry> _cache = {};
   int _currentCacheSize = 0;
@@ -57,8 +66,11 @@ class CacheInterceptor extends Interceptor {
     final cachedEntry = _cache[cacheKey];
     if (cachedEntry != null && !cachedEntry.isExpired) {
       if (config.enableLogging) {
+        // Intentional logging for cache diagnostics.
+        // ignore: avoid_print
         print(
-          '[CacheInterceptor] Cache hit for: ${options.method} ${options.uri}',
+          '[CacheInterceptor] Cache hit for: '
+          '${options.method} ${options.uri}',
         );
       }
 
@@ -76,7 +88,10 @@ class CacheInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     // Only cache successful GET requests
     if (!config.enableCache ||
         response.requestOptions.method != 'GET' ||
@@ -118,8 +133,11 @@ class CacheInterceptor extends Interceptor {
     return input.hashCode.toString();
   }
 
-  /// Gets headers that should be included in cache key generation.
-  Map<String, dynamic> _getCacheableHeaders(Map<String, dynamic> headers) {
+  /// Gets headers that should be included in cache key
+  /// generation.
+  Map<String, dynamic> _getCacheableHeaders(
+    Map<String, dynamic> headers,
+  ) {
     final cacheableHeaders = <String, dynamic>{};
 
     // Include headers that affect response content
@@ -139,8 +157,9 @@ class CacheInterceptor extends Interceptor {
     return cacheableHeaders;
   }
 
-  /// Determines cache duration from response headers or config.
-  Duration _getCacheDuration(Response response) {
+  /// Determines cache duration from response headers or
+  /// config.
+  Duration _getCacheDuration(Response<dynamic> response) {
     // Check Cache-Control max-age
     final cacheControl = response.headers.value('cache-control');
     if (cacheControl != null) {
@@ -164,6 +183,8 @@ class CacheInterceptor extends Interceptor {
           return Duration.zero;
         }
         return duration;
+        // Date parsing may throw FormatException or other types.
+        // ignore: avoid_catches_without_on_clauses
       } catch (e) {
         // Invalid expires header, ignore
       }
@@ -174,7 +195,11 @@ class CacheInterceptor extends Interceptor {
   }
 
   /// Adds a response to the cache.
-  void _addToCache(String key, Response response, Duration maxAge) {
+  void _addToCache(
+    String key,
+    Response<dynamic> response,
+    Duration maxAge,
+  ) {
     // Skip if duration is zero
     if (maxAge == Duration.zero) {
       return;
@@ -197,9 +222,14 @@ class CacheInterceptor extends Interceptor {
     _currentCacheSize += responseSize;
 
     if (config.enableLogging) {
+      // Intentional logging for cache diagnostics.
+      // ignore: avoid_print
       print(
-        '[CacheInterceptor] Cached response for: ${response.requestOptions.method} '
-        '${response.requestOptions.uri} (${responseSize ~/ 1024}KB, expires in ${maxAge.inSeconds}s)',
+        '[CacheInterceptor] Cached response for: '
+        '${response.requestOptions.method} '
+        '${response.requestOptions.uri} '
+        '(${responseSize ~/ 1024}KB, '
+        'expires in ${maxAge.inSeconds}s)',
       );
     }
   }
@@ -216,7 +246,9 @@ class CacheInterceptor extends Interceptor {
   void _evictOldestEntries(int requiredSize) {
     // Sort entries by timestamp (oldest first)
     final sortedEntries = _cache.entries.toList()
-      ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+      ..sort(
+        (a, b) => a.value.timestamp.compareTo(b.value.timestamp),
+      );
 
     // Remove entries until we have enough space
     for (final entry in sortedEntries) {
@@ -228,7 +260,7 @@ class CacheInterceptor extends Interceptor {
   }
 
   /// Estimates the size of a response in bytes.
-  int _estimateResponseSize(Response response) {
+  int _estimateResponseSize(Response<dynamic> response) {
     // Start with headers size
     var size = 0;
 
@@ -250,6 +282,8 @@ class CacheInterceptor extends Interceptor {
       // Estimate JSON size
       try {
         size += jsonEncode(data).length;
+        // JSON encoding may fail for non-serializable types.
+        // ignore: avoid_catches_without_on_clauses
       } catch (e) {
         // Can't encode, estimate 1KB
         size += 1024;
@@ -275,8 +309,6 @@ class CacheInterceptor extends Interceptor {
       }
     });
 
-    for (final key in keysToRemove) {
-      _removeFromCache(key);
-    }
+    keysToRemove.forEach(_removeFromCache);
   }
 }

@@ -5,114 +5,6 @@ import 'package:dart_faltool/lib.dart';
 /// Provides comprehensive string utilities including conversions, validations,
 /// formatting, and transformations.
 extension FalconToolStringExtension on String {
-  /// URL validation pattern that matches http and https URLs.
-  static final _urlRegex = RegExp(
-    r'^https?://[-A-Z0-9.]+(\:[0-9]+)?(/[-A-Z0-9+&@#/%=~_|!:,.;]*)?(\?[A-Z0-9+&@#/%=~_|!:,.;]*)?$',
-    caseSensitive: false,
-  );
-
-  /// Email validation pattern (RFC 5322 simplified).
-  static final _emailRegex = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-  );
-
-  static final RegExp _htmlTags = RegExp(
-    '<[^>]*>',
-    multiLine: true,
-    caseSensitive: false,
-  );
-
-  static final RegExp _htmlEntities = RegExp(
-    '&[^;]+;',
-    multiLine: true,
-  );
-
-  // Whitespace and Formatting
-
-  /// Removes all whitespace characters from the string.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'hello world'.removeWhiteSpace; // 'helloworld'
-  /// '  tab\tspace\n '.removeWhiteSpace; // 'tabspace'
-  /// ```
-  String get removeWhiteSpace => replaceAll(RegExp(r'\s+'), '');
-
-  String get removeHtmlTags => replaceAll(
-    _htmlTags,
-    '',
-  ).replaceAll(_htmlEntities, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
-
-  /// Removes leading and trailing whitespace and collapses internal whitespace.
-  ///
-  /// Example:
-  /// ```dart
-  /// '  hello   world  '.normalizeWhitespace; // 'hello world'
-  /// ```
-  String get normalizeWhitespace => trim().replaceAll(RegExp(r'\s+'), ' ');
-
-  // isBlank and isNotBlank are now provided by dartx package.
-  // Use: string.isBlank and string.isNotBlank
-
-  // Validation Methods
-
-  /// Returns true if the string is a valid URL.
-  ///
-  /// Validates against http and https protocols.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'https://example.com'.isUrl; // true
-  /// 'not a url'.isUrl; // false
-  /// ```
-  bool get isUrl => _urlRegex.hasMatch(this);
-
-  /// Returns true if the string is not a valid URL.
-  bool get isNotUrl => !isUrl;
-
-  /// Returns true if the string is a valid email address.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'user@example.com'.isEmail; // true
-  /// 'invalid.email'.isEmail; // false
-  /// ```
-  bool get isEmail => _emailRegex.hasMatch(this);
-
-  /// Returns true if the string is not a valid email address.
-  bool get isNotEmail => !isEmail;
-
-  /// Returns true if the string contains only numeric characters.
-  ///
-  /// Allows optional leading minus sign and decimal point.
-  ///
-  /// Example:
-  /// ```dart
-  /// '123'.isNumeric; // true
-  /// '-45.67'.isNumeric; // true
-  /// 'abc123'.isNumeric; // false
-  /// ```
-  bool get isNumeric => RegExp(r'^-?\d*\.?\d+$').hasMatch(this);
-
-  /// Returns true if the string is valid JSON.
-  ///
-  /// Example:
-  /// ```dart
-  /// '{"key": "value"}'.isJson; // true
-  /// 'not json'.isJson; // false
-  /// ```
-  bool get isJson {
-    try {
-      json.decode(this);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Returns true if the string is not valid JSON.
-  bool get isNotJson => !isJson;
-
   // Conversion Methods
 
   // toInt() and toIntOrNull() are now provided by dartx package.
@@ -133,11 +25,21 @@ extension FalconToolStringExtension on String {
     return int.tryParse(cleaned) ?? 0;
   }
 
-  String hashStr({int? length}) {
-    // Generate hash
-    final bytes = utf8.encode(this);
-    final digest = sha256.convert(bytes);
-    final hash = digest.toString();
+  /// Computes the SHA-256 hash of this string and returns it as a lowercase
+  /// hex string.
+  ///
+  /// When [length] is provided and positive, the result is truncated or
+  /// right-padded with `'0'` to exactly [length] characters. A null, zero,
+  /// or negative [length] returns the full 64-character hash.
+  ///
+  /// Example:
+  /// ```dart
+  /// 'hello'.hashSha256();          // '2cf24dba...938b9824'
+  /// 'hello'.hashSha256(length: 8); // '2cf24dba'
+  /// ```
+  String hashSha256({int? length}) {
+    // Generate hash using hashlib's SHA-256 implementation.
+    final hash = sha256.string(this).hex();
 
     // Adjust length if specified
     if (length != null && length > 0) {
@@ -212,6 +114,8 @@ extension FalconToolStringExtension on String {
     try {
       final decoded = json.decode(this);
       return decoded is Map<String, dynamic> ? decoded : null;
+      // Generic catch needed to return null on any parse failure.
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       return null;
     }
@@ -221,110 +125,10 @@ extension FalconToolStringExtension on String {
   /// or empty map if parsing fails.
   Map<String, dynamic> toMapOrEmpty() => toMapOrNull() ?? {};
 
-  /// Encodes the string to base64.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'Hello'.toBase64(); // 'SGVsbG8='
-  /// ```
-  String toBase64() => base64.encode(utf8.encode(this));
-
-  /// Decodes the string from base64.
-  ///
-  /// Throws [FormatException] if the string is not valid base64.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'SGVsbG8='.fromBase64(); // 'Hello'
-  /// ```
-  String fromBase64() => utf8.decode(base64.decode(this));
-
   /// Converts the string to bytes using UTF-8 encoding.
   Uint8List toBytes() => Uint8List.fromList(utf8.encode(this));
 
-  // Case Conversions
-
-  /// Converts the string to camelCase.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'hello_world'.toCamelCase(); // 'helloWorld'
-  /// 'HELLO-WORLD'.toCamelCase(); // 'helloWorld'
-  /// ```
-  String toCamelCase() {
-    // Handle camelCase strings by inserting underscores before capitals
-    var normalized = replaceAllMapped(
-      RegExp('([a-z])([A-Z])'),
-      (match) => '${match[1]}_${match[2]}',
-    );
-
-    final words = normalized.split(RegExp(r'[_\-\s]+'));
-    if (words.isEmpty) return toLowerCase();
-
-    return words.first.toLowerCase() +
-        words.skip(1).map((w) => w.toLowerCase().capitalize).join();
-  }
-
-  /// Converts the string to snake_case.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'helloWorld'.toSnakeCase(); // 'hello_world'
-  /// 'HelloWorld'.toSnakeCase(); // 'hello_world'
-  /// ```
-  String toSnakeCase() {
-    return replaceAllMapped(
-      RegExp('[A-Z]'),
-      (match) => '_${match.group(0)!.toLowerCase()}',
-    ).replaceAll(RegExp('^_'), '').replaceAll(RegExp(r'[\s\-]+'), '_');
-  }
-
-  /// Converts the string to PascalCase.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'hello_world'.toPascalCase(); // 'HelloWorld'
-  /// 'hello-world'.toPascalCase(); // 'HelloWorld'
-  /// ```
-  String toPascalCase() {
-    // Handle camelCase strings by inserting underscores before capitals
-    var normalized = replaceAllMapped(
-      RegExp('([a-z])([A-Z])'),
-      (match) => '${match[1]}_${match[2]}',
-    );
-
-    final words = normalized.split(RegExp(r'[_\-\s]+'));
-    return words.map((w) => w.toLowerCase().capitalize).join();
-  }
-
-  /// Converts the string to kebab-case.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'helloWorld'.toKebabCase(); // 'hello-world'
-  /// 'HelloWorld'.toKebabCase(); // 'hello-world'
-  /// ```
-  String toKebabCase() => toSnakeCase().replaceAll('_', '-');
-
   // String Manipulation
-
-  // capitalize is now provided by dartx package.
-  // Use: string.capitalize()
-
-  /// Capitalizes the first letter of each word.
-  ///
-  /// Example:
-  /// ```dart
-  /// 'hello world'.capitalizeWords(); // 'Hello World'
-  /// ```
-  String capitalizeWords() {
-    return split(' ')
-        .map(
-          (word) =>
-              word.isEmpty ? word : word[0].toUpperCase() + word.substring(1),
-        )
-        .join(' ');
-  }
 
   /// Reverses the string.
   ///
@@ -335,23 +139,6 @@ extension FalconToolStringExtension on String {
   /// ```dart
   /// 'hello'.reversed; // 'olleh'
   /// ```
-
-  /// Truncates the string to the specified length.
-  ///
-  /// [length] - Maximum length of the result
-  /// [ellipsis] - String to append if truncated (default: '...')
-  ///
-  /// Example:
-  /// ```dart
-  /// 'Hello World'.truncate(8); // 'Hello...'
-  /// 'Hello World'.truncate(8, ellipsis: '~'); // 'Hello W~'
-  /// ```
-  String truncate(int? length, {String ellipsis = '...'}) {
-    if (length == null) return this;
-    if (this.length <= length) return this;
-    if (length <= ellipsis.length) return ellipsis.substring(0, length);
-    return substring(0, length - ellipsis.length) + ellipsis;
-  }
 
   /// Removes the protocol (http:// or https://) from the URL.
   ///
@@ -410,25 +197,6 @@ extension FalconToolStringExtension on String {
         .replaceAll('&quot;', '"')
         .replaceAll('&#39;', "'");
   }
-
-  /// Returns a copy of this string having its first letter uppercased, or the
-  /// original string, if it's empty or already starts with an upper case
-  /// letter.
-  ///
-  /// ```dart
-  /// print('abcd'.capitalize()) // Abcd
-  /// print('Abcd'.capitalize()) // Abcd
-  /// ```
-  String get capitalize {
-    switch (length) {
-      case 0:
-        return this;
-      case 1:
-        return toUpperCase();
-      default:
-        return substring(0, 1).toUpperCase() + substring(1);
-    }
-  }
 }
 
 /// Extension methods for nullable String manipulation and validation.
@@ -471,13 +239,4 @@ extension FalconStringNullExtension on String? {
 
   /// Safely normalizes whitespace.
   String? get normalizeWhitespace => this?.normalizeWhitespace;
-
-  /// Safely capitalizes the string.
-  String? get capitalize => this == null || this!.isEmpty
-      ? this
-      : this![0].toUpperCase() + this!.substring(1);
-
-  /// Safely truncates the string.
-  String? truncate(int? length, {String ellipsis = '...'}) =>
-      this?.truncate(length, ellipsis: ellipsis);
 }

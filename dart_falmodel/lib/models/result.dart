@@ -1,28 +1,68 @@
 import 'package:dart_falmodel/lib.dart';
 
-class Result<T> {
-
+/// A type representing either a successful value or an exception.
+///
+/// Result is useful for exception handling without throwing exceptions,
+/// making exception cases explicit in the type system.
+class Result<T> extends Equatable {
   /// Creates a successful result.
   factory Result.success(T value) => Result._success(value);
 
   /// Creates a failed result.
-  factory Result.failure(Object error, [StackTrace? stackTrace]) =>
-      Result._failure(error, stackTrace ?? StackTrace.current);
+  factory Result.failure(CommonException exception) =>
+      Result._failure(exception);
+
+  /// Creates a failed result whose exception is a `DataLayerException`.
+  ///
+  /// [code] becomes the exception `type`; the remaining parameters are
+  /// forwarded directly to `DataLayerException`.
+  factory Result.dataFailure({
+    required Object code,
+    String? userMessage,
+    String? developerMessage,
+    Object? originalException,
+    StackTrace? stackTrace,
+  }) => Result._failure(
+    DataLayerException(
+      type: code,
+      userMessage: userMessage,
+      developerMessage: developerMessage,
+      originalException: originalException,
+      stackTrace: stackTrace,
+    ),
+  );
+
+  /// Creates a failed result whose exception is a `DomainLayerException`.
+  ///
+  /// [code] becomes the exception `type`; the remaining parameters are
+  /// forwarded directly to `DomainLayerException`.
+  factory Result.domainFailure({
+    required Object code,
+    String? userMessage,
+    String? developerMessage,
+    Object? originalException,
+    StackTrace? stackTrace,
+  }) => Result._failure(
+    DomainLayerException(
+      type: code,
+      userMessage: userMessage,
+      developerMessage: developerMessage,
+      originalException: originalException,
+      stackTrace: stackTrace,
+    ),
+  );
 
   const Result._success(T value)
-      : _value = value,
-        _error = null,
-        _stackTrace = null,
-        _isSuccess = true;
+    : _value = value,
+      _exception = null,
+      _isSuccess = true;
 
-  const Result._failure(Object error, StackTrace stackTrace)
-      : _value = null,
-        _error = error,
-        _stackTrace = stackTrace,
-        _isSuccess = false;
+  const Result._failure(CommonException exception)
+    : _value = null,
+      _exception = exception,
+      _isSuccess = false;
   final T? _value;
-  final Object? _error;
-  final StackTrace? _stackTrace;
+  final CommonException? _exception;
   final bool _isSuccess;
 
   /// True if the result is successful.
@@ -37,61 +77,195 @@ class Result<T> {
     throw StateError('Cannot get value from failed Result');
   }
 
-  /// Gets the error if failed, throws if successful.
-  Object get error {
-    if (!_isSuccess) return _error!;
-    throw StateError('Cannot get error from successful Result');
-  }
-
-  /// Gets the stack trace if failed.
-  StackTrace? get stackTrace => _stackTrace;
-
   /// Gets the value or null if failed.
   T? get valueOrNull => _isSuccess ? _value : null;
 
   /// Gets the value or the provided default if failed.
-  T valueOr(T defaultValue) => _isSuccess ? _value as T : defaultValue;
+  T valueOr(T defaultValue) =>
+      _isSuccess ? _value ?? defaultValue : defaultValue;
+
+  /// Gets the exception if failed, throws if successful.
+  CommonException get exception {
+    if (!_isSuccess) return _exception!;
+    throw StateError('Cannot get exception from successful Result');
+  }
+
+  /// Gets the exception or null if successful.
+  CommonException? get exceptionOrNull => !_isSuccess ? _exception : null;
+
+  /// Gets the stack trace if failed, null otherwise.
+  StackTrace? get stackTraceOrNull => exceptionOrNull?.stackTrace;
 
   /// Transforms the value if successful.
   Result<R> map<R>(R Function(T value) transform) {
     if (_isSuccess) {
       try {
         return Result.success(transform(_value as T));
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
-        return Result.failure(error, stackTrace);
+        return Result.failure(
+          exception.toException(stackTrace: stackTrace),
+        );
       }
     }
-    return Result.failure(_error!, _stackTrace);
+    return Result.failure(_exception!);
   }
 
-  /// Transforms the error if failed.
-  Result<T> mapError(Object Function(Object error) transform) {
+  /// Transforms the exception if failed.
+  Result<T> mapException(
+    CommonException Function(
+      CommonException exception,
+    )
+    transform,
+  ) {
     if (!_isSuccess) {
-      return Result.failure(transform(_error!), _stackTrace);
+      return Result.failure(transform(_exception!));
     }
     return this;
   }
 
   /// Folds the result into a single value.
-  R fold<R>({
-    required R Function(T value) onSuccess,
-    required R Function(Object error, StackTrace? stackTrace) onFailure,
-  }) {
+  R resolve<R>(
+    R Function(T value) onSuccess,
+    R Function(CommonException exception, StackTrace? stackTrace) onError,
+  ) {
     if (_isSuccess) {
       return onSuccess(_value as T);
     }
-    return onFailure(_error!, _stackTrace);
+    return onError(_exception!, stackTraceOrNull);
   }
 
   /// Executes a callback based on the result.
-  void when({
-    required void Function(T value) onSuccess,
-    required void Function(Object error, StackTrace? stackTrace) onFailure,
-  }) {
+  void when(
+    void Function(T value) onSuccess,
+    void Function(CommonException exception, StackTrace? stackTrace) onError,
+  ) {
     if (_isSuccess) {
       onSuccess(_value as T);
     } else {
-      onFailure(_error!, _stackTrace);
+      onError(_exception!, stackTraceOrNull);
     }
+  }
+
+  /// Chains Result operations (flatMap/bind).
+  ///
+  /// If successful, applies transform which returns a new Result.
+  /// If failed, returns the failure.
+  Result<R> flatMap<R>(Result<R> Function(T value) transform) {
+    if (_isSuccess) {
+      try {
+        return transform(_value as T);
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
+      } catch (error, stackTrace) {
+        return Result.failure(
+          exception.toException(stackTrace: stackTrace),
+        );
+      }
+    }
+    return Result.failure(_exception!);
+  }
+
+  /// Recovers from a failure by providing a fallback value.
+  Result<T> recover(
+    T Function(CommonException exception) fallback,
+  ) {
+    if (!_isSuccess) {
+      try {
+        return Result.success(fallback(_exception!));
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
+      } catch (error, stackTrace) {
+        return Result.failure(
+          exception.toException(stackTrace: stackTrace),
+        );
+      }
+    }
+    return this;
+  }
+
+  /// Recovers from a failure by providing a fallback Result.
+  Result<T> recoverWith(
+    Result<T> Function(CommonException exception) fallback,
+  ) {
+    if (!_isSuccess) {
+      try {
+        return fallback(_exception!);
+        // Need to catch all errors from user-provided transform
+        // ignore: avoid_catches_without_on_clauses
+      } catch (error, stackTrace) {
+        return Result.failure(
+          exception.toException(stackTrace: stackTrace),
+        );
+      }
+    }
+    return this;
+  }
+
+  /// Executes a side-effect callback if successful.
+  void doOnSuccess(void Function(T value) callback) {
+    if (_isSuccess) {
+      callback(_value as T);
+    }
+  }
+
+  /// Executes a side-effect callback if failed.
+  void doOnFailure(
+    void Function(CommonException exception) callback,
+  ) {
+    if (!_isSuccess) {
+      callback(_exception!);
+    }
+  }
+
+  /// Returns a copy of this result with the failure messages replaced.
+  ///
+  /// Has no effect when the result is successful.
+  Result<T> updateFailMessage({
+    String? userMessage,
+    String? developerMessage,
+  }) {
+    if (!_isSuccess) {
+      return Result._failure(
+        exception.copyWith(
+          userMessage: userMessage,
+          developerMessage: developerMessage,
+        ),
+      );
+    }
+    return this;
+  }
+
+  /// Swaps success and failure.
+  ///
+  /// Success becomes Failure with a new exception,
+  /// Failure becomes Success with the exception.
+  Result<CommonException> swap({
+    Object? errorType,
+    String? userMessage,
+    String? developerMessage,
+  }) {
+    if (_isSuccess) {
+      return Result.failure(
+        CommonException(
+          type: errorType ?? SystemErrorType.system,
+          userMessage: userMessage ?? 'Unexpected success',
+          developerMessage: developerMessage,
+        ),
+      );
+    }
+    return Result.success(_exception!);
+  }
+
+  @override
+  List<Object?> get props => [_value, _exception, _isSuccess];
+
+  @override
+  String toString() {
+    if (_isSuccess) {
+      return 'Result.success($_value)';
+    }
+    return 'Result.failure($_exception)';
   }
 }

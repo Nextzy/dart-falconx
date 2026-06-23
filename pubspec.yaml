@@ -12,31 +12,99 @@ workspace:
   - dart_faltool
 
 dev_dependencies:
-  melos: ^7.1.1
+  melos: ^7.8.0
 
 melos:
   scripts:
-    get:
-      description: Get dependencies for all packages
-      run: dart pub get
+    analyze:
+      description: Run dart analyze across all packages.
+      run: dart analyze --options analysis_options.ci.yaml --fatal-infos
       exec:
-        concurrency: 1
+        concurrency: 4
 
-    upgrade:
-      description: Upgrade dependencies in all packages
-      run: dart pub upgrade
+    format:
+      description: Run dart format across all packages.
+      run: dart format --set-exit-if-changed .
       exec:
-        concurrency: 1
+        concurrency: 4
 
-    outdated:
-      description: Check outdated dependencies
-      run: dart pub outdated
+    fix:
+      description: Fix all packages.
+      run: >-
+        dart fix --apply
+        --code=always_put_required_named_parameters_first
+        --code=avoid_unused_constructor_parameters
+        --code=cast_nullable_to_non_nullable
+        --code=directives_ordering
+        --code=omit_local_variable_types
+        --code=prefer_const_constructors
+        --code=unnecessary_breaks
+        --code=unnecessary_cast
+        --code=unnecessary_const
+        --code=unnecessary_import
+        --code=unnecessary_non_null_assertion
+        --code=unnecessary_null_comparison
+        --code=unused_catch_stack
+        --code=unused_import
+        --code=use_null_aware_elements
+      exec:
+        concurrency: 4
+
+    fix:format:
+      description: Run fix and format together.
+      steps:
+        - fix
+        - format
+
+    test:
+      description: Run tests across all packages.
+      run: dart test
       exec:
         concurrency: 1
+        failFast: true
+      packageFilters:
+        dirExists: test
 
     build_runner:
-      description: Run build_runner in all packages
-      run: dart run build_runner build -d
+      description: Run build_runner for code generation in all packages.
+      run: dart run build_runner build --delete-conflicting-outputs
       exec:
         concurrency: 1
+        failFast: false
+      packageFilters:
+        dependsOn: build_runner
 
+    build_runner:fast:
+      description: Run build_runner without deleting outputs — reuses incremental cache (use when just adding fields, not after merges).
+      run: dart run build_runner build
+      exec:
+        concurrency: 4
+        failFast: false
+      packageFilters:
+        dependsOn: build_runner
+
+    build_runner:watch:
+      description: Run build_runner watch for code generation.
+      run: dart run build_runner watch --delete-conflicting-outputs
+      exec:
+        concurrency: 1
+      packageFilters:
+        dependsOn: build_runner
+
+    get:
+      description: Get all packages.
+      run: dart pub get
+      exec:
+        concurrency: 5
+
+    upgrade:
+      description: Upgrade all packages.
+      run: dart pub upgrade
+      exec:
+        concurrency: 5
+
+    check:
+      description: Run analyze and tests together.
+      steps:
+        - analyze
+        - test

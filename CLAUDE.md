@@ -4,139 +4,238 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Dart/Flutter monorepo managed with Melos, containing three interconnected packages for network operations and utilities:
+This is a Dart/Flutter monorepo managed with Melos, containing packages for network operations and utilities:
 
-- **dart_falconnect**: Network connectivity package (HTTP client, WebSocket, RPC)
-- **dart_falmodel**: Data models and network abstractions
+- **dart_falconx**: Umbrella package that re-exports all packages below (single import for consumers)
+- **dart_falconnect**: Network connectivity (HTTP client, WebSocket, RPC implementations)
+- **dart_falmodel**: Data models, exceptions, and network abstractions
 - **dart_faltool**: Utility extensions and helper functions
+
+### Package Architecture
+```
+dart_falconx (umbrella: re-exports all packages)
+    ↑
+dart_faltool ←→ dart_falmodel (circular dependency via workspace resolution)
+    ↑
+dart_falconnect (top layer: network implementations)
+```
+- `dart_faltool`: utilities, extensions — depends on `dart_falmodel`
+- `dart_falmodel`: models, exceptions, abstractions — depends on `dart_faltool`
+- Both resolve via Dart workspace resolution (not a layering violation)
 
 ## Common Development Commands
 
 ### Package Management
 ```bash
-# Get dependencies for all packages
+# Install dependencies for all packages
 melos get
-# or
-flutter pub get  # in each package directory
 
 # Upgrade dependencies
 melos upgrade
 
-# Check outdated dependencies
+# Check outdated packages
 melos outdated
 
-# Clean and restart (when dependencies are corrupted)
-melos restart
+# Clean everything and reinstall (when dependencies are corrupted)
+melos clean
+flutter clean
+melos bootstrap
 ```
 
 ### Code Generation
 ```bash
-# Run build_runner for all packages that need code generation
+# Generate code for all packages (Freezed, JsonSerializable, Retrofit)
 melos build_runner
 
-# Run build_runner in a specific package
+# Generate in specific package with conflict resolution
 cd dart_falconnect
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build -d
+
+# Watch mode for continuous generation
+dart run build_runner watch --delete-conflicting-outputs
 ```
 
 ### Testing
 ```bash
-# Run all tests in a specific package
+# Run all tests in a package (dart_faltool has real tests; other packages have stubs)
 cd dart_faltool
 dart test
 
-# Run a single test file
+# Run specific test file
 dart test test/extensions/string_extensions_test.dart
 
-# Run tests matching a pattern
+# Run tests matching pattern
 dart test -n "StringExtension"
 
-# Run tests with specific tags
-dart test -t "unit"
+# Run with coverage
+dart test --coverage
 ```
 
-### Linting and Analysis
+### Code Quality
 ```bash
-# Analyze code in each package
+# Analyze code
 dart analyze
 
-# Fix linting issues
+# Auto-fix issues
 dart fix --apply
+
+# Format code
+dart format .
 ```
 
-## Architecture Overview
+### Custom Melos Scripts (root `pubspec.yaml`)
 
-### Package Dependencies
-The packages follow a layered architecture:
-```
-dart_faltool (base utilities)
-    ↑
-dart_falmodel (models & abstractions)
-    ↑
-dart_falconnect (network implementation)
-```
+| Script                         | Purpose                                                                      |
+|--------------------------------|------------------------------------------------------------------------------|
+| `melos run analyze`            | `dart analyze` with `analysis_options.ci.yaml --fatal-infos` (concurrency 4) |
+| `melos run format`             | `dart format --set-exit-if-changed .`                                        |
+| `melos run fix`                | `dart fix --apply` with curated `--code=` allowlist                          |
+| `melos run fix:format`         | Run `fix` then `format`                                                      |
+| `melos run test`               | `dart test` in packages with a `test/` dir, fail-fast                        |
+| `melos run build_runner`       | `build --delete-conflicting-outputs` (use after merges)                      |
+| `melos run build_runner:fast`  | `build` only, reuses incremental cache (use when adding fields)              |
+| `melos run build_runner:watch` | Watch mode                                                                   |
+| `melos run get` / `upgrade`    | `dart pub get` / `pub upgrade` across packages                               |
+| `melos run check`              | Run `analyze` then `test`                                                    |
 
-### Key Components
+## High-Level Architecture
+
+### Core Components
 
 **dart_falconnect/lib/engine/**
-- **https/**: HTTP client implementation with interceptors (cache, error handling, retry, rate limiting)
-  - `BaseHttpClient`: Abstract class providing typed HTTP methods with automatic JSON conversion
-  - Interceptor pattern for cross-cutting concerns
+- **https/**: HTTP client with comprehensive interceptor system
+  - `BaseHttpClient`: Abstract class with typed HTTP methods and automatic JSON conversion
+  - Interceptors: cache, retry, rate limiting, logging, error handling
+  - All methods require converter functions for type-safe responses
   
-- **sockets/**: WebSocket client implementation
-  - `SocketClient`: Abstract WebSocket client with retry logic and interceptor support
-  - Stream-based response handling
+- **sockets/**: WebSocket implementation with reactive streams
+  - `SocketClient`: Abstract WebSocket with retry logic and interceptor support
+  - Stream-based filtering for specific response types
+  - Automatic reconnection handling
   
-- **rpc/**: JSON-RPC implementation using Freezed for code generation
-  - Request/Response models with proper serialization
+- **rpc/**: JSON-RPC protocol implementation
+  - `JsonRpcService`: Abstract class for JSON-RPC 2.0 over HTTP; `DefaultJsonRpcService`: concrete implementation
+  - `BatchJsonRpcItem`: Sealed class with `resolve`, `map`, `responseOrNull`, `errorOrNull` for batch responses
+  - Freezed-based request/response models with generated JSON serialization
 
-### Code Generation Patterns
+### Code Generation Structure
 
-The project uses several code generation tools:
+Generated files follow strict organization:
+- **Output Path**: `lib/{{path}}/generated/{{file}}.g.dart` or `.freezed.dart`
+- **Annotations Used**:
+  - `@freezed`: Immutable models with unions
+  - `@JsonSerializable`: JSON conversion
+  - `@retrofit`: REST API clients
+- **Important**: Run `melos build_runner` after modifying annotated files
 
-1. **Freezed**: For immutable data classes (see `rpc_request.dart`)
-   - Generated files go to `lib/{{path}}/generated/` subdirectory
-   
-2. **JsonSerializable**: For JSON serialization
-   - Works in conjunction with Freezed
-   
-3. **Retrofit**: For REST API client generation
+### Exception Architecture
 
-When modifying files with code generation annotations (@freezed, @JsonSerializable), always run build_runner afterward.
+Three exception systems in dart_falmodel:
+- **`DefaultErrorType` enum** (`lib/exceptions/common_exception.dart`): General-purpose (unknown, system, validation, storage, etc.)
+- **`NetworkErrorType` enum** (`lib/networks/exceptions/network_exception.dart`): HTTP-specific, maps to status codes
+- **JSON-RPC exceptions** (`lib/networks/rpc/exceptions/`): `JsonRpcCommonException`, `JsonRpcDataLayerException`, `JsonRpcDomainLayerException` — use `JsonRpcErrorCategory` and `JsonRpcApiErrorType`/`JsonRpcRequestErrorType` enums
+- `CommonException` has a `category` field and `toJsonRpcError()` method for converting to `JsonRpcError`
+- `NetworkException extends CommonException` — do NOT mix with `ErrorType`
+- Each HTTP exception class has a default `NetworkErrorType` via `super.type = NetworkErrorType.xxx`
+- Barrel exports in `networks/exceptions/exceptions.dart` — new exception files MUST be added here
+- Known typo: `NetworkNotImplementException` (501) — missing "ed" in "Implemented", preserved for backward compatibility
+- Duplicate: both `NetworkAuthenticationException` and `UnauthorizedException` exist for 401
 
-### Network Exception Hierarchy
+### Key Design Patterns
 
-The project has a comprehensive exception system in `dart_falconnect/lib/engine/https/exceptions/`:
-- HTTP 4xx errors (authentication, forbidden, not found, etc.)
-- HTTP 5xx errors (internal server error, gateway timeout, etc.)
-- Network-specific exceptions (timeout, no internet connection)
+1. **Interceptor Chain Pattern**
+   - Both HTTP and WebSocket use middleware-style interceptors
+   - Enables cross-cutting concerns without modifying core logic
+   - Order matters: auth → retry → cache → logging
 
-### Important Patterns
+2. **Result Pattern** (dart_falmodel)
+   - Type-safe error handling without exceptions
+   - Success/Failure union types with pattern matching
+   - Comprehensive extension methods for transformation
 
-1. **Extension Methods**: Heavy use of Dart extensions for type conversions and utilities (see dart_faltool)
+3. **Extension Methods**
+   - Heavy use throughout dart_faltool
+   - Type conversions, null safety, collection utilities
+   - String, StringValidator, DateTime, Number, Future, Stream, Iterable, List, Map, Enum, Object extensions
 
-2. **Interceptor Pattern**: Both HTTP and WebSocket clients use interceptor chains for:
-   - Logging
-   - Error handling
-   - Retry logic
-   - Performance monitoring
-   - Rate limiting
+4. **Stream-Based Communication**
+   - WebSocket responses as filtered streams
+   - Reactive programming with RxDart
+   - Proper subscription management required
 
-3. **Stream-Based WebSockets**: WebSocket responses are exposed as filtered streams for reactive programming
+## Gotchas
 
-4. **Type-Safe HTTP Methods**: All HTTP methods require converter functions for automatic JSON to model conversion
+- When adding new exception classes, always add the export to `dart_falmodel/lib/networks/exceptions/exceptions.dart` — missing exports cause misleading analyzer errors (e.g., "method can't be unconditionally invoked because receiver can be 'null'")
+- Exports in barrel files must be sorted alphabetically (enforced by `directives_ordering` lint rule)
+- After large changes, run `dart pub get` before `dart analyze` to clear stale analyzer state
 
-## Configuration
+## Configuration Details
 
-### Analysis Options
-The project uses `very_good_analysis` package for strict linting with some rules disabled for practical reasons (see `analysis_options.yaml` in each package).
+### Linting Rules
+- Base: `very_good_analysis` package
+- Single `analysis_options.yaml` at the workspace root applies to every package (consolidated; per-package configs were removed)
+- `strict-casts` and `strict-inference` enabled — no implicit `dynamic`
+- Enforced: `prefer_single_quotes`, `avoid_print`, `avoid_relative_lib_imports`
+- Key relaxed rules: `public_member_api_docs`, `file_names`, `constant_identifier_names`, `avoid_redundant_argument_values`, and others
+- Generated files excluded globally (`**/*.g.dart`, `**/*.freezed.dart`, `**/*.gen.dart`, `**/generated/**`, `**/build/**`)
 
 ### Build Configuration
-Code generation outputs are configured to generate into `generated/` subdirectories to keep the main source directories clean (see `build.yaml`).
+- See `build.yaml` in `dart_falconnect`, `dart_falmodel`, and `dart_faltool`
+- Generated files in subdirectories to maintain clean structure
+- Retrofit generator enabled for API clients
+- Melos scripts defined in root `pubspec.yaml` under `melos:` key (not in `melos.yaml`)
 
-## Development Tips
+### Environment Requirements
+- Dart SDK: `>=3.9.0 <4.0.0`
+- Workspace resolution enabled for monorepo
+- Melos: `^7.5.1` for workspace management
 
-1. Always run `melos get` after pulling changes that modify pubspec files
-2. Generated files (`*.g.dart`, `*.freezed.dart`) should not be edited manually
-3. When adding new packages to the workspace, update the root `pubspec.yaml` workspace section
-4. The project requires Dart SDK >=3.9.0
+## Third-Party Packages
+
+Packages flow upward: `dart_faltool` re-exports many of these via `dart_faltool.dart`, so consumers of `dart_falconx` get them transitively.
+
+### Networking (`dart_falconnect`, `dart_falmodel`)
+
+| Package                                 | Purpose                                                             |
+|-----------------------------------------|---------------------------------------------------------------------|
+| `dio`                                   | HTTP client — base of `BaseHttpClient`, JSON-RPC, interceptor chain |
+| `dio_cache_interceptor`                 | Response caching strategy for `CacheInterceptor`                    |
+| `retrofit` + `retrofit_generator`       | Annotation-driven REST client codegen                               |
+| `web_socket_channel`                    | Cross-platform WebSocket — auto-resolves to `IO`/`Html` channel     |
+| `freezed_annotation` + `freezed`        | Sealed unions / immutable models (request/response, errors)         |
+| `json_annotation` + `json_serializable` | JSON serialization codegen                                          |
+| `ansicolor`                             | ANSI-colored log output for `LogInterceptor`                        |
+
+### Utilities (`dart_faltool`, re-exported)
+
+| Package          | Purpose                                                                           |
+|------------------|-----------------------------------------------------------------------------------|
+| `rxdart`         | Reactive streams (`PublishSubject`, operators) — used by `SocketClient`           |
+| `fpdart`         | Functional types (`Either`, `Option`, `Task`) for `Result` patterns               |
+| `equatable`      | Value equality without boilerplate                                                |
+| `dartx`          | Kotlin-style extensions; some members hidden to avoid clash with local extensions |
+| `meta`           | Dart annotations (`@immutable`, `@protected`, etc.)                               |
+| `logger`         | Structured/pretty log printer                                                     |
+| `intl`           | i18n plus locale-aware date/number formatting                                     |
+| `timeago`        | Human-readable relative time (`5 minutes ago`)                                    |
+| `numeral`        | Compact number formatting (`1.2k`, `3.4m`)                                        |
+| `big_decimal`    | Arbitrary-precision decimal arithmetic                                            |
+| `hashlib`        | Crypto / non-crypto hash digests (used by TypeID)                                 |
+| `retry`          | Generic retry-with-backoff helper                                                 |
+| `stack_trace`    | Stack-trace parsing / formatting                                                  |
+| `version`        | SemVer parsing (used by `AppInfo`)                                                |
+| `yaml`           | YAML parser (used by `AppInfo` to read `pubspec.yaml`)                            |
+| `universal_io`   | Cross-platform `dart:io` substitute (web-safe `File`, `Platform`, `HttpClient`)   |
+| `web`            | Modern `package:web` JS interop bindings                                          |
+| `enum_to_string` | Enum to/from string helpers                                                       |
+| `data`           | Data-structure / buffer helpers                                                   |
+
+### Dev / Tooling
+
+| Package              | Purpose                                                   |
+|----------------------|-----------------------------------------------------------|
+| `melos`              | Monorepo orchestrator (workspace, scripts)                |
+| `build_runner`       | Codegen runner                                            |
+| `very_good_analysis` | Opinionated lint preset (base of `analysis_options.yaml`) |
+| `lints`              | Stock Dart lints                                          |
+| `test`               | Dart test framework                                       |

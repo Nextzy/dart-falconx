@@ -1,12 +1,12 @@
 import 'package:dart_falmodel/lib.dart';
 
 /// Base class for all network request models.
-/// 
+///
 /// Provides common functionality for HTTP requests including:
 /// - Equality comparison through [EquatableMixin]
 /// - String representation for debugging
 /// - Common HTTP request properties
-/// 
+///
 /// Example:
 /// ```dart
 /// class LoginRequest extends BaseRequest {
@@ -15,17 +15,17 @@ import 'package:dart_falmodel/lib.dart';
 ///     required this.password,
 ///     this.rememberMe = false,
 ///   });
-///   
+///
 ///   final String email;
 ///   final String password;
 ///   final bool rememberMe;
-///   
+///
 ///   Map<String, dynamic> toJson() => {
 ///     'email': email,
 ///     'password': password,
 ///     'remember_me': rememberMe,
 ///   };
-///   
+///
 ///   @override
 ///   List<Object?> get props => [email, password, rememberMe];
 /// }
@@ -40,10 +40,10 @@ abstract class BaseRequest with EquatableMixin {
 }
 
 /// Base class for paginated requests.
-/// 
+///
 /// Provides common pagination parameters that can be extended
 /// for specific API endpoints.
-/// 
+///
 /// Example:
 /// ```dart
 /// class GetProductsRequest extends PaginatedRequest {
@@ -53,24 +53,24 @@ abstract class BaseRequest with EquatableMixin {
 ///     this.category,
 ///     this.sortBy,
 ///   });
-///   
+///
 ///   final String? category;
 ///   final String? sortBy;
-///   
+///
 ///   @override
 ///   Map<String, dynamic> toQueryParameters() => {
 ///     ...super.toQueryParameters(),
 ///     if (category != null) 'category': category,
 ///     if (sortBy != null) 'sort_by': sortBy,
 ///   };
-///   
+///
 ///   @override
 ///   List<Object?> get props => [...super.props, category, sortBy];
 /// }
 /// ```
 abstract class PaginatedRequest extends BaseRequest {
   /// Creates a paginated request.
-  /// 
+  ///
   /// [page] starts from 1. Defaults to 1.
   /// [pageSize] is the number of items per page. Defaults to 20.
   const PaginatedRequest({

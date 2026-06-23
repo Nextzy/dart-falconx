@@ -1,39 +1,33 @@
 import 'package:dart_faltool/lib.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 /// Extension methods for DateTime manipulation and formatting.
-/// 
+///
 /// Provides comprehensive utilities for date/time operations including
 /// formatting, comparisons, calculations, and timezone handling.
 extension FalconToolDateTimeExtensions on DateTime {
   /// Common date format patterns.
+
+  /// ISO 8601 date-time pattern without timezone offset
+  /// (`yyyy-MM-ddTHH:mm:ss`).
   static const String iso8601Pattern = 'yyyy-MM-ddTHH:mm:ss';
+
+  /// Date-only pattern (`yyyy-MM-dd`).
   static const String dateOnlyPattern = 'yyyy-MM-dd';
+
+  /// Time-only pattern (`HH:mm:ss`).
   static const String timeOnlyPattern = 'HH:mm:ss';
+
+  /// Short date pattern (`MMM dd, yyyy`).
   static const String shortDatePattern = 'MMM dd, yyyy';
+
+  /// Full date pattern including weekday (`EEEE, MMMM dd, yyyy`).
   static const String fullDatePattern = 'EEEE, MMMM dd, yyyy';
+
+  /// Month and year pattern (`MMMM yyyy`).
   static const String monthYearPattern = 'MMMM yyyy';
 
   // Date Components
-
-  /// Gets the start of the day (00:00:00).
-  /// 
-  /// Example:
-  /// ```dart
-  /// DateTime(2023, 5, 15, 14, 30).startOfDay; // 2023-05-15 00:00:00
-  /// ```
-  DateTime get startOfDay => DateTime(year, month, day);
-
-  /// Gets the start of the month.
-  DateTime get startOfMonth => DateTime(year, month, 1);
-
-  /// Gets the end of the month.
-  DateTime get endOfMonth => DateTime(year, month + 1, 0, 23, 59, 59, 999);
-
-  /// Gets the start of the year.
-  DateTime get startOfYear => DateTime(year, 1, 1);
-
-  /// Gets the end of the year.
-  DateTime get endOfYear => DateTime(year, 12, 31, 23, 59, 59, 999);
 
   /// Gets the quarter of the year (1-4).
   int get quarter => ((month - 1) ~/ 3) + 1;
@@ -44,33 +38,30 @@ extension FalconToolDateTimeExtensions on DateTime {
     final jan1 = DateTime(year, 1, 1);
     final daysToThursday = (4 - jan1.weekday + 7) % 7;
     final firstThursday = jan1.add(Duration(days: daysToThursday));
-    
-    // If this date is before the first Thursday, it belongs to the previous year's last week
+
+    // If this date is before the first Thursday, it belongs to the
+    // previous year's last week
     if (isBefore(firstThursday.subtract(const Duration(days: 3)))) {
       // This is week 52 or 53 of the previous year
       final prevYearJan1 = DateTime(year - 1, 1, 1);
       final prevDaysToThursday = (4 - prevYearJan1.weekday + 7) % 7;
-      final prevFirstThursday = prevYearJan1.add(Duration(days: prevDaysToThursday));
+      final prevFirstThursday = prevYearJan1.add(
+        Duration(days: prevDaysToThursday),
+      );
       final lastWeekStart = DateTime(year - 1, 12, 31).subtract(
-        Duration(days: (DateTime(year - 1, 12, 31).weekday - 1 + 7) % 7),
+        Duration(
+          days: (DateTime(year - 1, 12, 31).weekday - 1 + 7) % 7,
+        ),
       );
       return 1 + lastWeekStart.difference(prevFirstThursday).inDays ~/ 7;
     }
-    
+
     // Calculate the Monday of the week containing the first Thursday
-    final firstWeekMonday = firstThursday.subtract(Duration(days: 3));
-    
+    final firstWeekMonday = firstThursday.subtract(const Duration(days: 3));
+
     // Calculate weeks from the first week's Monday
     final daysSinceFirstWeek = difference(firstWeekMonday).inDays;
     return 1 + (daysSinceFirstWeek / 7).floor();
-  }
-
-  /// Checks if this date is yesterday.
-  bool get isYesterday {
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return year == yesterday.year &&
-        month == yesterday.month &&
-        day == yesterday.day;
   }
 
   /// Checks if this date is in the past.
@@ -78,9 +69,6 @@ extension FalconToolDateTimeExtensions on DateTime {
 
   /// Checks if this date is in the future.
   bool get isFuture => isAfter(DateTime.now());
-
-  /// Checks if this date is on a weekday.
-  bool get isWeekday => weekday != DateTime.saturday && weekday != DateTime.sunday;
 
   /// Checks if this date is in the same day as another date.
   bool isSameDay(DateTime other) =>
@@ -104,12 +92,12 @@ extension FalconToolDateTimeExtensions on DateTime {
   DateTime subtractDays(int days) => subtract(Duration(days: days));
 
   /// Adds the specified number of months.
-  /// 
+  ///
   /// Handles month overflow correctly (e.g., Jan 31 + 1 month = Feb 28/29).
   DateTime addMonths(int months) {
     var newYear = year;
     var newMonth = month + months;
-    
+
     while (newMonth > 12) {
       newYear++;
       newMonth -= 12;
@@ -118,24 +106,40 @@ extension FalconToolDateTimeExtensions on DateTime {
       newYear--;
       newMonth += 12;
     }
-    
+
     final newDay = day.clamp(1, DateTime(newYear, newMonth + 1, 0).day);
-    return DateTime(newYear, newMonth, newDay, hour, minute, second,
-        millisecond, microsecond);
+    return DateTime(
+      newYear,
+      newMonth,
+      newDay,
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+    );
   }
 
   /// Subtracts the specified number of months.
   DateTime subtractMonths(int months) => addMonths(-months);
 
   /// Adds the specified number of years.
-  DateTime addYears(int years) => DateTime(year + years, month, day, hour, 
-      minute, second, millisecond, microsecond);
+  DateTime addYears(int years) => DateTime(
+    year + years,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+  );
 
   /// Subtracts the specified number of years.
   DateTime subtractYears(int years) => addYears(-years);
 
   /// Gets the next occurrence of a specific weekday.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// // Get next Monday
@@ -157,7 +161,7 @@ extension FalconToolDateTimeExtensions on DateTime {
   // Formatting
 
   /// Formats the date using the specified pattern.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// DateTime.now().format('yyyy-MM-dd'); // '2023-05-15'
@@ -185,160 +189,32 @@ extension FalconToolDateTimeExtensions on DateTime {
   /// Formats as month and year (MMMM yyyy).
   String get toMonthYear => format(monthYearPattern);
 
-  /// Formats as a relative time string with localization support.
-  /// 
+  /// Formats as a relative time string using the timeago package.
+  ///
+  /// Uses the [timeago] package for localized relative time formatting.
+  /// Register locales at app startup via `timeago.setLocaleMessages()`.
+  ///
   /// Example:
   /// ```dart
   /// DateTime.now().subtract(Duration(minutes: 5)).toRelative(); // '5 minutes ago'
-  /// DateTime.now().add(Duration(hours: 2)).toRelative(); // 'in 2 hours'
+  /// DateTime.now().add(Duration(hours: 2)).toRelative(allowFromNow: true); // '2 hours from now'
   /// ```
-  String toRelative({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    
-    final now = DateTime.now();
-    final difference = now.difference(this);
-    final isInPast = !difference.isNegative;
-    final duration = difference.abs();
-
-    if (duration.inSeconds < 60) {
-      return isInPast 
-          ? DateTimeLocalizations.justNow(locale: locale)
-          : DateTimeLocalizations.inAMoment(locale: locale);
-    } else if (duration.inMinutes < 60) {
-      final minutes = duration.inMinutes;
-      return isInPast
-          ? Intl.plural(
-              minutes,
-              one: Intl.message('$minutes minute ago', 
-                  name: 'minuteAgo', args: [minutes]),
-              other: Intl.message('$minutes minutes ago', 
-                  name: 'minutesAgo', args: [minutes]),
-              locale: locale,
-            )
-          : Intl.plural(
-              minutes,
-              one: Intl.message('in $minutes minute', 
-                  name: 'inMinute', args: [minutes]),
-              other: Intl.message('in $minutes minutes', 
-                  name: 'inMinutes', args: [minutes]),
-              locale: locale,
-            );
-    } else if (duration.inHours < 24) {
-      final hours = duration.inHours;
-      return isInPast
-          ? Intl.plural(
-              hours,
-              one: Intl.message('$hours hour ago', 
-                  name: 'hourAgo', args: [hours]),
-              other: Intl.message('$hours hours ago', 
-                  name: 'hoursAgo', args: [hours]),
-              locale: locale,
-            )
-          : Intl.plural(
-              hours,
-              one: Intl.message('in $hours hour', 
-                  name: 'inHour', args: [hours]),
-              other: Intl.message('in $hours hours', 
-                  name: 'inHours', args: [hours]),
-              locale: locale,
-            );
-    } else if (duration.inDays < 7) {
-      final days = duration.inDays;
-      return isInPast
-          ? Intl.plural(
-              days,
-              one: Intl.message('$days day ago', 
-                  name: 'dayAgo', args: [days]),
-              other: Intl.message('$days days ago', 
-                  name: 'daysAgo', args: [days]),
-              locale: locale,
-            )
-          : Intl.plural(
-              days,
-              one: Intl.message('in $days day', 
-                  name: 'inDay', args: [days]),
-              other: Intl.message('in $days days', 
-                  name: 'inDays', args: [days]),
-              locale: locale,
-            );
-    } else if (duration.inDays < 30) {
-      final weeks = (duration.inDays / 7).round();
-      return isInPast
-          ? Intl.plural(
-              weeks,
-              one: Intl.message('$weeks week ago', 
-                  name: 'weekAgo', args: [weeks]),
-              other: Intl.message('$weeks weeks ago', 
-                  name: 'weeksAgo', args: [weeks]),
-              locale: locale,
-            )
-          : Intl.plural(
-              weeks,
-              one: Intl.message('in $weeks week', 
-                  name: 'inWeek', args: [weeks]),
-              other: Intl.message('in $weeks weeks', 
-                  name: 'inWeeks', args: [weeks]),
-              locale: locale,
-            );
-    } else if (duration.inDays < 365) {
-      final months = (duration.inDays / 30).round();
-      return isInPast
-          ? Intl.plural(
-              months,
-              one: Intl.message('$months month ago', 
-                  name: 'monthAgo', args: [months]),
-              other: Intl.message('$months months ago', 
-                  name: 'monthsAgo', args: [months]),
-              locale: locale,
-            )
-          : Intl.plural(
-              months,
-              one: Intl.message('in $months month', 
-                  name: 'inMonth', args: [months]),
-              other: Intl.message('in $months months', 
-                  name: 'inMonths', args: [months]),
-              locale: locale,
-            );
-    } else {
-      final years = (duration.inDays / 365).round();
-      return isInPast
-          ? Intl.plural(
-              years,
-              one: Intl.message('$years year ago', 
-                  name: 'yearAgo', args: [years]),
-              other: Intl.message('$years years ago', 
-                  name: 'yearsAgo', args: [years]),
-              locale: locale,
-            )
-          : Intl.plural(
-              years,
-              one: Intl.message('in $years year', 
-                  name: 'inYear', args: [years]),
-              other: Intl.message('in $years years', 
-                  name: 'inYears', args: [years]),
-              locale: locale,
-            );
-    }
+  String toRelative({String? locale, bool allowFromNow = false}) {
+    return timeago.format(this, locale: locale, allowFromNow: allowFromNow);
   }
 
   /// Gets a human-readable string for the day with localization support.
-  /// 
+  ///
   /// Returns localized 'Today', 'Yesterday', 'Tomorrow', or the formatted date.
   String humanReadableDay({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    
     if (isToday) {
-      return Intl.message('Today', name: 'today');
+      return Intl.message('Today', name: 'today', locale: locale);
     }
-    if (isYesterday) {
-      return Intl.message('Yesterday', name: 'yesterday');
+    if (wasYesterday) {
+      return Intl.message('Yesterday', name: 'yesterday', locale: locale);
     }
     if (isTomorrow) {
-      return Intl.message('Tomorrow', name: 'tomorrow');
+      return Intl.message('Tomorrow', name: 'tomorrow', locale: locale);
     }
     return format('EEEE, MMM dd', locale: locale);
   }
@@ -352,7 +228,7 @@ extension FalconToolDateTimeExtensions on DateTime {
   int get toJsTimestamp => millisecondsSinceEpoch;
 
   /// Gets the age in years from this date to now.
-  /// 
+  ///
   /// Useful for calculating someone's age from their birthdate.
   int get age {
     final now = DateTime.now();
@@ -364,7 +240,7 @@ extension FalconToolDateTimeExtensions on DateTime {
   }
 
   /// Gets the number of days until this date.
-  /// 
+  ///
   /// Returns negative values for dates in the future.
   int get daysUntil => DateTime.now().difference(this).inDays;
 
@@ -375,7 +251,7 @@ extension FalconToolDateTimeExtensions on DateTime {
 /// Extension methods for int to DateTime conversions.
 extension FalconToolIntToDateTimeExtensions on int {
   /// Converts Unix timestamp (seconds) to DateTime.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// 1684156800.fromUnixToDateTime; // 2023-05-15 12:00:00 UTC
@@ -414,7 +290,8 @@ extension FalconToolDateTimeNullExtensions on DateTime? {
   }
 
   /// Safely converts to relative time string with localization support.
-  String? toRelative({String? locale}) => this?.toRelative(locale: locale);
+  String? toRelative({String? locale, bool allowFromNow = false}) =>
+      this?.toRelative(locale: locale, allowFromNow: allowFromNow);
 
   /// Returns the DateTime or the current time if null.
   DateTime get orNow => this ?? DateTime.now();
@@ -432,17 +309,13 @@ extension FalconToolDateTimeNullExtensions on DateTime? {
 /// Extension methods for Duration manipulation.
 extension FalconToolDurationExtensions on Duration {
   /// Formats the duration as a human-readable string with localization support.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Duration(hours: 2, minutes: 30).toHumanReadable(); // '2h 30m'
   /// Duration(days: 1, hours: 2).toHumanReadable(); // '1d 2h'
   /// ```
   String toHumanReadable({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-
     final days = inDays;
     final hours = inHours.remainder(24);
     final minutes = inMinutes.remainder(60);
@@ -450,20 +323,44 @@ extension FalconToolDurationExtensions on Duration {
 
     final parts = <String>[];
     if (days > 0) {
-      parts.add(Intl.message('${days}d', 
-          name: 'daysShort', args: [days]));
+      parts.add(
+        Intl.message(
+          '${days}d',
+          name: 'daysShort',
+          args: [days],
+          locale: locale,
+        ),
+      );
     }
     if (hours > 0) {
-      parts.add(Intl.message('${hours}h', 
-          name: 'hoursShort', args: [hours]));
+      parts.add(
+        Intl.message(
+          '${hours}h',
+          name: 'hoursShort',
+          args: [hours],
+          locale: locale,
+        ),
+      );
     }
     if (minutes > 0) {
-      parts.add(Intl.message('${minutes}m', 
-          name: 'minutesShort', args: [minutes]));
+      parts.add(
+        Intl.message(
+          '${minutes}m',
+          name: 'minutesShort',
+          args: [minutes],
+          locale: locale,
+        ),
+      );
     }
     if (seconds > 0 || parts.isEmpty) {
-      parts.add(Intl.message('${seconds}s', 
-          name: 'secondsShort', args: [seconds]));
+      parts.add(
+        Intl.message(
+          '${seconds}s',
+          name: 'secondsShort',
+          args: [seconds],
+          locale: locale,
+        ),
+      );
     }
 
     return parts.join(' ');
@@ -478,10 +375,10 @@ extension FalconToolDurationExtensions on Duration {
   }
 
   /// Gets the total number of weeks in the duration.
-  /// 
+  ///
   /// This property is now provided by dartx package (via time package).
   /// Use: duration.inWeeks
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Duration(days: 14).inWeeks; // 2
@@ -492,64 +389,18 @@ extension FalconToolDurationExtensions on Duration {
   double get inYears => inDays / 365.25;
 
   /// Adds another duration to this one.
-  Duration operator +(Duration other) => 
+  Duration operator +(Duration other) =>
       Duration(microseconds: inMicroseconds + other.inMicroseconds);
 
   /// Subtracts another duration from this one.
-  Duration operator -(Duration other) => 
+  Duration operator -(Duration other) =>
       Duration(microseconds: inMicroseconds - other.inMicroseconds);
 
   /// Multiplies the duration by a factor.
-  Duration operator *(num factor) => 
+  Duration operator *(num factor) =>
       Duration(microseconds: (inMicroseconds * factor).round());
 
   /// Divides the duration by a factor.
-  Duration operator /(num factor) => 
+  Duration operator /(num factor) =>
       Duration(microseconds: (inMicroseconds / factor).round());
-}
-
-/// Helper class for localizable date/time strings.
-/// 
-/// This class provides static methods to get localized strings
-/// without hardcoding them in the extension methods.
-class DateTimeLocalizations {
-  /// Gets localized 'Today' string.
-  static String today({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('Today', name: 'today');
-  }
-
-  /// Gets localized 'Yesterday' string.
-  static String yesterday({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('Yesterday', name: 'yesterday');
-  }
-
-  /// Gets localized 'Tomorrow' string.
-  static String tomorrow({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('Tomorrow', name: 'tomorrow');
-  }
-
-  /// Gets localized 'just now' string.
-  static String justNow({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('just now', name: 'justNow');
-  }
-
-  /// Gets localized 'in a moment' string.
-  static String inAMoment({String? locale}) {
-    if (locale != null) {
-      Intl.defaultLocale = locale;
-    }
-    return Intl.message('in a moment', name: 'inAMoment');
-  }
 }

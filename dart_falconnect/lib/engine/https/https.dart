@@ -1,3 +1,4 @@
+export 'default_http_client.dart';
 export 'extensions/extensions.dart';
 export 'http_client.dart';
 export 'interceptors/interceptors.dart';
