@@ -7,12 +7,15 @@ part of '../json_rpc_request.dart';
 // **************************************************************************
 
 _JsonRpcRequest _$JsonRpcRequestFromJson(Map<String, dynamic> json) =>
-    _JsonRpcRequest(
-      jsonrpc: json['jsonrpc'] as String,
-      method: json['method'] as String,
-      params: json['params'] as Map<String, dynamic>?,
-      id: (json['id'] as num?)?.toInt(),
-    );
+    $checkedCreate('_JsonRpcRequest', json, ($checkedConvert) {
+      final val = _JsonRpcRequest(
+        jsonrpc: $checkedConvert('jsonrpc', (v) => v as String),
+        method: $checkedConvert('method', (v) => v as String),
+        params: $checkedConvert('params', (v) => v as Map<String, dynamic>?),
+        id: $checkedConvert('id', (v) => (v as num?)?.toInt()),
+      );
+      return val;
+    });
 
 Map<String, dynamic> _$JsonRpcRequestToJson(_JsonRpcRequest instance) =>
     <String, dynamic>{

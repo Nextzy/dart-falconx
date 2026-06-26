@@ -14,7 +14,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DecodedTypeId {
 
- String get prefix; String get suffix; String get uuid;
+/// The type prefix (e.g., `'user'`); empty string for prefix-less TypeIDs.
+ String get prefix;/// The base32-encoded UUID suffix (26 characters).
+ String get suffix;/// The UUID string extracted from the TypeID.
+ String get uuid;
 /// Create a copy of DecodedTypeId
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -207,8 +210,11 @@ class _DecodedTypeId extends DecodedTypeId {
   const _DecodedTypeId({required this.prefix, required this.suffix, required this.uuid}): super._();
   
 
+/// The type prefix (e.g., `'user'`); empty string for prefix-less TypeIDs.
 @override final  String prefix;
+/// The base32-encoded UUID suffix (26 characters).
 @override final  String suffix;
+/// The UUID string extracted from the TypeID.
 @override final  String uuid;
 
 /// Create a copy of DecodedTypeId
