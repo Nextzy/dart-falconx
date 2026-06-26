@@ -7,13 +7,22 @@ part of '../json_rpc_error.dart';
 // **************************************************************************
 
 _JsonRpcError _$JsonRpcErrorFromJson(Map<String, dynamic> json) =>
-    _JsonRpcError(
-      category: $enumDecode(_$JsonRpcErrorCategoryEnumMap, json['category']),
-      code: json['code'] as String,
-      userMessage: json['userMessage'] as String?,
-      developerMessage: json['developerMessage'] as String?,
-      data: json['data'] as Map<String, dynamic>?,
-    );
+    $checkedCreate('_JsonRpcError', json, ($checkedConvert) {
+      final val = _JsonRpcError(
+        category: $checkedConvert(
+          'category',
+          (v) => $enumDecode(_$JsonRpcErrorCategoryEnumMap, v),
+        ),
+        code: $checkedConvert('code', (v) => v as String),
+        userMessage: $checkedConvert('userMessage', (v) => v as String?),
+        developerMessage: $checkedConvert(
+          'developerMessage',
+          (v) => v as String?,
+        ),
+        data: $checkedConvert('data', (v) => v as Map<String, dynamic>?),
+      );
+      return val;
+    });
 
 Map<String, dynamic> _$JsonRpcErrorToJson(_JsonRpcError instance) =>
     <String, dynamic>{
