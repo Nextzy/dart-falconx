@@ -29,7 +29,7 @@ dart test
 - `lib/lib.dart` — Internal "prelude" that re-exports dart:async, dart:convert, Dio, Freezed/JSON annotations, json_annotation, and dart_faltool. Most files in this package import from here instead of individual packages.
 - `lib/dart_falmodel.dart` — Public API barrel that exports the five modules: exceptions, extensions, feedbacks, models, networks.
 
-### Two Exception Systems
+### Three Exception Systems
 
 1. **`CommonException`** (`lib/exceptions/common_exception.dart`) — Generic exception with `type` and `category` fields. Base for all exceptions.
    - `DefaultErrorType` enum: general-purpose categories (unknown, system, validation, storage, etc.)

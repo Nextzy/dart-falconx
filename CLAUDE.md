@@ -183,12 +183,13 @@ Three exception systems in dart_falmodel:
 - See `build.yaml` in `dart_falconnect`, `dart_falmodel`, and `dart_faltool`
 - Generated files in subdirectories to maintain clean structure
 - Retrofit generator enabled for API clients
+- `json_serializable` runs in **checked mode** with `explicit_to_json: true` — generated `fromJson` validates types and nested models serialize via their own `toJson()`
 - Melos scripts defined in root `pubspec.yaml` under `melos:` key (not in `melos.yaml`)
 
 ### Environment Requirements
-- Dart SDK: `>=3.9.0 <4.0.0`
+- Dart SDK: `>=3.12.0 <4.0.0`
 - Workspace resolution enabled for monorepo
-- Melos: `^7.5.1` for workspace management
+- Melos: `^8.0.0` for workspace management
 
 ## Third-Party Packages
 
