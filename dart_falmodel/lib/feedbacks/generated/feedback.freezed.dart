@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of '../feedback.dart';
@@ -9,6 +9,7 @@ part of '../feedback.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 UserFeedback _$UserFeedbackFromJson(
@@ -253,7 +254,7 @@ return information(_that.message,_that.level);case _:
 @JsonSerializable()
 
 class Success extends UserFeedback {
-  const Success({this.message, this.level = FeedbackLevel.medium, final  String? $type}): $type = $type ?? 'success',super._();
+  const Success({this.message, this.level = FeedbackLevel.medium,  String? $type}): $type = $type ?? 'success',super._();
   factory Success.fromJson(Map<String, dynamic> json) => _$SuccessFromJson(json);
 
 @override final  String? message;
@@ -328,7 +329,7 @@ as FeedbackLevel,
 @JsonSerializable()
 
 class Warning extends UserFeedback {
-  const Warning({this.message, this.level = FeedbackLevel.medium, final  String? $type}): $type = $type ?? 'warning',super._();
+  const Warning({this.message, this.level = FeedbackLevel.medium,  String? $type}): $type = $type ?? 'warning',super._();
   factory Warning.fromJson(Map<String, dynamic> json) => _$WarningFromJson(json);
 
 @override final  String? message;
@@ -403,7 +404,7 @@ as FeedbackLevel,
 @JsonSerializable()
 
 class Failure extends UserFeedback {
-  const Failure({this.message, this.level = FeedbackLevel.medium, final  String? $type}): $type = $type ?? 'failure',super._();
+  const Failure({this.message, this.level = FeedbackLevel.medium,  String? $type}): $type = $type ?? 'failure',super._();
   factory Failure.fromJson(Map<String, dynamic> json) => _$FailureFromJson(json);
 
 @override final  String? message;
@@ -478,7 +479,7 @@ as FeedbackLevel,
 @JsonSerializable()
 
 class Information extends UserFeedback {
-  const Information({this.message, this.level = FeedbackLevel.medium, final  String? $type}): $type = $type ?? 'information',super._();
+  const Information({this.message, this.level = FeedbackLevel.medium,  String? $type}): $type = $type ?? 'information',super._();
   factory Information.fromJson(Map<String, dynamic> json) => _$InformationFromJson(json);
 
 @override final  String? message;
