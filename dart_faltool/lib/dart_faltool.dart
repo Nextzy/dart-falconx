@@ -32,6 +32,8 @@ export 'package:retry/retry.dart';
 export 'package:rrule/rrule.dart' hide DateTimeRrule;
 export 'package:rxdart/rxdart.dart';
 export 'package:stack_trace/stack_trace.dart';
+export 'package:time/time.dart';
+export 'package:timeago/timeago.dart';
 export 'package:version/version.dart';
 
 export 'extensions/extensions.dart';

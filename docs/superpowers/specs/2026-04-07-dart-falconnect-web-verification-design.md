@@ -141,7 +141,7 @@ melos run verify:web
 | # | Risk | Mitigation |
 |---|------|------------|
 | 1 | `dart compile js` fails on transitive dep (`universal_io`, `dartx`, `logger`, `ansicolor`) | Fix only if root cause is in `dart_falconnect`. If in `dart_faltool`/`dart_falmodel`, report as follow-up task and stop — do NOT expand scope. |
-| 2 | `dart test -p chrome` requires browser runner setup | Already satisfied — `test: ^1.31.1` is in `dev_dependencies`. |
+| 2 | `dart test -p chrome` requires browser runner setup | Already satisfied — `test: ^1.31.2` is in `dev_dependencies`. |
 | 3 | `compile_smoke.dart` accidentally imports `package:test` | Enforce via review; the file must be a plain `main()`. |
 | 4 | `ansicolor` may emit escape codes that look wrong in browser console | Acceptable — logging still works, just without color. No fix needed. |
 | 5 | Mock setup for `BaseHttpClient` HTTP test is non-trivial | Use `dio`'s `HttpClientAdapter` mock or `MockAdapter` pattern. Scope this to happy-path instantiation + serialization only, not full request/response mocking. |

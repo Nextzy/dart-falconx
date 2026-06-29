@@ -16,7 +16,7 @@ melos get
 cd dart_falconnect
 dart run build_runner build -d
 
-# Run tests (stub only — no real tests exist yet)
+# Run tests (unit_test.dart is a stub; real tests live under test/web/ — see Web Support)
 dart test
 
 # Analyze and format
@@ -85,7 +85,7 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 ## Gotchas
 
 - `RateLimiter` in `utils/` is a placeholder (all code commented out) — do not use or reference it
-- The test file is a stub with an empty test — this package has no real tests
+- `test/unit_test.dart` is a stub with an empty test; the real tests are the web verification gates under `test/web/`
 - `NetworkExceptionHandlerInterceptor` uses `err.toException()` extension method (from dart_falmodel) to convert `DioException` to `NetworkException`
 - WebSocket uses RxDart's `PublishSubject` (not `ReplaySubject` despite the variable name `_replaySubject`)
 - Generated files go to `lib/{{path}}/generated/` subdirectories per `build.yaml` configuration
