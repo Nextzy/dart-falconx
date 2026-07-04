@@ -27,6 +27,7 @@ export 'package:json_annotation/json_annotation.dart';
 export 'package:logger/web.dart'
     if (dart.library.io) 'package:logger/logger.dart';
 export 'package:meta/meta.dart';
+export 'package:numeral/extension.dart';
 export 'package:numeral/numeral.dart';
 export 'package:retry/retry.dart';
 export 'package:rrule/rrule.dart' hide DateTimeRrule;
