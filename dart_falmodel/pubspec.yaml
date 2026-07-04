@@ -1,6 +1,6 @@
 name: dart_falmodel
 description: A new Flutter package project.
-version: 1.0.1
+version: 1.0.5
 publish_to: none
 
 environment:
@@ -13,7 +13,7 @@ dependencies:
     path: ../dart_faltool
 
   #PLATFORM: All
-  dio: ^5.9.2
+  dio: ^5.10.0
   freezed_annotation: ^3.1.0
   json_annotation: ^4.12.0
 
