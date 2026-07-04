@@ -1,6 +1,6 @@
 name: dart_falconx
 description: A dart falcon package.
-version: 1.0.1
+version: 1.0.5
 publish_to: none
 
 environment:
