@@ -50,7 +50,11 @@ Some extensions deliberately overlap with `dartx` — the `dartx` package is re-
 ### Utils (`lib/utils/`)
 
 - **`app_info.dart`** — `AppInfo`: Static class that reads app version from `pubspec.yaml`. Call `AppInfo.init()` at startup, then access `AppInfo.version`.
-- **`functions.dart`** — `runCatching`, `runDomainCatching`, `runDataCatching`: Execute async operations and catch exceptions into `Result<T>` failures. Each wraps exceptions into the appropriate layer exception (`CommonException`, `DomainLayerException`, `DataLayerException`).
+- **`functions.dart`** — Top-level helpers:
+  - `runCatching`: Execute an async operation and catch exceptions into a `Result<T>` failure (`CommonException` wrapped directly, others via `toException()`).
+  - `nowUtc`: Current time as a UTC `DateTime`.
+  - `constantTimeEquals`: Constant-time string comparison (timing-attack safe).
+  - `randomDelay`: Awaits a secure-random delay in `[minMs, maxMs)` ms (asserts `maxMs > minMs >= 0`).
 - **`uuid_generator.dart`** — `UuidGenerator.getV4()`: Static UUID v4 generation.
 - **`json_serialize.dart`** — JSON serialization helpers.
 - **`typeid/`** — [TypeID](https://github.com/jetify-com/typeid) implementation:

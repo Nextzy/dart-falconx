@@ -70,8 +70,9 @@ hosting.*
 .serena/
 .claude/worktrees/
 .claude.local.md
-.mcp.json
-.playwright-mcp/
+.claude/settings.local.json
+.mcp.local.json
+.playwright-mcp
 
 # Worktrees
 .worktrees/
