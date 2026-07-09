@@ -32,6 +32,8 @@ abstract class JsonRpcService {
   /// Optional logger invoked when request parsing or network errors occur.
   final ParseErrorLogger? errorLogger;
 
+  static final _random = Random();
+
   /// Sends a JSON-RPC request and returns the typed response.
   ///
   /// [method] is the remote procedure name. [fromResultJson] deserializes the
@@ -42,7 +44,7 @@ abstract class JsonRpcService {
     String? jsonrpc,
     required String method,
     Map<String, dynamic>? params,
-    String? id,
+    int? id,
     String? mockId,
     required RESULT Function(Map<String, dynamic> json) fromResultJson,
     Map<String, dynamic>? queryParameters,
@@ -277,11 +279,7 @@ abstract class JsonRpcService {
     return value;
   }
 
-  String _randomRequestId() {
-    final random = Random();
-    final randomNumber = random.nextInt(9999999) + 1;
-    return randomNumber.toString();
-  }
+  int _randomRequestId() => _random.nextInt(99999999) + 1;
 
   RequestOptions _setStreamType<T>(
     RequestOptions requestOptions,
