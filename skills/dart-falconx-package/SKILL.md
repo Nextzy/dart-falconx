@@ -22,7 +22,7 @@ who depend on only one package.
 |-------------------|-------------------------------------------------------------------------------------|-------------------------------|
 | `dart_falconnect` | HTTP client, WebSocket, JSON-RPC, interceptors, datasource binding                  | `packages/dart_falconnect.md` |
 | `dart_falmodel`   | `Result<T>`, exception hierarchy, request/response models, `UserFeedback`           | `packages/dart_falmodel.md`   |
-| `dart_faltool`    | Extension methods, `TypeId`, `AppInfo`, `runCatching`, re-exported third-party libs | `packages/dart_faltool.md`    |
+| `dart_faltool`    | Extension methods, `TypeId`, `AppInfo`, `runCatching`, `nowUtc`, `constantTimeEquals`, `randomDelay`, re-exported third-party libs | `packages/dart_faltool.md`    |
 
 ## Routing guide — which file to open
 
