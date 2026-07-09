@@ -758,7 +758,7 @@ Bump `dart_faltool` to `2.0.0`, do a clean grep for any residual `crypto`/`uuid`
 In `dart_faltool/pubspec.yaml`, change:
 
 ```yaml
-version: 1.0.5
+version: 1.0.6
 ```
 
 to:

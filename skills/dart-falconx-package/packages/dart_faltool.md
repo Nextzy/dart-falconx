@@ -233,6 +233,37 @@ final result = await runCatching(() async {
 // result is always Result<User> — never throws
 ```
 
+### nowUtc
+
+Current time as a UTC `DateTime`.
+
+```dart
+final ts = nowUtc; // DateTime, .isUtc == true
+```
+
+### constantTimeEquals
+
+Constant-time string comparison — compare time does not vary with the position
+of the first differing character. Use for secrets (tokens, HMACs, signatures) to
+avoid timing side-channel leaks. Returns `false` immediately on length mismatch.
+
+```dart
+if (constantTimeEquals(providedToken, expectedToken)) {
+  // authenticated
+}
+```
+
+### randomDelay
+
+Awaits a cryptographically-secure random delay in `[minMs, maxMs)` milliseconds
+(default 100–300ms) to defend against timing-oracle attacks. Asserts
+`maxMs > minMs >= 0`.
+
+```dart
+await randomDelay();                 // 100–300ms
+await randomDelay(minMs: 50, maxMs: 150);
+```
+
 ### TypeId
 
 TypeID per the [jetify-com/typeid](https://github.com/jetify-com/typeid) spec
