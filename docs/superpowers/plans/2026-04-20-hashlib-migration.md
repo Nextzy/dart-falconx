@@ -111,7 +111,7 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.12.0
   logger: ^2.7.0
-  meta: ^1.18.3
+  meta: ^1.19.0
   numeral: ^3.1.2
   retry: ^3.1.2
   rxdart: ^0.28.0
@@ -758,7 +758,7 @@ Bump `dart_faltool` to `2.0.0`, do a clean grep for any residual `crypto`/`uuid`
 In `dart_faltool/pubspec.yaml`, change:
 
 ```yaml
-version: 1.0.7
+version: 1.0.8
 ```
 
 to:
