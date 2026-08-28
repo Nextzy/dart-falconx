@@ -85,8 +85,10 @@ abstract class JsonRpcService {
     late JsonRpcResponse<RESULT> value;
     final Map<String, dynamic> data = fetchResult.data!;
     try {
-      // Check for error response first
-      final error = data['error'];
+      // Check for error response first. A server may answer the singular
+      // JSON-RPC 2.0 `error` object or a plural `errors` list (the brick
+      // envelope); both decode into one [JsonRpcErrorResponse].
+      final error = data['error'] ?? data['errors'];
       if (error != null) {
         throw JsonRpcErrorResponse(
           jsonrpc: data['jsonrpc'] as String,
@@ -227,7 +229,8 @@ abstract class JsonRpcService {
           final iMap = i as Map<String, dynamic>;
           final id = iMap['id'];
           final result = iMap['result'];
-          final error = iMap['error'];
+          // Singular `error` object or plural `errors` list, as in [request].
+          final error = iMap['error'] ?? iMap['errors'];
           final jsonrpc = iMap['jsonrpc'] as String;
           final intId = id as int;
 
