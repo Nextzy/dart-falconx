@@ -37,7 +37,7 @@ In `dart_faltool/pubspec.yaml`, add `freezed` under `dev_dependencies` (matching
 ```yaml
 dev_dependencies:
   build_runner: ^2.16.0
-  freezed: ^4.0.0-dev.3
+  freezed: ^4.0.0
   test: ^1.31.2
   very_good_analysis: ^10.3.0
 ```
