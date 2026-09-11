@@ -29,16 +29,21 @@ $RemoteErrorCopyWith<RemoteError> get copyWith => _$RemoteErrorCopyWithImpl<Remo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RemoteError&&(identical(other.code, code) || other.code == code)&&(identical(other.message, message) || other.message == message)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage));
+  final _this = this as RemoteError;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RemoteError&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.userMessage, _this.userMessage) || other.userMessage == _this.userMessage)&&(identical(other.developerMessage, _this.developerMessage) || other.developerMessage == _this.developerMessage));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,code,message,userMessage,developerMessage);
+int get hashCode {
+  final _this = this as RemoteError;
+  return Object.hash(runtimeType,_this.code,_this.message,_this.userMessage,_this.developerMessage);
+}
 
 @override
 String toString() {
-  return 'RemoteError(code: $code, message: $message, userMessage: $userMessage, developerMessage: $developerMessage)';
+  final _this = this as RemoteError;
+  return 'RemoteError(code: ${_this.code}, message: ${_this.message}, userMessage: ${_this.userMessage}, developerMessage: ${_this.developerMessage})';
 }
 
 
@@ -234,16 +239,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RemoteError&&(identical(other.code, code) || other.code == code)&&(identical(other.message, message) || other.message == message)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RemoteError&&(identical(other.code, code) || other.code == code)&&(identical(other.message, message) || other.message == message)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,code,message,userMessage,developerMessage);
+int get hashCode {
+    return Object.hash(runtimeType,code,message,userMessage,developerMessage);
+}
 
 @override
 String toString() {
-  return 'RemoteError(code: $code, message: $message, userMessage: $userMessage, developerMessage: $developerMessage)';
+    return 'RemoteError(code: $code, message: $message, userMessage: $userMessage, developerMessage: $developerMessage)';
 }
 
 
