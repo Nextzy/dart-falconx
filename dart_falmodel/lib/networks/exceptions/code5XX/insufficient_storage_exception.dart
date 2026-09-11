@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// to complete the request.
 class NetworkInsufficientStorageException extends NetworkServerException {
   /// Creates a [NetworkInsufficientStorageException].
-  const NetworkInsufficientStorageException({
+  const new({
     super.statusCode = 507,
     super.type = NetworkErrorType.insufficientStorage,
     super.userMessage,

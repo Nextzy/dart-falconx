@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// that failed.
 class NetworkFailedDependencyException extends NetworkClientException {
   /// Creates a [NetworkFailedDependencyException].
-  const NetworkFailedDependencyException({
+  const new({
     super.statusCode = 424,
     super.type = NetworkErrorType.failedDependency,
     super.userMessage,

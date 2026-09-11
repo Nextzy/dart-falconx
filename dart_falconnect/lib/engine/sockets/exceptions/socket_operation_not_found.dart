@@ -4,12 +4,10 @@ import 'package:dart_falconnect/lib.dart';
 class SocketOperationNotFound extends SocketException {
   /// Creates a [SocketOperationNotFound] with a default message of
   /// `'Operation not match'` when [message] is omitted.
-  const SocketOperationNotFound({
+  const new({
     super.response,
     String? message,
     super.exception,
     super.stackTrace,
-  }) : super(
-         message: message ?? 'Operation not match',
-       );
+  }) : super(message: message ?? 'Operation not match');
 }

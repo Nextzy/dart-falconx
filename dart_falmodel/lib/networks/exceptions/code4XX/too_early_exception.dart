@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// be replayed.
 class NetworkTooEarlyException extends NetworkClientException {
   /// Creates a [NetworkTooEarlyException].
-  const NetworkTooEarlyException({
+  const new({
     super.statusCode = 425,
     super.type = NetworkErrorType.tooEarly,
     super.userMessage,

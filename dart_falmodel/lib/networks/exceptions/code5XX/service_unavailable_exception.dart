@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// often due to maintenance or overload.
 class ServiceUnavailableException extends NetworkServerException {
   /// Creates a [ServiceUnavailableException].
-  const ServiceUnavailableException({
+  const new({
     super.statusCode = 503,
     super.type = NetworkErrorType.serviceUnavailable,
     super.userMessage,

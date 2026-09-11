@@ -43,78 +43,62 @@ typedef VoidFailureCallback = void Function(Failure failure);
 /// ```
 @freezed
 sealed class UserFeedback with _$UserFeedback {
-  const UserFeedback._();
+  const new _();
 
   /// Represents a successful operation.
-  const factory UserFeedback.success({
+  const factory success({
     String? message,
     @Default(FeedbackLevel.medium) FeedbackLevel level,
   }) = Success;
 
   /// Represents a warning that doesn't prevent operation completion.
-  const factory UserFeedback.warning({
+  const factory warning({
     String? message,
     @Default(FeedbackLevel.medium) FeedbackLevel level,
   }) = Warning;
 
   /// Represents a failure or error condition.
-  const factory UserFeedback.failure({
+  const factory failure({
     String? message,
     @Default(FeedbackLevel.medium) FeedbackLevel level,
   }) = Failure;
 
   /// Represents an informational message.
-  const factory UserFeedback.information({
+  const factory information({
     String? message,
     @Default(FeedbackLevel.medium) FeedbackLevel level,
   }) = Information;
 
   /// Deserialises a [UserFeedback] from a JSON map.
-  factory UserFeedback.fromJson(
-    Map<String, dynamic> json,
-  ) => _$UserFeedbackFromJson(json);
+  factory fromJson(Map<String, dynamic> json) => _$UserFeedbackFromJson(json);
 
   /// Creates a Warning from an Exception object.
   static UserFeedback warningFromException(
     CommonException? exception, {
     FeedbackLevel level = FeedbackLevel.medium,
-  }) => UserFeedback.warning(
-    message: exception?.userMessage,
-    level: level,
-  );
+  }) => UserFeedback.warning(message: exception?.userMessage, level: level);
 
   /// Creates a Failure from an Exception object.
   static UserFeedback failureFromException(
     CommonException? exception, {
     FeedbackLevel level = FeedbackLevel.medium,
-  }) => UserFeedback.failure(
-    message: exception?.userMessage,
-    level: level,
-  );
+  }) => UserFeedback.failure(message: exception?.userMessage, level: level);
 
   /// Gets the message if this is a Success feedback.
-  String? get successMessage => maybeWhen(
-    success: (message, level) => message,
-    orElse: () => null,
-  );
+  String? get successMessage =>
+      maybeWhen(success: (message, level) => message, orElse: () => null);
 
   /// Gets the message if this is a Failure feedback.
-  String? get errorMessage => maybeWhen(
-    failure: (message, level) => message,
-    orElse: () => null,
-  );
+  String? get errorMessage =>
+      maybeWhen(failure: (message, level) => message, orElse: () => null);
 
   /// Gets the message if this is a Warning feedback.
-  String? get warningMessage => maybeWhen(
-    warning: (message, level) => message,
-    orElse: () => null,
-  );
+  String? get warningMessage =>
+      maybeWhen(warning: (message, level) => message, orElse: () => null);
 
   /// Gets the message if this is an Information feedback.
-  String? get informationMessage => maybeWhen(
-    information: (message, level) => message,
-    orElse: () => null,
-  );
+  String? get informationMessage =>
+      maybeWhen(information: (message, level) => message, orElse: () => null);
 
   /// Pattern matching using switch expression (Dart 3 style).
   /// This is available in addition to Freezed's when/maybeWhen methods.

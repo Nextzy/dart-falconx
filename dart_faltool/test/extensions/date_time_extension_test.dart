@@ -477,11 +477,7 @@ void main() {
         });
 
         when('copying with multiple changes', () {
-          final result = original.copyWith(
-            month: 6,
-            hour: 14,
-            minute: 45,
-          );
+          final result = original.copyWith(month: 6, hour: 14, minute: 45);
 
           then('only specified fields should change', () {
             expect(result.year, equals(2023));
@@ -588,11 +584,7 @@ void main() {
 
         // When & Then
         final relativeTimeTestCases = [
-          (
-            time: now,
-            expected: 'a moment ago',
-            description: 'current time',
-          ),
+          (time: now, expected: 'a moment ago', description: 'current time'),
           (
             time: now.subtract(const Duration(minutes: 5)),
             expected: '5 minutes ago',

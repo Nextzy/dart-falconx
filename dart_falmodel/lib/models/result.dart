@@ -6,17 +6,16 @@ import 'package:dart_falmodel/lib.dart';
 /// making exception cases explicit in the type system.
 class Result<T> extends Equatable {
   /// Creates a successful result.
-  factory Result.success(T value) => Result._success(value);
+  factory success(T value) => Result._success(value);
 
   /// Creates a failed result.
-  factory Result.failure(CommonException exception) =>
-      Result._failure(exception);
+  factory failure(CommonException exception) => Result._failure(exception);
 
   /// Creates a failed result whose exception is a `DataLayerException`.
   ///
   /// [code] becomes the exception `type`; the remaining parameters are
   /// forwarded directly to `DataLayerException`.
-  factory Result.dataFailure({
+  factory dataFailure({
     required Object code,
     String? userMessage,
     String? developerMessage,
@@ -36,7 +35,7 @@ class Result<T> extends Equatable {
   ///
   /// [code] becomes the exception `type`; the remaining parameters are
   /// forwarded directly to `DomainLayerException`.
-  factory Result.domainFailure({
+  factory domainFailure({
     required Object code,
     String? userMessage,
     String? developerMessage,
@@ -52,12 +51,12 @@ class Result<T> extends Equatable {
     ),
   );
 
-  const Result._success(T value)
+  const new _success(T value)
     : _value = value,
       _exception = null,
       _isSuccess = true;
 
-  const Result._failure(CommonException exception)
+  const new _failure(CommonException exception)
     : _value = null,
       _exception = exception,
       _isSuccess = false;
@@ -104,9 +103,7 @@ class Result<T> extends Equatable {
         // Need to catch all errors from user-provided transform
         // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
-        return Result.failure(
-          exception.toException(stackTrace: stackTrace),
-        );
+        return Result.failure(exception.toException(stackTrace: stackTrace));
       }
     }
     return Result.failure(_exception!);
@@ -114,10 +111,7 @@ class Result<T> extends Equatable {
 
   /// Transforms the exception if failed.
   Result<T> mapException(
-    CommonException Function(
-      CommonException exception,
-    )
-    transform,
+    CommonException Function(CommonException exception) transform,
   ) {
     if (!_isSuccess) {
       return Result.failure(transform(_exception!));
@@ -159,27 +153,21 @@ class Result<T> extends Equatable {
         // Need to catch all errors from user-provided transform
         // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
-        return Result.failure(
-          exception.toException(stackTrace: stackTrace),
-        );
+        return Result.failure(exception.toException(stackTrace: stackTrace));
       }
     }
     return Result.failure(_exception!);
   }
 
   /// Recovers from a failure by providing a fallback value.
-  Result<T> recover(
-    T Function(CommonException exception) fallback,
-  ) {
+  Result<T> recover(T Function(CommonException exception) fallback) {
     if (!_isSuccess) {
       try {
         return Result.success(fallback(_exception!));
         // Need to catch all errors from user-provided transform
         // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
-        return Result.failure(
-          exception.toException(stackTrace: stackTrace),
-        );
+        return Result.failure(exception.toException(stackTrace: stackTrace));
       }
     }
     return this;
@@ -195,9 +183,7 @@ class Result<T> extends Equatable {
         // Need to catch all errors from user-provided transform
         // ignore: avoid_catches_without_on_clauses
       } catch (error, stackTrace) {
-        return Result.failure(
-          exception.toException(stackTrace: stackTrace),
-        );
+        return Result.failure(exception.toException(stackTrace: stackTrace));
       }
     }
     return this;
@@ -211,9 +197,7 @@ class Result<T> extends Equatable {
   }
 
   /// Executes a side-effect callback if failed.
-  void doOnFailure(
-    void Function(CommonException exception) callback,
-  ) {
+  void doOnFailure(void Function(CommonException exception) callback) {
     if (!_isSuccess) {
       callback(_exception!);
     }
@@ -222,10 +206,7 @@ class Result<T> extends Equatable {
   /// Returns a copy of this result with the failure messages replaced.
   ///
   /// Has no effect when the result is successful.
-  Result<T> updateFailMessage({
-    String? userMessage,
-    String? developerMessage,
-  }) {
+  Result<T> updateFailMessage({String? userMessage, String? developerMessage}) {
     if (!_isSuccess) {
       return Result._failure(
         exception.copyWith(

@@ -19,12 +19,7 @@ class SocketOptions {
   /// [retryLimit] is the maximum number of reconnection attempts (default: 3).
   /// [protocol] is the optional sub-protocol for the WebSocket handshake.
   /// [data] is optional initial data to send upon connection.
-  SocketOptions({
-    this.uri = '',
-    this.retryLimit = 3,
-    this.protocol,
-    this.data,
-  });
+  new({this.uri = '', this.retryLimit = 3, this.protocol, this.data});
 
   /// The WebSocket endpoint URL.
   ///

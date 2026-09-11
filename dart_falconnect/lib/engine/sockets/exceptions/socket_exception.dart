@@ -7,12 +7,7 @@ import 'package:dart_falmodel/dart_falmodel.dart';
 /// [exception], and [stackTrace] at the point of failure.
 class SocketException implements Exception {
   /// Creates a [SocketException] with optional diagnostic context.
-  const SocketException({
-    this.response,
-    this.message,
-    this.exception,
-    this.stackTrace,
-  });
+  const new({this.response, this.message, this.exception, this.stackTrace});
 
   /// Human-readable description of the failure.
   final String? message;

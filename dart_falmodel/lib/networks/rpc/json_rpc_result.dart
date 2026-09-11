@@ -4,7 +4,7 @@
 /// which guarantees a `toJson()` method for serialization at the
 /// protocol boundary.
 abstract class JsonRpcResult {
-  const JsonRpcResult();
+  const new();
 }
 
 abstract class JsonRpcModelResult extends JsonRpcResult {
@@ -13,7 +13,7 @@ abstract class JsonRpcModelResult extends JsonRpcResult {
 }
 
 class JsonRpcListResult<T extends JsonRpcResult> extends JsonRpcResult {
-  const JsonRpcListResult(this.data);
+  const new(this.data);
 
   final List<T> data;
 
@@ -37,19 +37,19 @@ class JsonRpcListResult<T extends JsonRpcResult> extends JsonRpcResult {
 }
 
 class JsonRpcIntResult extends JsonRpcResult {
-  const JsonRpcIntResult(this.data);
+  const new(this.data);
 
   final int data;
 }
 
 abstract class JsonRpcStringResult extends JsonRpcResult {
-  const JsonRpcStringResult(this.data);
+  const new(this.data);
 
   final String data;
 }
 
 abstract class JsonRpcBoolResult extends JsonRpcResult {
-  const JsonRpcBoolResult(this.data);
+  const new(this.data);
 
   final bool data;
 }
@@ -58,7 +58,7 @@ abstract class JsonRpcBoolResult extends JsonRpcResult {
 /// construct their response maps manually.
 class JsonRpcRawResult implements JsonRpcResult {
   /// Creates a [JsonRpcRawResult] wrapping the given data map.
-  const JsonRpcRawResult(this._data);
+  const new(this._data);
 
   final Map<String, dynamic> _data;
 

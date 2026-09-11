@@ -156,10 +156,7 @@ extension FalconToolFutureExtensions<T> on Future<T> {
   ///     .guard(() => isNetworkAvailable,
   ///            fallback: cachedData);
   /// ```
-  Future<T> guard(
-    bool Function() condition, {
-    required T fallback,
-  }) {
+  Future<T> guard(bool Function() condition, {required T fallback}) {
     if (!condition()) {
       return Future.value(fallback);
     }

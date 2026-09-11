@@ -7,7 +7,7 @@ import 'package:dart_falmodel/lib.dart';
 /// from data-layer errors via `is` checks.
 class DomainLayerException extends CommonException {
   /// Creates a [DomainLayerException].
-  const DomainLayerException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,

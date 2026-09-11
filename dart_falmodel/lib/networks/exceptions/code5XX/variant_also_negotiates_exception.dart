@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// circular content negotiation.
 class NetworkVariantAlsoNegotiatesException extends NetworkServerException {
   /// Creates a [NetworkVariantAlsoNegotiatesException].
-  const NetworkVariantAlsoNegotiatesException({
+  const new({
     super.statusCode = 506,
     super.type = NetworkErrorType.variantAlsoNegotiates,
     super.userMessage,

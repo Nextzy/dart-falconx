@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the request conflicts with the current state of the resource.
 class NetworkConflictException extends NetworkClientException {
   /// Creates a [NetworkConflictException].
-  const NetworkConflictException({
+  const new({
     super.statusCode = 409,
     super.type = NetworkErrorType.conflict,
     super.userMessage,

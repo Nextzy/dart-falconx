@@ -7,7 +7,7 @@ import 'package:dart_falmodel/lib.dart';
 class BatchJsonRpcBody<RESULT> extends JsonRpc {
   /// Creates a [BatchJsonRpcBody] with the required [method] and
   /// optional parameters.
-  const BatchJsonRpcBody({
+  const new({
     super.jsonrpc,
     super.id,
     required this.method,

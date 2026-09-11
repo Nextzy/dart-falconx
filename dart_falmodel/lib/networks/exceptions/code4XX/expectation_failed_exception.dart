@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server cannot meet the requirements of the Expect header.
 class NetworkExpectationFailedException extends NetworkClientException {
   /// Creates a [NetworkExpectationFailedException].
-  const NetworkExpectationFailedException({
+  const new({
     super.statusCode = 417,
     super.type = NetworkErrorType.expectationFailed,
     super.userMessage,

@@ -35,7 +35,7 @@ enum SystemErrorType implements DefaultErrorType {
   /// A concurrent modification was detected.
   concurrency('Concurrent modification error.');
 
-  const SystemErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -63,7 +63,7 @@ enum InputErrorType implements DefaultErrorType {
   /// A type mismatch or cast error occurred.
   type('Type error occurred.');
 
-  const InputErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -79,7 +79,7 @@ enum TimeoutErrorType implements DefaultErrorType {
   /// The operation deadline was exceeded.
   deadline('Operation deadline exceeded.');
 
-  const TimeoutErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -101,7 +101,7 @@ enum StorageErrorType implements DefaultErrorType {
   /// A file-system operation failed.
   fileSystem('File system error.');
 
-  const StorageErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -126,7 +126,7 @@ enum ConnectivityErrorType implements DefaultErrorType {
   /// An HTTP-level connectivity error occurred.
   http('HTTP error.');
 
-  const ConnectivityErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -145,7 +145,7 @@ enum AsyncErrorType implements DefaultErrorType {
   /// An error occurred inside an isolate.
   isolate('Isolate error occurred.');
 
-  const AsyncErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -164,7 +164,7 @@ enum AccessErrorType implements DefaultErrorType {
   /// The current device does not support the requested operation.
   deviceNotSupported('This device is not supported.');
 
-  const AccessErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -180,7 +180,7 @@ enum ExternalErrorType implements DefaultErrorType {
   /// The external service is not currently available.
   serviceUnavailable('Service is currently unavailable.');
 
-  const ExternalErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -202,7 +202,7 @@ enum BusinessErrorType implements DefaultErrorType {
   /// The feature or API is deprecated and no longer active.
   deprecated('This feature is deprecated.');
 
-  const BusinessErrorType(this._message);
+  new(this._message);
 
   final String _message;
 
@@ -222,7 +222,7 @@ class CommonException implements Exception {
   /// [userMessage] is shown to end users; [developerMessage] is for logs.
   /// [data] carries an optional structured payload (forwarded into
   /// [JsonRpcError.data] when serialised).
-  const CommonException({
+  const new({
     required this.type,
     this.userMessage,
     this.developerMessage,
@@ -323,10 +323,7 @@ class CommonException implements Exception {
   /// The [JsonRpcErrorCategory] is inferred from the concrete subclass and
   /// [type]. Provide [userMessage] or [developerMessage] to override the
   /// stored values.
-  JsonRpcError toJsonRpcError({
-    String? userMessage,
-    String? developerMessage,
-  }) {
+  JsonRpcError toJsonRpcError({String? userMessage, String? developerMessage}) {
     final resolveCategory = _resolveJsonRpcErrorCategory(type: type);
     final resolveCode = (type is Enum) ? (type as Enum).name : type.toString();
 
@@ -345,22 +342,15 @@ class CommonException implements Exception {
   /// Converts this exception to an [Information] feedback with the given
   /// [level].
   Information toInformation({FeedbackLevel level = FeedbackLevel.medium}) =>
-      Information(
-        message: userMessage,
-        level: level,
-      );
+      Information(message: userMessage, level: level);
 
   /// Converts this exception to a [Failure] feedback with the given [level].
-  Failure toFailure({FeedbackLevel level = FeedbackLevel.medium}) => Failure(
-    message: userMessage,
-    level: level,
-  );
+  Failure toFailure({FeedbackLevel level = FeedbackLevel.medium}) =>
+      Failure(message: userMessage, level: level);
 
   /// Converts this exception to a [Warning] feedback with the given [level].
-  Warning toWarning({FeedbackLevel level = FeedbackLevel.medium}) => Warning(
-    message: userMessage,
-    level: level,
-  );
+  Warning toWarning({FeedbackLevel level = FeedbackLevel.medium}) =>
+      Warning(message: userMessage, level: level);
 
   JsonRpcErrorCategory _resolveJsonRpcErrorCategory({
     required Object? type,

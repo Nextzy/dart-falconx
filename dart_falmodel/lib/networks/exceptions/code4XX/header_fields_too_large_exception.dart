@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// fields are too large.
 class NetworkHeaderFieldsTooLargeException extends NetworkClientException {
   /// Creates a [NetworkHeaderFieldsTooLargeException].
-  const NetworkHeaderFieldsTooLargeException({
+  const new({
     super.statusCode = 431,
     super.type = NetworkErrorType.headerFieldsTooLarge,
     super.userMessage,

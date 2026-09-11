@@ -1,4 +1,5 @@
 import 'dart:collection';
+
 import 'package:dart_falconnect/lib.dart';
 
 /// Ordered, mutable list of [SocketInterceptor] instances for a socket client.

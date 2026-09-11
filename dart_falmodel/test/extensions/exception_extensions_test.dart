@@ -39,10 +39,7 @@ void main() {
 
   group('_detectErrorType — Timeout', () {
     test('TimeoutException maps to TimeoutErrorType.timeout', () {
-      expect(
-        detectType(TimeoutException('test')),
-        TimeoutErrorType.timeout,
-      );
+      expect(detectType(TimeoutException('test')), TimeoutErrorType.timeout);
     });
   });
 
@@ -52,10 +49,7 @@ void main() {
     });
 
     test('UnsupportedError maps to SystemErrorType.unexpected', () {
-      expect(
-        detectType(UnsupportedError('test')),
-        SystemErrorType.unexpected,
-      );
+      expect(detectType(UnsupportedError('test')), SystemErrorType.unexpected);
     });
 
     test('ConcurrentModificationError maps to SystemErrorType.concurrency', () {

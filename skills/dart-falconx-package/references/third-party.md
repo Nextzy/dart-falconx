@@ -19,7 +19,7 @@ The umbrella import `package:dart_falconx/dart_falconx.dart` brings every row be
 | `dartx` | Kotlin-style extensions (`firstOrNullWhere`, `sortedBy`, `Pair`) | `IterableAll`, `IterableAppend`, `IterableNumAverageExtension`, `IterableNumSumExtension`, `IterablePartition`, `IterableZip`, `MapOrEmpty`, `NumCoerceInRangeExtension`, `StringCapitalizeExtension` (falcon equivalents exist) |
 | `data` | data-structure helpers | `Field` |
 | `enum_to_string` | `EnumToString.convertToString` / `fromString` | none |
-| `equatable` | `Equatable`, `EquatableMixin` | none |
+| `equatable` | `Equatable` | none |
 | `fpdart` | `Either`, `Option`, `TaskEither` | `State`, `Task` |
 | `freezed_annotation` | `@freezed`, `@Default` | none |
 | `hashlib`, `hashlib/random` | hash digests, `uuid` generator | none |

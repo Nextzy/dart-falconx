@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the client has sent too many requests in a given time window.
 class NetworkLimitExceededException extends NetworkClientException {
   /// Creates a [NetworkLimitExceededException].
-  const NetworkLimitExceededException({
+  const new({
     super.statusCode = 429,
     super.type = NetworkErrorType.tooManyRequests,
     super.userMessage,

@@ -21,10 +21,7 @@ class FormatRegex {
   );
 
   /// HTML entity pattern that matches encoded entities such as `&amp;`.
-  static final RegExp htmlEntities = RegExp(
-    '&[^;]+;',
-    multiLine: true,
-  );
+  static final RegExp htmlEntities = RegExp('&[^;]+;', multiLine: true);
 
   /// E.164 international phone number validation pattern.
   static final e164 = RegExp(r'^\+[1-9]\d{6,14}$');
@@ -51,14 +48,10 @@ extension FalconToolStringValidatorExtension on String {
 
   /// Strips all HTML tags and entities from the string, collapsing
   /// extra whitespace.
-  String get removeHtmlTags =>
-      replaceAll(
-            FormatRegex.html,
-            '',
-          )
-          .replaceAll(FormatRegex.htmlEntities, ' ')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
+  String get removeHtmlTags => replaceAll(FormatRegex.html, '')
+      .replaceAll(FormatRegex.htmlEntities, ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
   /// Removes leading and trailing whitespace and collapses internal whitespace.
   ///

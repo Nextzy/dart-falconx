@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// [JsonRpcDomainLayerException] when the failure site is known.
 class JsonRpcCommonException extends CommonException {
   /// Creates a [JsonRpcCommonException].
-  const JsonRpcCommonException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,

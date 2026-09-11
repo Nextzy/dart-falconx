@@ -8,14 +8,14 @@ part 'generated/json_rpc_response.g.dart';
 @Freezed(genericArgumentFactories: true)
 sealed class JsonRpcResponse<RESULT extends JsonRpcResult>
     with _$JsonRpcResponse<RESULT> {
-  const factory JsonRpcResponse({
+  const factory({
     @JsonKey(includeFromJson: true, includeToJson: true)
     required String jsonrpc,
     @JsonKey(includeFromJson: true, includeToJson: true) required int id,
     @JsonKey(includeFromJson: true, includeToJson: true) required RESULT result,
   }) = _JsonRpcResponse;
 
-  factory JsonRpcResponse.fromJson(
+  factory fromJson(
     Map<String, dynamic> json,
     RESULT Function(Object?) fromJsonResult,
   ) => _$JsonRpcResponseFromJson(json, fromJsonResult);
@@ -24,7 +24,7 @@ sealed class JsonRpcResponse<RESULT extends JsonRpcResult>
 /// Error JSON-RPC response envelope carrying one or more [JsonRpcError]s.
 @freezed
 sealed class JsonRpcErrorResponse with _$JsonRpcErrorResponse {
-  const factory JsonRpcErrorResponse({
+  const factory({
     @JsonKey(includeFromJson: true, includeToJson: true)
     required String jsonrpc,
     @JsonKey(includeFromJson: true, includeToJson: true) required int id,
@@ -32,11 +32,11 @@ sealed class JsonRpcErrorResponse with _$JsonRpcErrorResponse {
     required List<JsonRpcError> errors,
   }) = _JsonRpcErrorResponse;
 
-  factory JsonRpcErrorResponse.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$JsonRpcErrorResponseFromJson(json);
 
   /// Shorthand for a response with a single error.
-  factory JsonRpcErrorResponse.single({
+  factory single({
     required String jsonrpc,
     required int id,
     required JsonRpcError error,

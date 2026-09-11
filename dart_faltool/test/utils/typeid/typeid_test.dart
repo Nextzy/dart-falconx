@@ -19,10 +19,7 @@ void main() {
       });
 
       test('throws FormatException for prefix with underscore', () {
-        expect(
-          () => TypeId.generate('user_account'),
-          throwsFormatException,
-        );
+        expect(() => TypeId.generate('user_account'), throwsFormatException);
       });
 
       test('throws FormatException for uppercase prefix', () {
@@ -30,10 +27,7 @@ void main() {
       });
 
       test('throws FormatException for prefix longer than 63 chars', () {
-        expect(
-          () => TypeId.generate('a' * 64),
-          throwsFormatException,
-        );
+        expect(() => TypeId.generate('a' * 64), throwsFormatException);
       });
 
       test('accepts max length prefix of 63 chars', () {

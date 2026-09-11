@@ -151,10 +151,7 @@ extension FalconToolStringFormatExtension on String {
   /// 'a@example.com'.maskEmail(); // '*@example.com'
   /// 'ab@example.com'.maskEmail(visibleChars: 3); // 'ab@example.com'
   /// ```
-  String maskEmail({
-    int visibleChars = 2,
-    String maskChar = '*',
-  }) {
+  String maskEmail({int visibleChars = 2, String maskChar = '*'}) {
     final atIndex = indexOf('@');
     if (atIndex < 0) return this;
 
@@ -213,8 +210,6 @@ extension FalconStringNullFormatExtension on String? {
   );
 
   /// Safely masks an email address.
-  String? maskEmail({
-    int visibleChars = 2,
-    String maskChar = '*',
-  }) => this?.maskEmail(visibleChars: visibleChars, maskChar: maskChar);
+  String? maskEmail({int visibleChars = 2, String maskChar = '*'}) =>
+      this?.maskEmail(visibleChars: visibleChars, maskChar: maskChar);
 }

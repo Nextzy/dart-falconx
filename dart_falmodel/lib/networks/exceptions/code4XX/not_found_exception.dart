@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server cannot find the requested resource.
 class NetworkNotFoundException extends NetworkClientException {
   /// Creates a [NetworkNotFoundException].
-  const NetworkNotFoundException({
+  const new({
     super.statusCode = 404,
     super.type = NetworkErrorType.notFound,
     super.userMessage,

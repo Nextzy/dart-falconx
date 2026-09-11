@@ -44,9 +44,7 @@ void main() {
       test('should map events asynchronously', () async {
         final stream = Stream.fromIterable([1, 2, 3]);
         final delayed = stream.asyncMapStream((n) async {
-          await Future<void>.delayed(
-            const Duration(milliseconds: 10),
-          );
+          await Future<void>.delayed(const Duration(milliseconds: 10));
           return n * 2;
         });
 
@@ -83,85 +81,63 @@ void main() {
     });
 
     group('combineLatest', () {
-      test(
-        'should combine latest values from two streams',
-        () async {
-          final controller1 = StreamController<int>();
-          final controller2 = StreamController<String>();
+      test('should combine latest values from two streams', () async {
+        final controller1 = StreamController<int>();
+        final controller2 = StreamController<String>();
 
-          final combined = controller1.stream.combineLatest(
-            controller2.stream,
-            (a, b) => '$a$b',
-          );
+        final combined = controller1.stream.combineLatest(
+          controller2.stream,
+          (a, b) => '$a$b',
+        );
 
-          final events = <String>[];
-          combined.listen(events.add);
+        final events = <String>[];
+        combined.listen(events.add);
 
-          controller1.add(1);
-          await Future<void>.delayed(
-            const Duration(milliseconds: 10),
-          );
-          controller2.add('a');
-          await Future<void>.delayed(
-            const Duration(milliseconds: 10),
-          );
-          controller1.add(2);
-          await Future<void>.delayed(
-            const Duration(milliseconds: 10),
-          );
-          controller2.add('b');
-          await Future<void>.delayed(
-            const Duration(milliseconds: 10),
-          );
+        controller1.add(1);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        controller2.add('a');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        controller1.add(2);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        controller2.add('b');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
 
-          await controller1.close();
-          await controller2.close();
+        await controller1.close();
+        await controller2.close();
 
-          expect(events, ['1a', '2a', '2b']);
-        },
-      );
+        expect(events, ['1a', '2a', '2b']);
+      });
     });
 
     group('takeWhileStream', () {
-      test(
-        'should take events while condition is true',
-        () async {
-          final stream = Stream.fromIterable([1, 2, 3, 4, 5]);
-          final limited = stream.takeWhileStream((n) => n < 4);
+      test('should take events while condition is true', () async {
+        final stream = Stream.fromIterable([1, 2, 3, 4, 5]);
+        final limited = stream.takeWhileStream((n) => n < 4);
 
-          expect(await limited.toList(), [1, 2, 3]);
-        },
-      );
+        expect(await limited.toList(), [1, 2, 3]);
+      });
     });
 
     group('skipWhileStream', () {
-      test(
-        'should skip events while condition is true',
-        () async {
-          final stream = Stream.fromIterable([1, 2, 3, 4, 5]);
-          final skipped = stream.skipWhileStream((n) => n < 3);
+      test('should skip events while condition is true', () async {
+        final stream = Stream.fromIterable([1, 2, 3, 4, 5]);
+        final skipped = stream.skipWhileStream((n) => n < 3);
 
-          expect(await skipped.toList(), [3, 4, 5]);
-        },
-      );
+        expect(await skipped.toList(), [3, 4, 5]);
+      });
     });
 
     group('delay', () {
       test('should delay events', () async {
         final start = DateTime.now();
         final stream = Stream.fromIterable([1, 2, 3]);
-        final delayed = stream.delay(
-          const Duration(milliseconds: 150),
-        );
+        final delayed = stream.delay(const Duration(milliseconds: 150));
 
         final events = await delayed.toList();
         final duration = DateTime.now().difference(start);
 
         expect(events, [1, 2, 3]);
-        expect(
-          duration.inMilliseconds,
-          greaterThanOrEqualTo(150),
-        );
+        expect(duration.inMilliseconds, greaterThanOrEqualTo(150));
       });
     });
 
@@ -181,26 +157,23 @@ void main() {
     });
 
     group('onErrorReturnWith', () {
-      test(
-        'should convert errors to values using function',
-        () async {
-          final stream = Stream<int>.multi((controller) {
-            controller
-              ..add(1)
-              ..addError(Exception('Error 1'))
-              ..add(2)
-              ..addError(Exception('Error 2'));
-            unawaited(controller.close());
-          });
+      test('should convert errors to values using function', () async {
+        final stream = Stream<int>.multi((controller) {
+          controller
+            ..add(1)
+            ..addError(Exception('Error 1'))
+            ..add(2)
+            ..addError(Exception('Error 2'));
+          unawaited(controller.close());
+        });
 
-          final safe = stream.onErrorReturnWith((error, stackTrace) {
-            if (error.toString().contains('1')) return -1;
-            return -2;
-          });
+        final safe = stream.onErrorReturnWith((error, stackTrace) {
+          if (error.toString().contains('1')) return -1;
+          return -2;
+        });
 
-          expect(await safe.toList(), [1, -1, 2, -2]);
-        },
-      );
+        expect(await safe.toList(), [1, -1, 2, -2]);
+      });
     });
 
     group('ignoreErrors', () {
@@ -258,17 +231,14 @@ void main() {
     });
 
     group('doOnDone', () {
-      test(
-        'should execute action when stream completes',
-        () async {
-          var completed = false;
-          final stream = Stream.fromIterable([1, 2, 3]);
-          final tracked = stream.doOnDone(() => completed = true);
+      test('should execute action when stream completes', () async {
+        var completed = false;
+        final stream = Stream.fromIterable([1, 2, 3]);
+        final tracked = stream.doOnDone(() => completed = true);
 
-          await tracked.toList();
-          expect(completed, true);
-        },
-      );
+        await tracked.toList();
+        expect(completed, true);
+      });
     });
 
     group('startWith', () {
@@ -314,9 +284,7 @@ void main() {
       });
 
       test('should handle all null stream', () async {
-        final stream = Stream<int?>.fromIterable(
-          [null, null, null],
-        );
+        final stream = Stream<int?>.fromIterable([null, null, null]);
         final nonNull = stream.whereNotNull();
 
         expect(await nonNull.toList(), <int>[]);
@@ -324,23 +292,16 @@ void main() {
     });
 
     group('mapNotNull', () {
-      test(
-        'should map non-null values and filter nulls',
-        () async {
-          final stream = Stream.fromIterable([1, null, 2, null, 3]);
-          final doubled = stream.mapNotNull(
-            (n) => n != null ? n * 2 : null,
-          );
+      test('should map non-null values and filter nulls', () async {
+        final stream = Stream.fromIterable([1, null, 2, null, 3]);
+        final doubled = stream.mapNotNull((n) => n != null ? n * 2 : null);
 
-          expect(await doubled.toList(), [2, 4, 6]);
-        },
-      );
+        expect(await doubled.toList(), [2, 4, 6]);
+      });
 
       test('should handle empty result', () async {
         final stream = Stream<int?>.fromIterable([null, null]);
-        final mapped = stream.mapNotNull(
-          (n) => n != null ? n * 2 : null,
-        );
+        final mapped = stream.mapNotNull((n) => n != null ? n * 2 : null);
 
         expect(await mapped.toList(), <dynamic>[]);
       });

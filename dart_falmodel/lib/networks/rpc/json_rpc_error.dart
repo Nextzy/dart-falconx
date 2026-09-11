@@ -10,7 +10,7 @@ part 'generated/json_rpc_error.g.dart';
 /// serialises it into [JsonRpcErrorResponse].
 @freezed
 sealed class JsonRpcError with _$JsonRpcError implements Exception {
-  const factory JsonRpcError({
+  const factory({
     required JsonRpcErrorCategory category,
     required String code,
     String? userMessage,
@@ -18,13 +18,12 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     @JsonKey(includeIfNull: false) Map<String, dynamic>? data,
   }) = _JsonRpcError;
 
-  const JsonRpcError._();
+  const new _();
 
-  factory JsonRpcError.fromJson(Map<String, dynamic> json) =>
-      _$JsonRpcErrorFromJson(json);
+  factory fromJson(Map<String, dynamic> json) => _$JsonRpcErrorFromJson(json);
 
   /// Convenience factory for [JsonRpcErrorCategory.INVALID_REQUEST_ERROR].
-  factory JsonRpcError.invalidRequest({
+  factory invalidRequest({
     required String code,
     String? userMessage,
     String? developerMessage,
@@ -37,7 +36,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
     data: data,
   );
 
-  factory JsonRpcError.external({
+  factory external({
     required String code,
     String? userMessage,
     String? developerMessage,
@@ -51,7 +50,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
   );
 
   /// Convenience factory for method-not-found errors.
-  factory JsonRpcError.methodNotImplement({
+  factory methodNotImplement({
     String? userMessage,
     String? developerMessage,
     Map<String, dynamic>? data,
@@ -64,7 +63,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
   );
 
   /// Convenience factory for invalid-params errors.
-  factory JsonRpcError.invalidParams({
+  factory invalidParams({
     required String code,
     String? userMessage,
     String? developerMessage,
@@ -78,7 +77,7 @@ sealed class JsonRpcError with _$JsonRpcError implements Exception {
   );
 
   /// Convenience factory for [JsonRpcErrorCategory.API_ERROR].
-  factory JsonRpcError.internal({
+  factory internal({
     String? code,
     String? userMessage,
     String? developerMessage,

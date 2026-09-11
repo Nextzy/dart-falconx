@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the HTTP method used is not supported for the target resource.
 class MethodNotAllowedException extends NetworkClientException {
   /// Creates a [MethodNotAllowedException].
-  const MethodNotAllowedException({
+  const new({
     super.statusCode = 405,
     super.type = NetworkErrorType.methodNotAllowed,
     super.userMessage,
