@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server cannot process the request due to malformed syntax.
 class NetworkBadRequestException extends NetworkClientException {
   /// Creates a [NetworkBadRequestException].
-  const NetworkBadRequestException({
+  const new({
     super.statusCode = 400,
     super.type = NetworkErrorType.badRequest,
     super.userMessage,

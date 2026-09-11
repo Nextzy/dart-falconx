@@ -131,10 +131,10 @@ Generated files follow strict organization:
 ### Exception Architecture
 
 Three exception systems in dart_falmodel:
-- **`DefaultErrorType` enum** (`lib/exceptions/common_exception.dart`): General-purpose (unknown, system, validation, storage, etc.)
+- **`DefaultErrorType` sealed interface** (`lib/exceptions/common_exception.dart`): General-purpose, implemented by nine enums (`SystemErrorType`, `InputErrorType`, `TimeoutErrorType`, `StorageErrorType`, `ConnectivityErrorType`, `AsyncErrorType`, `AccessErrorType`, `ExternalErrorType`, `BusinessErrorType`); `DefaultErrorCategory` (remote/local/unknown) is a separate enum
 - **`NetworkErrorType` enum** (`lib/networks/exceptions/network_exception.dart`): HTTP-specific, maps to status codes
 - **JSON-RPC exceptions** (`lib/networks/rpc/exceptions/`): `JsonRpcCommonException`, `JsonRpcDataLayerException`, `JsonRpcDomainLayerException` — use `JsonRpcErrorCategory` and `JsonRpcApiErrorType`/`JsonRpcRequestErrorType` enums
-- `CommonException` has a `category` field and `toJsonRpcError()` method for converting to `JsonRpcError`
+- `CommonException` carries `type` (an `Object` discriminant, normally a `DefaultErrorType` enum value), `userMessage`, `developerMessage`, `data`, and a `toJsonRpcError()` method for converting to `JsonRpcError` — there is no `category` field
 - `NetworkException extends CommonException` — do NOT mix with `ErrorType`
 - Each HTTP exception class has a default `NetworkErrorType` via `super.type = NetworkErrorType.xxx`
 - Barrel exports in `networks/exceptions/exceptions.dart` — new exception files MUST be added here
@@ -168,6 +168,15 @@ Three exception systems in dart_falmodel:
 - When adding new exception classes, always add the export to `dart_falmodel/lib/networks/exceptions/exceptions.dart` — missing exports cause misleading analyzer errors (e.g., "method can't be unconditionally invoked because receiver can be 'null'")
 - Exports in barrel files must be sorted alphabetically (enforced by `directives_ordering` lint rule)
 - After large changes, run `dart pub get` before `dart analyze` to clear stale analyzer state
+- Any change to a public API must also update the consumer skill — see [Skill maintenance](#skill-maintenance)
+
+## Skill maintenance
+
+`skills/dart-falconx-package/` is the consumer-facing skill. Downstream projects copy this folder into their own `.claude/skills/` so their agents know what the package provides and how to call it. It is documentation, and it drifts silently when code changes.
+
+**Rule:** whenever a change touches the public API of `dart_falconnect`, `dart_falmodel`, or `dart_faltool` (a new, renamed, or removed public class, method, or parameter; a changed signature; an edit to an export or `hide` list in `dart_*/lib/dart_*.dart`; a newly re-exported third-party package), update `skills/dart-falconx-package/SKILL.md` and the matching file under `skills/dart-falconx-package/references/` in the same change. Internal refactors that leave the public surface unchanged do not require a skill update.
+
+Before bumping a version, confirm the skill still matches the source.
 
 ## Configuration Details
 

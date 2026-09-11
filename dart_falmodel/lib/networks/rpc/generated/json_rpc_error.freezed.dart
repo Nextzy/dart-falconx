@@ -29,16 +29,21 @@ $JsonRpcErrorCopyWith<JsonRpcError> get copyWith => _$JsonRpcErrorCopyWithImpl<J
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcError&&(identical(other.category, category) || other.category == category)&&(identical(other.code, code) || other.code == code)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage)&&const DeepCollectionEquality().equals(other.data, data));
+  final _this = this as JsonRpcError;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcError&&(identical(other.category, _this.category) || other.category == _this.category)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.userMessage, _this.userMessage) || other.userMessage == _this.userMessage)&&(identical(other.developerMessage, _this.developerMessage) || other.developerMessage == _this.developerMessage)&&const DeepCollectionEquality().equals(other.data, _this.data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,category,code,userMessage,developerMessage,const DeepCollectionEquality().hash(data));
+int get hashCode {
+  final _this = this as JsonRpcError;
+  return Object.hash(runtimeType,_this.category,_this.code,_this.userMessage,_this.developerMessage,const DeepCollectionEquality().hash(_this.data));
+}
 
 @override
 String toString() {
-  return 'JsonRpcError(category: $category, code: $code, userMessage: $userMessage, developerMessage: $developerMessage, data: $data)';
+  final _this = this as JsonRpcError;
+  return 'JsonRpcError(category: ${_this.category}, code: ${_this.code}, userMessage: ${_this.userMessage}, developerMessage: ${_this.developerMessage}, data: ${_this.data})';
 }
 
 
@@ -238,16 +243,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcError&&(identical(other.category, category) || other.category == category)&&(identical(other.code, code) || other.code == code)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage)&&const DeepCollectionEquality().equals(other._data, _data));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcError&&(identical(other.category, category) || other.category == category)&&(identical(other.code, code) || other.code == code)&&(identical(other.userMessage, userMessage) || other.userMessage == userMessage)&&(identical(other.developerMessage, developerMessage) || other.developerMessage == developerMessage)&&const DeepCollectionEquality().equals(other.data, _data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,category,code,userMessage,developerMessage,const DeepCollectionEquality().hash(_data));
+int get hashCode {
+    return Object.hash(runtimeType,category,code,userMessage,developerMessage,const DeepCollectionEquality().hash(_data));
+}
 
 @override
 String toString() {
-  return 'JsonRpcError(category: $category, code: $code, userMessage: $userMessage, developerMessage: $developerMessage, data: $data)';
+    return 'JsonRpcError(category: $category, code: $code, userMessage: $userMessage, developerMessage: $developerMessage, data: $data)';
 }
 
 

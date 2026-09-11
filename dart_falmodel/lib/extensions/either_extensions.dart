@@ -15,32 +15,20 @@ extension FalconEitherDataAndFailueExtensions<F extends Failure, DATA>
   bool get hasData => this is Right;
 
   /// Returns the [Right] value, throwing if this is a [Left].
-  DATA get data => fold(
-    (l) {
-      throw Exception('Either is fail.');
-    },
-    (r) => r,
-  );
+  DATA get data => fold((l) {
+    throw Exception('Either is fail.');
+  }, (r) => r);
 
   /// Returns the [Right] value, or `null` if this is a [Left].
-  DATA? get dataOrNull => fold(
-    (l) => null,
-    (r) => r,
-  );
+  DATA? get dataOrNull => fold((l) => null, (r) => r);
 
   /// Returns the [Left] failure, throwing if this is a [Right].
-  F get failure => fold(
-    (l) => l,
-    (r) {
-      throw Exception('Either has data not fail.');
-    },
-  );
+  F get failure => fold((l) => l, (r) {
+    throw Exception('Either has data not fail.');
+  });
 
   /// Returns the [Left] failure, or `null` if this is a [Right].
-  F? get failureOrNull => fold(
-    (l) => l,
-    (r) => null,
-  );
+  F? get failureOrNull => fold((l) => l, (r) => null);
 }
 
 /// Extensions on `Either<Exception, DATA>` for ergonomic exception/data access.
@@ -58,32 +46,20 @@ extension FalconEitherDataAndExceptionExtensions<E extends Exception, DATA>
   bool get hasData => this is Right;
 
   /// Returns the [Right] value, throwing if this is a [Left].
-  DATA get data => fold(
-    (l) {
-      throw Exception('Either is fail.');
-    },
-    (r) => r,
-  );
+  DATA get data => fold((l) {
+    throw Exception('Either is fail.');
+  }, (r) => r);
 
   /// Returns the [Right] value, or `null` if this is a [Left].
-  DATA? get dataOrNull => fold(
-    (l) => null,
-    (r) => r,
-  );
+  DATA? get dataOrNull => fold((l) => null, (r) => r);
 
   /// Returns the [Left] exception, throwing if this is a [Right].
-  E get exception => fold(
-    (l) => l,
-    (r) {
-      throw Exception('Either has data not exception.');
-    },
-  );
+  E get exception => fold((l) => l, (r) {
+    throw Exception('Either has data not exception.');
+  });
 
   /// Returns the [Left] exception, or `null` if this is a [Right].
-  E? get exceptionOrNull => fold(
-    (l) => l,
-    (r) => null,
-  );
+  E? get exceptionOrNull => fold((l) => l, (r) => null);
 }
 
 /// Extensions on `Future<Either<Failure, DATA>>` for asynchronous folding.

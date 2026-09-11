@@ -9,7 +9,7 @@ class DefaultJsonRpcService extends JsonRpcService {
   ///
   /// [baseUrl] sets the JSON-RPC endpoint root. [jsonrpc] is the protocol
   /// version string (e.g. `'2.0'`). [errorLogger] is optional.
-  const DefaultJsonRpcService(
+  const new(
     super._dio, {
     required super.baseUrl,
     required super.jsonrpc,
@@ -20,7 +20,7 @@ class DefaultJsonRpcService extends JsonRpcService {
   ///
   /// Reuses [client]'s Dio instance and base URL unless [baseUrl] overrides
   /// it. [jsonrpc] sets the protocol version string (e.g. `'2.0'`).
-  factory DefaultJsonRpcService.fromHttpClient(
+  factory fromHttpClient(
     BaseHttpClient client, {
     required String jsonrpc,
     String? baseUrl,

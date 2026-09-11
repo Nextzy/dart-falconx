@@ -15,9 +15,7 @@ abstract class BaseHttpClient implements RequestApiService {
   /// The client will automatically set up default options and
   /// interceptors by calling [setupOptions] and
   /// [setupInterceptors] respectively.
-  BaseHttpClient({
-    required Dio dio,
-  }) : _dio = dio {
+  new({required Dio dio}) : _dio = dio {
     setupOptions(_dio, _dio.options);
     setupInterceptors(_dio, _dio.interceptors);
   }
@@ -52,17 +50,12 @@ abstract class BaseHttpClient implements RequestApiService {
   ///
   /// Override this method in subclasses to add custom
   /// interceptors. The default implementation does nothing.
-  void setupInterceptors(
-    Dio dio,
-    Interceptors interceptors,
-  ) {}
+  void setupInterceptors(Dio dio, Interceptors interceptors) {}
 
   /// Appends [interceptors] to the Dio interceptor chain at runtime.
   ///
   /// Use this to add interceptors after construction without subclassing.
-  void addInterceptors(
-    Interceptors interceptors,
-  ) {
+  void addInterceptors(Interceptors interceptors) {
     _dio.interceptors.addAll(interceptors);
   }
 
@@ -107,15 +100,8 @@ abstract class BaseHttpClient implements RequestApiService {
     CancelToken? cancelToken,
     ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required FutureOr<T> Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required FutureOr<T> Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.get(
@@ -170,15 +156,8 @@ abstract class BaseHttpClient implements RequestApiService {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required T Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.post(
@@ -236,15 +215,8 @@ abstract class BaseHttpClient implements RequestApiService {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required T Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.post(
@@ -301,15 +273,8 @@ abstract class BaseHttpClient implements RequestApiService {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required T Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.patch(
@@ -366,15 +331,8 @@ abstract class BaseHttpClient implements RequestApiService {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required T Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.put(
@@ -431,15 +389,8 @@ abstract class BaseHttpClient implements RequestApiService {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required T Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.put(
@@ -491,15 +442,8 @@ abstract class BaseHttpClient implements RequestApiService {
     Options? options,
     CancelToken? cancelToken,
     bool isUseToken = true,
-    required T Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required T Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return _performRequest<T>(
       () => _dio.delete(
@@ -522,15 +466,8 @@ abstract class BaseHttpClient implements RequestApiService {
   /// response processing.
   Future<Response<T>> _performRequest<T>(
     Future<Response<dynamic>> Function() requestFn, {
-    required FutureOr<T> Function(
-      Map<String, dynamic> json,
-    )
-    converter,
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    catchError,
+    required FutureOr<T> Function(Map<String, dynamic> json) converter,
+    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
   }) async {
     return requestFn().mapJson(converter).catchWhenError(catchError);
   }

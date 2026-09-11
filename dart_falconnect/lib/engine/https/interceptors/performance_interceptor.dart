@@ -7,11 +7,7 @@ import 'package:dio/dio.dart';
 class RequestMetrics {
   /// Creates a [RequestMetrics] instance for tracking a request identified by
   /// [method], [url], and [startTime].
-  RequestMetrics({
-    required this.method,
-    required this.url,
-    required this.startTime,
-  });
+  new({required this.method, required this.url, required this.startTime});
 
   /// HTTP method (e.g. `GET`, `POST`).
   final String method;
@@ -183,9 +179,7 @@ class PerformanceStatistics {
   /// Returns the mean request duration, or [Duration.zero] if no requests have
   /// been recorded.
   Duration get averageDuration => totalRequests > 0
-      ? Duration(
-          milliseconds: totalDuration.inMilliseconds ~/ totalRequests,
-        )
+      ? Duration(milliseconds: totalDuration.inMilliseconds ~/ totalRequests)
       : Duration.zero;
 
   /// Returns the median request duration from the recent-durations window, or
@@ -245,7 +239,7 @@ class PerformanceStatistics {
 /// each request and provides aggregated statistics.
 class PerformanceInterceptor extends Interceptor {
   /// Creates a new performance interceptor.
-  PerformanceInterceptor({
+  new({
     required this.config,
     this.maxMetricsHistory = 1000,
     this.collectDetailedTimings = true,
@@ -270,10 +264,7 @@ class PerformanceInterceptor extends Interceptor {
   final Map<String, PerformanceStatistics> _urlStatistics = {};
 
   @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (!config.enablePerformanceMonitoring) {
       return handler.next(options);
     }
@@ -336,10 +327,7 @@ class PerformanceInterceptor extends Interceptor {
   }
 
   @override
-  void onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) {
+  void onError(DioException err, ErrorInterceptorHandler handler) {
     if (!config.enablePerformanceMonitoring) {
       return handler.next(err);
     }
@@ -393,10 +381,7 @@ class PerformanceInterceptor extends Interceptor {
     // Update URL pattern statistics
     final urlPattern = _getUrlPattern(metrics.url);
     _urlStatistics
-        .putIfAbsent(
-          urlPattern,
-          PerformanceStatistics.new,
-        )
+        .putIfAbsent(urlPattern, PerformanceStatistics.new)
         .addMetrics(metrics);
   }
 
@@ -409,9 +394,7 @@ class PerformanceInterceptor extends Interceptor {
       // Remove query parameters and numeric path
       // segments
       final pathSegments = uri.pathSegments
-          .map(
-            (segment) => int.tryParse(segment) != null ? '{id}' : segment,
-          )
+          .map((segment) => int.tryParse(segment) != null ? '{id}' : segment)
           .toList();
 
       return '${uri.scheme}://${uri.host}'
@@ -456,9 +439,7 @@ class PerformanceInterceptor extends Interceptor {
   }
 
   /// Estimates the size of a response in bytes.
-  int _estimateResponseSize(
-    Response<dynamic> response,
-  ) {
+  int _estimateResponseSize(Response<dynamic> response) {
     var size = 0;
 
     // Add status line

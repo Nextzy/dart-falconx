@@ -20,7 +20,7 @@ _JsonRpcRequest _$JsonRpcRequestFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$JsonRpcRequestToJson(_JsonRpcRequest instance) =>
     <String, dynamic>{
       'jsonrpc': instance.jsonrpc,
-      'id': instance.id,
       'method': instance.method,
       'params': instance.params,
+      'id': instance.id,
     };

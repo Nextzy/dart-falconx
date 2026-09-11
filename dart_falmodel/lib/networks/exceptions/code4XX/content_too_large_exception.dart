@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// to process.
 class NetworkContentTooLargeException extends NetworkClientException {
   /// Creates a [NetworkContentTooLargeException].
-  const NetworkContentTooLargeException({
+  const new({
     super.statusCode = 413,
     super.type = NetworkErrorType.contentTooLarge,
     super.userMessage,

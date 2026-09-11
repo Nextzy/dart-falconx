@@ -4,7 +4,7 @@ import 'package:dart_falmodel/lib.dart';
 ///
 /// Provides common functionality for Firebase documents including:
 /// - Conversion to Map for Firestore storage via [toMap]
-/// - Equality comparison through [EquatableMixin]
+/// - Equality comparison through [Equatable]
 /// - String representation for debugging
 ///
 /// Consider extending [FirebaseTimestampModel] if you need automatic
@@ -44,9 +44,9 @@ import 'package:dart_falmodel/lib.dart';
 ///   List<Object?> get props => [uid, displayName, email];
 /// }
 /// ```
-abstract class FirebaseModel with EquatableMixin {
+abstract class FirebaseModel with Equatable {
   /// Creates a Firebase model instance.
-  const FirebaseModel();
+  const new();
 
   /// Converts this model to a Map for storage in Firestore.
   ///
@@ -98,10 +98,7 @@ abstract class FirebaseModel with EquatableMixin {
 /// ```
 abstract class FirebaseTimestampModel extends FirebaseModel {
   /// Creates a Firebase model with timestamp tracking.
-  const FirebaseTimestampModel({
-    this.createdAt,
-    this.updatedAt,
-  });
+  const new({this.createdAt, this.updatedAt});
 
   /// When this document was first created.
   final DateTime? createdAt;

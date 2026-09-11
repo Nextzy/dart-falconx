@@ -54,27 +54,18 @@ void main() {
 
     test('edit modifies first matching element', () {
       final numbers = [1, 2, 3, 4, 5];
-      final edited = numbers.edit(
-        (n) => n > 3,
-        (n) => n * 10,
-      );
+      final edited = numbers.edit((n) => n > 3, (n) => n * 10);
 
       expect(edited, true);
       expect(numbers, [1, 2, 3, 40, 5]);
 
-      final notEdited = numbers.edit(
-        (n) => n > 100,
-        (n) => n * 10,
-      );
+      final notEdited = numbers.edit((n) => n > 100, (n) => n * 10);
       expect(notEdited, false);
     });
 
     test('editAll modifies all matching elements', () {
       final scores = [80, 90, 75, 95, 70];
-      final count = scores.editAll(
-        (score) => score < 80,
-        (score) => 80,
-      );
+      final count = scores.editAll((score) => score < 80, (score) => 80);
 
       expect(count, 2);
       expect(scores, [80, 90, 80, 95, 80]);
@@ -222,31 +213,16 @@ void main() {
       expect(sorted.binarySearch(5, compare: cmp), 2);
       expect(sorted.binarySearch(1, compare: cmp), 0);
       expect(sorted.binarySearch(11, compare: cmp), 5);
-      expect(
-        sorted.binarySearch(6, compare: cmp),
-        isNegative,
-      );
-      expect(
-        sorted.binarySearch(0, compare: cmp),
-        isNegative,
-      );
-      expect(
-        sorted.binarySearch(12, compare: cmp),
-        isNegative,
-      );
+      expect(sorted.binarySearch(6, compare: cmp), isNegative);
+      expect(sorted.binarySearch(0, compare: cmp), isNegative);
+      expect(sorted.binarySearch(12, compare: cmp), isNegative);
 
       // Empty list
-      expect(
-        <int>[].binarySearch(5, compare: cmp),
-        isNegative,
-      );
+      expect(<int>[].binarySearch(5, compare: cmp), isNegative);
 
       // Single element
       expect([5].binarySearch(5, compare: cmp), 0);
-      expect(
-        [5].binarySearch(3, compare: cmp),
-        isNegative,
-      );
+      expect([5].binarySearch(3, compare: cmp), isNegative);
     });
 
     test('binarySearch with custom comparator', () {
@@ -285,10 +261,10 @@ void main() {
           [
             {'name': 'Alice', 'age': 25},
             {'name': 'Charlie', 'age': 35},
-          ]..insertSorted(
-            {'name': 'Bob', 'age': 30},
-            (a, b) => (a['name']! as String).compareTo(b['name']! as String),
-          );
+          ]..insertSorted({
+            'name': 'Bob',
+            'age': 30,
+          }, (a, b) => (a['name']! as String).compareTo(b['name']! as String));
 
       expect(users[1]['name'], 'Bob');
     });

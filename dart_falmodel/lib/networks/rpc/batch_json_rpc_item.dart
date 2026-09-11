@@ -2,7 +2,7 @@ import 'package:dart_falmodel/lib.dart';
 
 /// A single item in a batch JSON-RPC response — either a success or a failure.
 sealed class BatchJsonRpcItem<RESULT extends JsonRpcResult> {
-  const BatchJsonRpcItem();
+  const new();
 
   /// Returns `true` if this item represents a successful response.
   bool get isSuccess => this is BatchJsonRpcSuccess;
@@ -47,7 +47,7 @@ sealed class BatchJsonRpcItem<RESULT extends JsonRpcResult> {
 class BatchJsonRpcSuccess<RESULT extends JsonRpcResult>
     extends BatchJsonRpcItem<RESULT> {
   /// Creates a [BatchJsonRpcSuccess] wrapping [response].
-  const BatchJsonRpcSuccess(this.response);
+  const new(this.response);
 
   /// The successful JSON-RPC response.
   final JsonRpcResponse<RESULT> response;
@@ -57,7 +57,7 @@ class BatchJsonRpcSuccess<RESULT extends JsonRpcResult>
 class BatchJsonRpcFailure<RESULT extends JsonRpcResult>
     extends BatchJsonRpcItem<RESULT> {
   /// Creates a [BatchJsonRpcFailure] wrapping [error].
-  const BatchJsonRpcFailure(this.error);
+  const new(this.error);
 
   /// The JSON-RPC error response.
   final JsonRpcErrorResponse error;

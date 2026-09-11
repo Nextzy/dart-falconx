@@ -301,7 +301,7 @@ enum NetworkErrorType {
 /// HTTP-specific fields such as [statusCode], [response], and [requestOptions].
 class NetworkException extends CommonException {
   /// Creates a [NetworkException] with the given [type] and [statusCode].
-  const NetworkException({
+  const new({
     required super.type,
     required this.statusCode,
     super.userMessage,
@@ -352,9 +352,7 @@ class NetworkException extends CommonException {
       msg += '>>Developer message: $developerMessage\n';
     }
     if (response != null) msg += '>>Response: $response\n';
-    errors?.forEach(
-      (error) => msg += '   $error]\n',
-    );
+    errors?.forEach((error) => msg += '   $error]\n');
     return msg;
   }
 }

@@ -39,7 +39,7 @@ import 'package:dart_falmodel/lib.dart';
 /// ```
 abstract class BaseFormDataBody extends BaseRequest {
   /// Creates a base form data body.
-  const BaseFormDataBody();
+  const new();
 
   /// Converts this request body to a JSON map.
   ///

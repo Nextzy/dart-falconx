@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the request's media type is not supported by the server.
 class NetworkUnsupportedMediaTypeException extends NetworkClientException {
   /// Creates a [NetworkUnsupportedMediaTypeException].
-  const NetworkUnsupportedMediaTypeException({
+  const new({
     super.statusCode = 415,
     super.type = NetworkErrorType.unsupportedMediaType,
     super.userMessage,

@@ -18,19 +18,13 @@ void main() {
     });
 
     test('copyWith preserves existing data when not overridden', () {
-      const ex = CommonException(
-        type: 'TEST',
-        data: {'foo': 'bar'},
-      );
+      const ex = CommonException(type: 'TEST', data: {'foo': 'bar'});
       final copy = ex.copyWith(userMessage: 'updated');
       expect(copy.data, {'foo': 'bar'});
     });
 
     test('copyWith replaces data when explicitly passed', () {
-      const ex = CommonException(
-        type: 'TEST',
-        data: {'foo': 'bar'},
-      );
+      const ex = CommonException(type: 'TEST', data: {'foo': 'bar'});
       final copy = ex.copyWith(data: const {'baz': 1});
       expect(copy.data, {'baz': 1});
     });

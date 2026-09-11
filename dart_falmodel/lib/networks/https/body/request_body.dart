@@ -28,7 +28,7 @@ import 'package:dart_falmodel/lib.dart';
 /// ```
 abstract class BaseRequestBody extends BaseRequest {
   /// Creates a base request body.
-  const BaseRequestBody();
+  const new();
 
   /// Converts this request body to a JSON map.
   ///

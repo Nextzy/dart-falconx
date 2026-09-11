@@ -29,12 +29,16 @@ $DecodedTypeIdCopyWith<DecodedTypeId> get copyWith => _$DecodedTypeIdCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DecodedTypeId&&(identical(other.prefix, prefix) || other.prefix == prefix)&&(identical(other.suffix, suffix) || other.suffix == suffix)&&(identical(other.uuid, uuid) || other.uuid == uuid));
+  final _this = this as DecodedTypeId;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DecodedTypeId&&(identical(other.prefix, _this.prefix) || other.prefix == _this.prefix)&&(identical(other.suffix, _this.suffix) || other.suffix == _this.suffix)&&(identical(other.uuid, _this.uuid) || other.uuid == _this.uuid));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,prefix,suffix,uuid);
+int get hashCode {
+  final _this = this as DecodedTypeId;
+  return Object.hash(runtimeType,_this.prefix,_this.suffix,_this.uuid);
+}
 
 
 
@@ -228,12 +232,14 @@ _$DecodedTypeIdCopyWith<_DecodedTypeId> get copyWith => __$DecodedTypeIdCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DecodedTypeId&&(identical(other.prefix, prefix) || other.prefix == prefix)&&(identical(other.suffix, suffix) || other.suffix == suffix)&&(identical(other.uuid, uuid) || other.uuid == uuid));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _DecodedTypeId&&(identical(other.prefix, prefix) || other.prefix == prefix)&&(identical(other.suffix, suffix) || other.suffix == suffix)&&(identical(other.uuid, uuid) || other.uuid == uuid));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,prefix,suffix,uuid);
+int get hashCode {
+    return Object.hash(runtimeType,prefix,suffix,uuid);
+}
 
 
 

@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when payment is required to access the requested resource.
 class NetworkPaymentRequiredException extends NetworkClientException {
   /// Creates a [NetworkPaymentRequiredException].
-  const NetworkPaymentRequiredException({
+  const new({
     super.statusCode = 402,
     super.type = NetworkErrorType.paymentRequired,
     super.userMessage,

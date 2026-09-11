@@ -5,11 +5,11 @@ import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_falmodel/dart_falmodel.dart';
 
 class StubHttpClient extends BaseHttpClient {
-  StubHttpClient({required super.dio});
+  new({required super.dio});
 }
 
 class StubSocketClient extends SocketClient {
-  StubSocketClient(super.baseUrl);
+  new(super.baseUrl);
 
   @override
   void setupConfig(SocketOptions configs) {

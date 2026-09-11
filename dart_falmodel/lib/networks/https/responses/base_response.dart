@@ -34,7 +34,7 @@ class BaseResponse<T> extends Response<T> {
   /// [redirects] contains the redirect history.
   /// [extra] can contain any extra information.
   /// [headers] contains the response headers.
-  BaseResponse({
+  new({
     super.data,
     super.statusCode,
     super.statusMessage,
@@ -46,7 +46,7 @@ class BaseResponse<T> extends Response<T> {
   });
 
   /// Creates a successful response with 200 status code.
-  factory BaseResponse.success({
+  factory success({
     required T data,
     required RequestOptions requestOptions,
     Map<String, List<String>>? headers,
@@ -61,9 +61,7 @@ class BaseResponse<T> extends Response<T> {
   }
 
   /// Creates a response with no content (204 status code).
-  factory BaseResponse.noContent({
-    required RequestOptions requestOptions,
-  }) {
+  factory noContent({required RequestOptions requestOptions}) {
     return BaseResponse<T>(
       data: null,
       statusCode: 204,

@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the client must authenticate to gain network access.
 class NetworkAuthRequiredException extends NetworkServerException {
   /// Creates a [NetworkAuthRequiredException].
-  const NetworkAuthRequiredException({
+  const new({
     super.statusCode = 511,
     super.type = NetworkErrorType.networkAuthRequired,
     super.userMessage,

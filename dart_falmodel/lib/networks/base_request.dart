@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Base class for all network request models.
 ///
 /// Provides common functionality for HTTP requests including:
-/// - Equality comparison through [EquatableMixin]
+/// - Equality comparison through [Equatable]
 /// - String representation for debugging
 /// - Common HTTP request properties
 ///
@@ -30,9 +30,9 @@ import 'package:dart_falmodel/lib.dart';
 ///   List<Object?> get props => [email, password, rememberMe];
 /// }
 /// ```
-abstract class BaseRequest with EquatableMixin {
+abstract class BaseRequest with Equatable {
   /// Creates a base request instance.
-  const BaseRequest();
+  const new();
 
   /// Enables automatic string representation for debugging.
   @override
@@ -73,10 +73,7 @@ abstract class PaginatedRequest extends BaseRequest {
   ///
   /// [page] starts from 1. Defaults to 1.
   /// [pageSize] is the number of items per page. Defaults to 20.
-  const PaginatedRequest({
-    this.page = 1,
-    this.pageSize = 20,
-  });
+  const new({this.page = 1, this.pageSize = 20});
 
   /// The current page number (1-indexed).
   final int page;

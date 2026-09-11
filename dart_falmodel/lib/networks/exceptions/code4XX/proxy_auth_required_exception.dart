@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// request can be fulfilled.
 class NetworkProxyAuthRequiredException extends NetworkClientException {
   /// Creates a [NetworkProxyAuthRequiredException].
-  const NetworkProxyAuthRequiredException({
+  const new({
     super.statusCode = 407,
     super.type = NetworkErrorType.proxyAuthRequired,
     super.userMessage,

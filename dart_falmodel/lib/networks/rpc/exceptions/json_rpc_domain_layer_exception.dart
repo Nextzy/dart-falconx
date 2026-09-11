@@ -4,7 +4,7 @@ import 'package:dart_falmodel/lib.dart';
 /// (use cases, business logic).
 class JsonRpcDomainLayerException extends JsonRpcCommonException {
   /// Creates a [JsonRpcDomainLayerException].
-  const JsonRpcDomainLayerException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -38,7 +38,7 @@ class JsonRpcDomainLayerException extends JsonRpcCommonException {
 class JsonRpcInternalApiDomainLayerException
     extends JsonRpcDomainLayerException {
   /// Creates a [JsonRpcInternalApiDomainLayerException].
-  const JsonRpcInternalApiDomainLayerException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -73,7 +73,7 @@ class JsonRpcInternalApiDomainLayerException
 class JsonRpcExternalApiDomainLayerException
     extends JsonRpcDomainLayerException {
   /// Creates a [JsonRpcExternalApiDomainLayerException].
-  const JsonRpcExternalApiDomainLayerException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -107,7 +107,7 @@ class JsonRpcExternalApiDomainLayerException
 class JsonRpcInvalidRequestDomainLayerException
     extends JsonRpcDomainLayerException {
   /// Creates a [JsonRpcInvalidRequestDomainLayerException].
-  const JsonRpcInvalidRequestDomainLayerException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -141,7 +141,7 @@ class JsonRpcInvalidRequestDomainLayerException
 class JsonRpcBadRequestDomainLayerException
     extends JsonRpcDomainLayerException {
   /// Creates a [JsonRpcBadRequestDomainLayerException].
-  const JsonRpcBadRequestDomainLayerException({
+  const new({
     super.userMessage,
     super.developerMessage,
     super.data,
