@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server cannot serve the requested byte range.
 class NetworkRangeNotSatisfiableException extends NetworkClientException {
   /// Creates a [NetworkRangeNotSatisfiableException].
-  const NetworkRangeNotSatisfiableException({
+  const new({
     super.statusCode = 416,
     super.type = NetworkErrorType.rangeNotSatisfiable,
     super.userMessage,

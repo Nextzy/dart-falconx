@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server understands the request but refuses to authorize it.
 class NetworkForbiddenException extends NetworkClientException {
   /// Creates a [NetworkForbiddenException].
-  const NetworkForbiddenException({
+  const new({
     super.statusCode = 403,
     super.type = NetworkErrorType.forbidden,
     super.userMessage,

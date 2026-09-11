@@ -75,9 +75,7 @@ extension FalconToolStreamExtension<T> on Stream<T> {
     Stream<S> other,
     R Function(T a, S b) combiner,
   ) {
-    final controller = StreamController<R>.broadcast(
-      sync: true,
-    );
+    final controller = StreamController<R>.broadcast(sync: true);
 
     T? latestFirst;
     S? latestSecond;

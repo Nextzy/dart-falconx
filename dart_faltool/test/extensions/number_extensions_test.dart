@@ -77,10 +77,12 @@ void main() {
 
     test('generate creates list with generator function', () {
       expect(3.generate<int>((i) => i * 2), [0, 2, 4]);
-      expect(
-        4.generate<String>((i) => 'item$i'),
-        ['item0', 'item1', 'item2', 'item3'],
-      );
+      expect(4.generate<String>((i) => 'item$i'), [
+        'item0',
+        'item1',
+        'item2',
+        'item3',
+      ]);
       expect(0.generate<int>((i) => i), isEmpty);
     });
   });
@@ -330,10 +332,7 @@ void main() {
 
       expect(nullDouble.toPercentage(), null);
       expect(validDouble.toPercentage(), '12.34%');
-      expect(
-        validDouble.toPercentage(decimalPlaces: 1),
-        '12.3%',
-      );
+      expect(validDouble.toPercentage(decimalPlaces: 1), '12.3%');
     });
   });
 

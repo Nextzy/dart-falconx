@@ -6,7 +6,7 @@ import 'package:dart_falconnect/lib.dart';
 class DefaultNetworkExceptionHandlerInterceptor
     extends NetworkExceptionHandlerInterceptor {
   /// Creates a [DefaultNetworkExceptionHandlerInterceptor].
-  DefaultNetworkExceptionHandlerInterceptor();
+  new();
 
   @override
   void onClientError(DioException err, ErrorInterceptorHandler handler) {

@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// in the request.
 class NetworkHttpVersionNotSupportedException extends NetworkServerException {
   /// Creates a [NetworkHttpVersionNotSupportedException].
-  const NetworkHttpVersionNotSupportedException({
+  const new({
     super.statusCode = 505,
     super.type = NetworkErrorType.httpVersionNotSupported,
     super.userMessage,

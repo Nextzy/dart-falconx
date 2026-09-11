@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// the request.
 class NetworkLoopDetectedException extends NetworkServerException {
   /// Creates a [NetworkLoopDetectedException].
-  const NetworkLoopDetectedException({
+  const new({
     super.statusCode = 508,
     super.type = NetworkErrorType.loopDetected,
     super.userMessage,

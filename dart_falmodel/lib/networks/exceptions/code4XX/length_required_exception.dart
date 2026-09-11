@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server requires a Content-Length header that is absent.
 class NetworkLengthRequiredException extends NetworkClientException {
   /// Creates a [NetworkLengthRequiredException].
-  const NetworkLengthRequiredException({
+  const new({
     super.statusCode = 411,
     super.type = NetworkErrorType.lengthRequired,
     super.userMessage,

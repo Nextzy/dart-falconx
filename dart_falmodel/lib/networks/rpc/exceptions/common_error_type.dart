@@ -1,8 +1,8 @@
 /// Marker interface for all JSON-RPC error type discriminants.
-interface class JsonRpcErrorType {}
+interface class JsonRpcErrorType;
 
 /// Marker interface for server-side API error types.
-interface class JsonRpcApiErrorType implements JsonRpcErrorType {}
+interface class JsonRpcApiErrorType implements JsonRpcErrorType;
 
 /// Concrete server-side API error codes used in JSON-RPC error responses.
 enum JsonRpcApiErrorTypeEnum implements JsonRpcApiErrorType {
@@ -59,7 +59,7 @@ enum JsonRpcApiErrorTypeEnum implements JsonRpcApiErrorType {
 }
 
 /// Marker interface for client-side request error types.
-interface class JsonRpcRequestErrorType implements JsonRpcErrorType {}
+interface class JsonRpcRequestErrorType implements JsonRpcErrorType;
 
 /// Concrete client-side request error codes used in JSON-RPC error responses.
 enum JsonRpcRequestErrorTypeEnum implements JsonRpcRequestErrorType {
@@ -89,7 +89,7 @@ enum JsonRpcRequestErrorTypeEnum implements JsonRpcRequestErrorType {
 }
 
 /// Marker interface for external-API error types.
-interface class JsonRpcExternalApiErrorType implements JsonRpcErrorType {}
+interface class JsonRpcExternalApiErrorType implements JsonRpcErrorType;
 
 /// Concrete external-API error codes used in JSON-RPC error responses.
 enum JsonRpcExternalApiErrorTypeEnum {

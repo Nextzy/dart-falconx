@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dio/dio.dart';
 
@@ -6,11 +7,7 @@ import 'package:dio/dio.dart';
 class CacheEntry {
   /// Creates a cache entry with the given [response], creation [timestamp],
   /// and cache [maxAge].
-  CacheEntry({
-    required this.response,
-    required this.timestamp,
-    required this.maxAge,
-  });
+  new({required this.response, required this.timestamp, required this.maxAge});
 
   /// The cached HTTP response.
   final Response<dynamic> response;
@@ -34,9 +31,7 @@ class CacheEntry {
 /// requests with configurable cache duration and size limits.
 class CacheInterceptor extends Interceptor {
   /// Creates a new cache interceptor.
-  CacheInterceptor({
-    required this.config,
-  });
+  new({required this.config});
 
   /// Configuration driving cache behavior (enable flag, duration, size limit).
   final HttpClientConfig config;
@@ -135,9 +130,7 @@ class CacheInterceptor extends Interceptor {
 
   /// Gets headers that should be included in cache key
   /// generation.
-  Map<String, dynamic> _getCacheableHeaders(
-    Map<String, dynamic> headers,
-  ) {
+  Map<String, dynamic> _getCacheableHeaders(Map<String, dynamic> headers) {
     final cacheableHeaders = <String, dynamic>{};
 
     // Include headers that affect response content
@@ -195,11 +188,7 @@ class CacheInterceptor extends Interceptor {
   }
 
   /// Adds a response to the cache.
-  void _addToCache(
-    String key,
-    Response<dynamic> response,
-    Duration maxAge,
-  ) {
+  void _addToCache(String key, Response<dynamic> response, Duration maxAge) {
     // Skip if duration is zero
     if (maxAge == Duration.zero) {
       return;
@@ -246,9 +235,7 @@ class CacheInterceptor extends Interceptor {
   void _evictOldestEntries(int requiredSize) {
     // Sort entries by timestamp (oldest first)
     final sortedEntries = _cache.entries.toList()
-      ..sort(
-        (a, b) => a.value.timestamp.compareTo(b.value.timestamp),
-      );
+      ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
 
     // Remove entries until we have enough space
     for (final entry in sortedEntries) {

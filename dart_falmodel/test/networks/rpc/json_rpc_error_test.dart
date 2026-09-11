@@ -55,10 +55,7 @@ void main() {
     });
 
     test('invalidRequest factory forwards data', () {
-      final err = JsonRpcError.invalidRequest(
-        code: 'X',
-        data: const {'k': 1},
-      );
+      final err = JsonRpcError.invalidRequest(code: 'X', data: const {'k': 1});
       expect(err.data, {'k': 1});
     });
   });

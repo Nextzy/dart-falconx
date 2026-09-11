@@ -8,7 +8,7 @@ part 'generated/decoded_typeid.freezed.dart';
 @freezed
 abstract class DecodedTypeId with _$DecodedTypeId {
   /// Creates a [DecodedTypeId] with the given [prefix], [suffix], and [uuid].
-  const factory DecodedTypeId({
+  const factory({
     /// The type prefix (e.g., `'user'`); empty string for prefix-less TypeIDs.
     required String prefix,
 
@@ -19,7 +19,7 @@ abstract class DecodedTypeId with _$DecodedTypeId {
     required String uuid,
   }) = _DecodedTypeId;
 
-  const DecodedTypeId._();
+  const new _();
 
   @override
   String toString() => prefix.isEmpty ? suffix : '${prefix}_$suffix';

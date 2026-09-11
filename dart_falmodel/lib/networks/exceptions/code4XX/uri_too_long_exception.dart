@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// is willing to interpret.
 class NetworkUriTooLongException extends NetworkClientException {
   /// Creates a [NetworkUriTooLongException].
-  const NetworkUriTooLongException({
+  const new({
     super.statusCode = 414,
     super.type = NetworkErrorType.uriTooLong,
     super.userMessage,

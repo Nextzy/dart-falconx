@@ -9,9 +9,7 @@ final Random _secureRandom = Random.secure();
 ///
 /// [CommonException] instances are wrapped directly; all other exceptions are
 /// converted via `toException()` before wrapping.
-Future<Result<T>> runCatching<T>(
-  Future<Result<T>> Function() execute,
-) async {
+Future<Result<T>> runCatching<T>(Future<Result<T>> Function() execute) async {
   try {
     return await execute();
   } on CommonException catch (e) {
@@ -40,10 +38,7 @@ bool constantTimeEquals(String a, String b) {
 /// Adds a delay between [minMs] and [maxMs] milliseconds (default 100–300ms)
 /// using a cryptographically secure random number generator, making it
 /// infeasible for attackers to infer server-side branching from response times.
-Future<void> randomDelay({
-  int minMs = 100,
-  int maxMs = 300,
-}) {
+Future<void> randomDelay({int minMs = 100, int maxMs = 300}) {
   assert(minMs >= 0, 'minMs must be non-negative');
   assert(maxMs > minMs, 'maxMs must be greater than minMs');
   return Future<void>.delayed(

@@ -19,13 +19,10 @@ import 'package:dart_falconnect/lib.dart';
 /// ```
 abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
   /// Creates a [NetworkExceptionHandlerInterceptor].
-  NetworkExceptionHandlerInterceptor();
+  new();
 
   @override
-  void onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) {
+  void onError(DioException err, ErrorInterceptorHandler handler) {
     final response = err.response;
     final exception = err.toException();
     if (err.type == DioExceptionType.connectionTimeout ||
@@ -45,15 +42,9 @@ abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
         ),
       );
     } else if (_isServerError(response)) {
-      onServerError(
-        err.copyWith(error: exception),
-        handler,
-      );
+      onServerError(err.copyWith(error: exception), handler);
     } else if (_isClientError(response)) {
-      onClientError(
-        err.copyWith(error: exception),
-        handler,
-      );
+      onClientError(err.copyWith(error: exception), handler);
     } else {
       onNonStandardError(err, handler);
     }
@@ -62,27 +53,18 @@ abstract class NetworkExceptionHandlerInterceptor extends QueuedInterceptor {
   /// Called when the response status code is in the 4xx range.
   ///
   /// Implementors may resolve, reject, or forward [err] via [handler].
-  void onClientError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  );
+  void onClientError(DioException err, ErrorInterceptorHandler handler);
 
   /// Called when the response status code is in the 5xx range.
   ///
   /// Implementors may resolve, reject, or forward [err] via [handler].
-  void onServerError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  );
+  void onServerError(DioException err, ErrorInterceptorHandler handler);
 
   /// Called when the error does not fall into the 4xx or 5xx ranges.
   ///
   /// Defaults to forwarding [err] via `handler.next`. Override to add
   /// custom handling for non-standard errors.
-  void onNonStandardError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) {
+  void onNonStandardError(DioException err, ErrorInterceptorHandler handler) {
     handler.next(err);
   }
 

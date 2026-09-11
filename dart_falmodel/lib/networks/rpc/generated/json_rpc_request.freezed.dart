@@ -29,16 +29,21 @@ $JsonRpcRequestCopyWith<JsonRpcRequest> get copyWith => _$JsonRpcRequestCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcRequest&&(identical(other.jsonrpc, jsonrpc) || other.jsonrpc == jsonrpc)&&(identical(other.method, method) || other.method == method)&&const DeepCollectionEquality().equals(other.params, params)&&(identical(other.id, id) || other.id == id));
+  final _this = this as JsonRpcRequest;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is JsonRpcRequest&&(identical(other.jsonrpc, _this.jsonrpc) || other.jsonrpc == _this.jsonrpc)&&(identical(other.method, _this.method) || other.method == _this.method)&&const DeepCollectionEquality().equals(other.params, _this.params)&&(identical(other.id, _this.id) || other.id == _this.id));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,jsonrpc,method,const DeepCollectionEquality().hash(params),id);
+int get hashCode {
+  final _this = this as JsonRpcRequest;
+  return Object.hash(runtimeType,_this.jsonrpc,_this.method,const DeepCollectionEquality().hash(_this.params),_this.id);
+}
 
 @override
 String toString() {
-  return 'JsonRpcRequest(jsonrpc: $jsonrpc, method: $method, params: $params, id: $id)';
+  final _this = this as JsonRpcRequest;
+  return 'JsonRpcRequest(jsonrpc: ${_this.jsonrpc}, method: ${_this.method}, params: ${_this.params}, id: ${_this.id})';
 }
 
 
@@ -213,9 +218,10 @@ return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
 @JsonSerializable()
 
 class _JsonRpcRequest extends JsonRpcRequest {
-  const _JsonRpcRequest({@JsonKey(includeFromJson: true, includeToJson: true) required  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true) required this.method,  Map<String, dynamic>? params,  int? id}): _params = params,super._(jsonrpc: jsonrpc, id: id);
+  const _JsonRpcRequest({@JsonKey(includeFromJson: true, includeToJson: true) required this.jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true) required this.method,  Map<String, dynamic>? params, this.id}): _params = params,super._(jsonrpc: jsonrpc, id: id);
   factory _JsonRpcRequest.fromJson(Map<String, dynamic> json) => _$JsonRpcRequestFromJson(json);
 
+@override@JsonKey(includeFromJson: true, includeToJson: true) final  String jsonrpc;
 @override@JsonKey(includeFromJson: true, includeToJson: true) final  String method;
  final  Map<String, dynamic>? _params;
 @override Map<String, dynamic>? get params {
@@ -226,6 +232,7 @@ class _JsonRpcRequest extends JsonRpcRequest {
   return EqualUnmodifiableMapView(value);
 }
 
+@override final  int? id;
 
 /// Create a copy of JsonRpcRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -240,16 +247,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcRequest&&(identical(other.jsonrpc, jsonrpc) || other.jsonrpc == jsonrpc)&&(identical(other.method, method) || other.method == method)&&const DeepCollectionEquality().equals(other._params, _params)&&(identical(other.id, id) || other.id == id));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _JsonRpcRequest&&(identical(other.jsonrpc, jsonrpc) || other.jsonrpc == jsonrpc)&&(identical(other.method, method) || other.method == method)&&const DeepCollectionEquality().equals(other.params, _params)&&(identical(other.id, id) || other.id == id));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,jsonrpc,method,const DeepCollectionEquality().hash(_params),id);
+int get hashCode {
+    return Object.hash(runtimeType,jsonrpc,method,const DeepCollectionEquality().hash(_params),id);
+}
 
 @override
 String toString() {
-  return 'JsonRpcRequest(jsonrpc: $jsonrpc, method: $method, params: $params, id: $id)';
+    return 'JsonRpcRequest(jsonrpc: $jsonrpc, method: $method, params: $params, id: $id)';
 }
 
 

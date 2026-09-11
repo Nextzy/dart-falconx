@@ -11,7 +11,7 @@ part 'generated/remote_error.g.dart';
 abstract class RemoteError with _$RemoteError {
   /// Creates a [RemoteError] with optional code, message, and
   /// developer/user messages.
-  const factory RemoteError({
+  const factory({
     int? code,
     String? message,
     String? userMessage,
@@ -19,14 +19,13 @@ abstract class RemoteError with _$RemoteError {
   }) = _RemoteError;
 
   /// Deserializes a [RemoteError] from a JSON map.
-  factory RemoteError.fromJson(Map<String, dynamic> json) =>
-      _$RemoteErrorFromJson(json);
+  factory fromJson(Map<String, dynamic> json) => _$RemoteErrorFromJson(json);
 
   /// Creates a [RemoteError] from an arbitrary [data] value.
   ///
   /// If [data] is a `Map<String, dynamic>`, delegates to `fromJson`;
   /// otherwise converts the value to a string message.
-  factory RemoteError.fromData(dynamic data) {
+  factory fromData(dynamic data) {
     if (data is Map<String, dynamic>) {
       return RemoteError.fromJson(data);
     } else {

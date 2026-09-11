@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:dart_faltool/lib.dart';
 
 /// Extension methods for int type with null safety.

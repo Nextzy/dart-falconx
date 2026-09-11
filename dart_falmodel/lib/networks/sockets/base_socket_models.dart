@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// with proper equality comparison and debugging support.
 abstract class BaseSocketModel extends BaseRequest {
   /// Creates a base socket model.
-  const BaseSocketModel();
+  const new();
 }
 
 /// Base class for WebSocket request bodies.
@@ -40,7 +40,7 @@ abstract class BaseSocketModel extends BaseRequest {
 /// ```
 abstract class BaseSocketRequestBody extends BaseSocketModel {
   /// Creates a base socket request body.
-  const BaseSocketRequestBody();
+  const new();
 
   /// Converts this request body to a JSON map.
   Map<String, Object?> toJson();
@@ -83,11 +83,7 @@ abstract class BaseSocketResponse<T> extends BaseSocketModel {
   /// [data] is the parsed response data.
   /// [requestOptions] contains the socket configuration.
   /// [timestamp] is when the message was received.
-  const BaseSocketResponse({
-    required this.data,
-    required this.requestOptions,
-    this.timestamp,
-  });
+  const new({required this.data, required this.requestOptions, this.timestamp});
 
   /// The parsed response data.
   final T data;
@@ -115,17 +111,14 @@ abstract class BaseSocketResponse<T> extends BaseSocketModel {
 /// simple text-based WebSocket protocols.
 class SocketResponse extends BaseSocketResponse<String> {
   /// Creates a generic socket response.
-  const SocketResponse({
+  const new({
     required super.data,
     required super.requestOptions,
     super.timestamp,
   });
 
   /// Creates a response with the current timestamp.
-  factory SocketResponse.now({
-    required String data,
-    required SocketOptions requestOptions,
-  }) {
+  factory now({required String data, required SocketOptions requestOptions}) {
     return SocketResponse(
       data: data,
       requestOptions: requestOptions,
@@ -140,7 +133,7 @@ class SocketResponse extends BaseSocketResponse<String> {
 /// for easier manipulation of structured data.
 class JsonSocketResponse extends BaseSocketResponse<Map<String, dynamic>> {
   /// Creates a JSON socket response.
-  const JsonSocketResponse({
+  const new({
     required super.data,
     required super.requestOptions,
     super.timestamp,
@@ -149,7 +142,7 @@ class JsonSocketResponse extends BaseSocketResponse<Map<String, dynamic>> {
   /// Creates a response by parsing a JSON string.
   ///
   /// Throws [FormatException] if the string is not valid JSON.
-  factory JsonSocketResponse.fromString({
+  factory fromString({
     required String jsonString,
     required SocketOptions requestOptions,
   }) {
@@ -198,14 +191,14 @@ class JsonSocketResponse extends BaseSocketResponse<Map<String, dynamic>> {
 /// such as file transfers or binary protocols.
 class BinarySocketResponse extends BaseSocketResponse<List<int>> {
   /// Creates a binary socket response.
-  const BinarySocketResponse({
+  const new({
     required super.data,
     required super.requestOptions,
     super.timestamp,
   });
 
   /// Creates a response from a base64 string.
-  factory BinarySocketResponse.fromBase64({
+  factory fromBase64({
     required String base64String,
     required SocketOptions requestOptions,
   }) {

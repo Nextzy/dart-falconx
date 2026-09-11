@@ -5,21 +5,13 @@ void main() {
   group('FalconToolMapExtension', () {
     group('removeNullOrEmptyString', () {
       test('should remove null values', () {
-        final map = {
-          'name': 'John',
-          'age': null,
-          'city': 'NYC',
-        };
+        final map = {'name': 'John', 'age': null, 'city': 'NYC'};
         final cleaned = map.removeNullOrEmptyString();
         expect(cleaned, {'name': 'John', 'city': 'NYC'});
       });
 
       test('should remove empty strings', () {
-        final map = {
-          'name': 'John',
-          'email': '',
-          'phone': '123456',
-        };
+        final map = {'name': 'John', 'email': '', 'phone': '123456'};
         final cleaned = map.removeNullOrEmptyString();
         expect(cleaned, {'name': 'John', 'phone': '123456'});
       });
@@ -28,11 +20,7 @@ void main() {
         final map = {
           'name': 'John',
           'age': null,
-          'address': {
-            'street': '',
-            'city': 'NYC',
-            'zip': null,
-          },
+          'address': {'street': '', 'city': 'NYC', 'zip': null},
         };
         final cleaned = map.removeNullOrEmptyString();
         expect(cleaned, {
@@ -65,11 +53,7 @@ void main() {
         final map = <String, dynamic>{
           'level1': {
             'level2': {
-              'level3': {
-                'value': 'deep',
-                'empty': '',
-                'null': null,
-              },
+              'level3': {'value': 'deep', 'empty': '', 'null': null},
             },
           },
         };
@@ -493,11 +477,7 @@ void main() {
 
       test('should work with different types', () {
         final config = {
-          'settings': {
-            'maxRetries': 3,
-            'timeout': 30.5,
-            'enabled': true,
-          },
+          'settings': {'maxRetries': 3, 'timeout': 30.5, 'enabled': true},
         };
         expect(config.getPath<int>(['settings', 'maxRetries']), 3);
         expect(config.getPath<double>(['settings', 'timeout']), 30.5);
@@ -603,11 +583,7 @@ void main() {
         'settings': {
           'theme': 'dark',
           'notifications': true,
-          'advanced': {
-            'debug': false,
-            'logs': '',
-            'metrics': null,
-          },
+          'advanced': {'debug': false, 'logs': '', 'metrics': null},
         },
       };
 
@@ -624,9 +600,7 @@ void main() {
         'settings': {
           'theme': 'dark',
           'notifications': true,
-          'advanced': {
-            'debug': false,
-          },
+          'advanced': {'debug': false},
         },
       });
     });

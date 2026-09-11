@@ -4,7 +4,7 @@ import 'package:dart_falmodel/lib.dart';
 /// (repositories, data sources).
 class JsonRpcDataLayerException extends JsonRpcCommonException {
   /// Creates a [JsonRpcDataLayerException].
-  const JsonRpcDataLayerException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -34,7 +34,7 @@ class JsonRpcDataLayerException extends JsonRpcCommonException {
 /// JSON-RPC exception caused by a database operation failure.
 class JsonRpcDatabaseException extends JsonRpcDataLayerException {
   /// Creates a [JsonRpcDatabaseException].
-  const JsonRpcDatabaseException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,
@@ -64,7 +64,7 @@ class JsonRpcDatabaseException extends JsonRpcDataLayerException {
 /// JSON-RPC exception caused by a failure in an external API data source.
 class JsonRpcExternalApiDataLayerException extends JsonRpcDataLayerException {
   /// Creates a [JsonRpcExternalApiDataLayerException].
-  const JsonRpcExternalApiDataLayerException({
+  const new({
     required super.type,
     super.userMessage,
     super.developerMessage,

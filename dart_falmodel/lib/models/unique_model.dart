@@ -34,7 +34,7 @@ abstract class UniqueModel<T> extends BaseModel<T> {
   /// Creates a model with a unique identifier.
   ///
   /// If [id] is not provided, a new UUID v4 will be generated.
-  UniqueModel({String? id}) : id = id ?? UuidGenerator.getV4();
+  new({String? id}) : id = id ?? UuidGenerator.getV4();
 
   /// The unique identifier for this model instance.
   final String id;

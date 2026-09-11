@@ -49,9 +49,7 @@ extension FalconToolDateTimeExtensions on DateTime {
         Duration(days: prevDaysToThursday),
       );
       final lastWeekStart = DateTime(year - 1, 12, 31).subtract(
-        Duration(
-          days: (DateTime(year - 1, 12, 31).weekday - 1 + 7) % 7,
-        ),
+        Duration(days: (DateTime(year - 1, 12, 31).weekday - 1 + 7) % 7),
       );
       return 1 + lastWeekStart.difference(prevFirstThursday).inDays ~/ 7;
     }

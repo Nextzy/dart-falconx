@@ -8,7 +8,7 @@ import 'package:dart_falmodel/lib.dart';
 // for backward compatibility.
 class NetworkNotImplementException extends NetworkServerException {
   /// Creates a [NetworkNotImplementException].
-  const NetworkNotImplementException({
+  const new({
     super.statusCode = 501,
     super.type = NetworkErrorType.notImplemented,
     super.userMessage,

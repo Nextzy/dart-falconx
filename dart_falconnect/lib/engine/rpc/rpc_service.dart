@@ -14,7 +14,7 @@ abstract class JsonRpcService {
   ///
   /// [baseUrl] is the root endpoint for all requests. [jsonrpc] is the
   /// protocol version string (e.g. `'2.0'`). [errorLogger] is optional.
-  const JsonRpcService(
+  const new(
     this._dio, {
     required this.baseUrl,
     required this.jsonrpc,
@@ -61,27 +61,16 @@ abstract class JsonRpcService {
     };
     body.removeWhere((k, v) => v == null);
     final options = _setStreamType<JsonRpcResponse<RESULT>>(
-      Options(
-            method: 'POST',
-            headers: headers,
-            extra: extra,
-          )
+      Options(method: 'POST', headers: headers, extra: extra)
           .compose(
             _dio.options,
             path ?? '',
             queryParameters: queryParameters,
             data: body,
           )
-          .copyWith(
-            baseUrl: _combineBaseUrls(
-              _dio.options.baseUrl,
-              baseUrl,
-            ),
-          ),
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final fetchResult = await _dio.fetch<Map<String, dynamic>>(
-      options,
-    );
+    final fetchResult = await _dio.fetch<Map<String, dynamic>>(options);
     late JsonRpcResponse<RESULT> value;
     final Map<String, dynamic> data = fetchResult.data!;
     try {
@@ -167,23 +156,14 @@ abstract class JsonRpcService {
     };
     data.removeWhere((k, v) => v == null);
     final options = _setStreamType<void>(
-      Options(
-            method: 'POST',
-            headers: headers,
-            extra: extra,
-          )
+      Options(method: 'POST', headers: headers, extra: extra)
           .compose(
             _dio.options,
             path ?? '',
             queryParameters: queryParameters,
             data: data,
           )
-          .copyWith(
-            baseUrl: _combineBaseUrls(
-              _dio.options.baseUrl,
-              baseUrl,
-            ),
-          ),
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     await _dio.fetch<Map<String, dynamic>>(options);
   }
@@ -202,79 +182,61 @@ abstract class JsonRpcService {
     final headers = <String, dynamic>{};
     final data = bodyList.map((e) => e.toJson()).toList();
     final options = _setStreamType<List<BatchJsonRpcItem<dynamic>>>(
-      Options(
-            method: 'POST',
-            headers: headers,
-            extra: extra,
-          )
+      Options(method: 'POST', headers: headers, extra: extra)
           .compose(
             _dio.options,
             path,
             queryParameters: queryParameters,
             data: data,
           )
-          .copyWith(
-            baseUrl: _combineBaseUrls(
-              _dio.options.baseUrl,
-              baseUrl,
-            ),
-          ),
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final result = await _dio.fetch<List<dynamic>>(options);
     late List<BatchJsonRpcItem<dynamic>> value;
     try {
       result.data!.removeWhere((m) => m['id'] == null);
-      value = result.data!.map(
-        (dynamic i) {
-          final iMap = i as Map<String, dynamic>;
-          final id = iMap['id'];
-          final result = iMap['result'];
-          // Singular `error` object or plural `errors` list, as in [request].
-          final error = iMap['error'] ?? iMap['errors'];
-          final jsonrpc = iMap['jsonrpc'] as String;
-          final intId = id as int;
+      value = result.data!.map((dynamic i) {
+        final iMap = i as Map<String, dynamic>;
+        final id = iMap['id'];
+        final result = iMap['result'];
+        // Singular `error` object or plural `errors` list, as in [request].
+        final error = iMap['error'] ?? iMap['errors'];
+        final jsonrpc = iMap['jsonrpc'] as String;
+        final intId = id as int;
 
-          if (error != null) {
-            return BatchJsonRpcFailure(
-              JsonRpcErrorResponse(
-                jsonrpc: jsonrpc,
-                id: intId,
-                errors: (error is List)
-                    ? error
-                          .map(
-                            (e) => JsonRpcError.fromJson(
-                              e as Map<String, dynamic>,
-                            ),
-                          )
-                          .toList()
-                    : [
-                        JsonRpcError.fromJson(
-                          error as Map<String, dynamic>,
-                        ),
-                      ],
-              ),
-            );
-          }
-
-          final Function(Map<String, dynamic>? json)? fromResultJson = bodyList
-              .firstOrNullWhere(
-                (b) => b.id == id,
-              )
-              ?.fromResultJson;
-
-          return BatchJsonRpcSuccess(
-            JsonRpcResponse(
+        if (error != null) {
+          return BatchJsonRpcFailure(
+            JsonRpcErrorResponse(
               jsonrpc: jsonrpc,
               id: intId,
-              result: switch (result) {
-                final Map<String, dynamic> map =>
-                  fromResultJson!(map) as JsonRpcResult,
-                _ => throw StateError('Invalid result type'),
-              },
+              errors: (error is List)
+                  ? error
+                        .map(
+                          (e) =>
+                              JsonRpcError.fromJson(e as Map<String, dynamic>),
+                        )
+                        .toList()
+                  : [JsonRpcError.fromJson(error as Map<String, dynamic>)],
             ),
           );
-        },
-      ).toList();
+        }
+
+        final Function(Map<String, dynamic>? json)? fromResultJson = bodyList
+            .firstOrNullWhere((b) => b.id == id)
+            ?.fromResultJson;
+
+        return BatchJsonRpcSuccess(
+          JsonRpcResponse(
+            jsonrpc: jsonrpc,
+            id: intId,
+            result: switch (result) {
+              final Map<String, dynamic> map =>
+                fromResultJson!(map) as JsonRpcResult,
+              _ => throw StateError('Invalid result type'),
+            },
+          ),
+        );
+      }).toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, options);
       rethrow;
@@ -284,9 +246,7 @@ abstract class JsonRpcService {
 
   int _randomRequestId() => _random.nextInt(99999999) + 1;
 
-  RequestOptions _setStreamType<T>(
-    RequestOptions requestOptions,
-  ) {
+  RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
     if (T != dynamic &&
         !(requestOptions.responseType == ResponseType.bytes ||
             requestOptions.responseType == ResponseType.stream)) {
@@ -299,10 +259,7 @@ abstract class JsonRpcService {
     return requestOptions;
   }
 
-  String _combineBaseUrls(
-    String dioBaseUrl,
-    String? baseUrl,
-  ) {
+  String _combineBaseUrls(String dioBaseUrl, String? baseUrl) {
     if (baseUrl == null || baseUrl.trim().isEmpty) {
       return dioBaseUrl;
     }

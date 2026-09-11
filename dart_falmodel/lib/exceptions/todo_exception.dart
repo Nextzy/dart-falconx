@@ -9,7 +9,7 @@ class TodoException<T> extends CommonException {
   ///
   /// [type] identifies the unimplemented feature; defaults signal that the
   /// feature is pending implementation.
-  const TodoException({
+  const new({
     required super.type,
     super.userMessage = 'Coming soon.',
     super.developerMessage = '[TODO] Not implement right now',
