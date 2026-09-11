@@ -60,16 +60,21 @@ $UserFeedbackCopyWith<UserFeedback> get copyWith => _$UserFeedbackCopyWithImpl<U
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserFeedback&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
+  final _this = this as UserFeedback;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserFeedback&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.level, _this.level) || other.level == _this.level));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,level);
+int get hashCode {
+  final _this = this as UserFeedback;
+  return Object.hash(runtimeType,_this.message,_this.level);
+}
 
 @override
 String toString() {
-  return 'UserFeedback(message: $message, level: $level)';
+  final _this = this as UserFeedback;
+  return 'UserFeedback(message: ${_this.message}, level: ${_this.level})';
 }
 
 
@@ -277,16 +282,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Success&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is Success&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,level);
+int get hashCode {
+    return Object.hash(runtimeType,message,level);
+}
 
 @override
 String toString() {
-  return 'UserFeedback.success(message: $message, level: $level)';
+    return 'UserFeedback.success(message: $message, level: $level)';
 }
 
 
@@ -352,16 +359,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Warning&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is Warning&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,level);
+int get hashCode {
+    return Object.hash(runtimeType,message,level);
+}
 
 @override
 String toString() {
-  return 'UserFeedback.warning(message: $message, level: $level)';
+    return 'UserFeedback.warning(message: $message, level: $level)';
 }
 
 
@@ -427,16 +436,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Failure&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is Failure&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,level);
+int get hashCode {
+    return Object.hash(runtimeType,message,level);
+}
 
 @override
 String toString() {
-  return 'UserFeedback.failure(message: $message, level: $level)';
+    return 'UserFeedback.failure(message: $message, level: $level)';
 }
 
 
@@ -502,16 +513,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Information&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is Information&&(identical(other.message, message) || other.message == message)&&(identical(other.level, level) || other.level == level));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,level);
+int get hashCode {
+    return Object.hash(runtimeType,message,level);
+}
 
 @override
 String toString() {
-  return 'UserFeedback.information(message: $message, level: $level)';
+    return 'UserFeedback.information(message: $message, level: $level)';
 }
 
 
