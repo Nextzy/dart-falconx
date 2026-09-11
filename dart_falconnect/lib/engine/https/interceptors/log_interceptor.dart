@@ -12,7 +12,7 @@ class HttpLogInterceptor extends Interceptor {
   /// Each boolean flag controls which parts of the request/response cycle are
   /// logged. [logPrint] defaults to a chunked console printer that avoids
   /// truncation on long payloads.
-  HttpLogInterceptor({
+  new({
     this.enabled = true,
     this.request = true,
     this.requestHeader = true,
@@ -65,10 +65,7 @@ class HttpLogInterceptor extends Interceptor {
   void Function(Object? object) logPrint;
 
   @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (enabled) {
       logPrint(_title('*** Request ***'));
       _printKV('URL', options.uri);
@@ -76,23 +73,11 @@ class HttpLogInterceptor extends Interceptor {
 
       if (request) {
         _printKV('method', _title(options.method));
-        _printKV(
-          'responseType',
-          options.responseType.toString(),
-        );
-        _printKV(
-          'followRedirects',
-          options.followRedirects,
-        );
-        _printKV(
-          'connectTimeout',
-          options.connectTimeout,
-        );
+        _printKV('responseType', options.responseType.toString());
+        _printKV('followRedirects', options.followRedirects);
+        _printKV('connectTimeout', options.connectTimeout);
         _printKV('sendTimeout', options.sendTimeout);
-        _printKV(
-          'receiveTimeout',
-          options.receiveTimeout,
-        );
+        _printKV('receiveTimeout', options.receiveTimeout);
         _printKV(
           'receiveDataWhenStatusError',
           options.receiveDataWhenStatusError,
@@ -102,10 +87,7 @@ class HttpLogInterceptor extends Interceptor {
       if (requestHeader) {
         logPrint('headers:');
         options.headers.forEach(
-          (key, v) => _printKV(
-            ' $key',
-            _title(v?.toString() ?? ''),
-          ),
+          (key, v) => _printKV(' $key', _title(v?.toString() ?? '')),
         );
       }
       if (requestBody) {
@@ -115,23 +97,12 @@ class HttpLogInterceptor extends Interceptor {
           String prettyPrint;
           if (data is FormData) {
             logPrint(_json('Form Data:'));
-            final newList =
-                data.fields
-                    .map(
-                      (e) => {e.key: e.value},
-                    )
-                    .toList()
-                  ..addAll(
-                    data.files
-                        .map(
-                          (e) => {
-                            e.key: _getMultipartFileString(
-                              e.value,
-                            ),
-                          },
-                        )
-                        .toList(),
-                  );
+            final newList = data.fields.map((e) => {e.key: e.value}).toList()
+              ..addAll(
+                data.files
+                    .map((e) => {e.key: _getMultipartFileString(e.value)})
+                    .toList(),
+              );
             prettyPrint = encoder.convert(newList);
           } else {
             logPrint(_json('Body Data:'));
@@ -141,9 +112,7 @@ class HttpLogInterceptor extends Interceptor {
           // Data may not be JSON-encodable.
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
-          _printAll(
-            _json(data?.toString() ?? ''),
-          );
+          _printAll(_json(data?.toString() ?? ''));
         }
       }
       logPrint('');
@@ -165,10 +134,7 @@ class HttpLogInterceptor extends Interceptor {
   }
 
   @override
-  void onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) {
+  void onError(DioException err, ErrorInterceptorHandler handler) {
     if (enabled) {
       if (error) {
         logPrint(_error('*** DioError ***:'));
@@ -189,10 +155,7 @@ class HttpLogInterceptor extends Interceptor {
     if (enabled) {
       _printKV('URL', response.requestOptions.uri);
       if (responseHeader) {
-        _printKV(
-          'statusCode',
-          response.statusCode ?? 0,
-        );
+        _printKV('statusCode', response.statusCode ?? 0);
         if (response.isRedirect) {
           _printKV('redirect', response.realUri);
         }

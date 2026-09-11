@@ -8,15 +8,13 @@ class SocketRetryException extends SocketException {
   ///
   /// [retryCount] is the number of remaining retry attempts. The default
   /// [message] includes [retryCount] when no message is supplied.
-  const SocketRetryException({
+  const new({
     required this.retryCount,
     super.response,
     String? message,
     super.exception,
     super.stackTrace,
-  }) : super(
-         message: message ?? 'Retry request at $retryCount',
-       );
+  }) : super(message: message ?? 'Retry request at $retryCount');
 
   /// Number of retry attempts remaining at the time this exception was thrown.
   final int retryCount;

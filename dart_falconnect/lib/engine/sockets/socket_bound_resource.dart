@@ -6,7 +6,7 @@ import 'package:dart_falconnect/lib.dart';
 /// Use [asStream] to wrap a raw socket stream with error handling, optional
 /// response mapping, and conditional saving.
 class SocketBoundResource<EntityType, ResponseType> {
-  SocketBoundResource._();
+  new _();
 
   /// Diagnostic tag used in debug log output.
   static const String TAG = 'SocketBoundResource';
@@ -20,10 +20,7 @@ class SocketBoundResource<EntityType, ResponseType> {
   static Stream<Result<EntityType>> asStream<EntityType, ResponseType>({
     bool Function(EntityType? data)? whenSave,
     required Stream<ResponseType> Function() createCallStream,
-    FutureOr<EntityType> Function(
-      ResponseType result,
-    )?
-    processResponse,
+    FutureOr<EntityType> Function(ResponseType result)? processResponse,
     Future<void> Function(EntityType item)? saveCallResult,
     VoidErrorCallback? error,
     bool log = false,
@@ -51,21 +48,13 @@ class SocketBoundResource<EntityType, ResponseType> {
       } catch (callbackException, callbackStackTrace) {
         sink.add(
           Result.failure(
-            callbackException.toException(
-              stackTrace: callbackStackTrace,
-            ),
+            callbackException.toException(stackTrace: callbackStackTrace),
           ),
         );
         return;
       }
 
-      sink.add(
-        Result.failure(
-          exception.toException(
-            stackTrace: stackTrace,
-          ),
-        ),
-      );
+      sink.add(Result.failure(exception.toException(stackTrace: stackTrace)));
 
       if (log) {
         // Intentional debug logging for socket operations.

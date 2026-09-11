@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// legal demands.
 class NetworkUnavailableForLegalException extends NetworkClientException {
   /// Creates a [NetworkUnavailableForLegalException].
-  const NetworkUnavailableForLegalException({
+  const new({
     super.statusCode = 451,
     super.type = NetworkErrorType.unavailableForLegal,
     super.userMessage,

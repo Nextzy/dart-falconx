@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 /// behavior including timeouts, retries, caching, and connection pooling.
 class HttpClientConfig {
   /// Creates a new HTTP client configuration.
-  const HttpClientConfig({
+  const new({
     this.connectTimeout = const Duration(seconds: 30),
     this.receiveTimeout = const Duration(seconds: 30),
     this.sendTimeout = const Duration(seconds: 30),
@@ -29,7 +29,7 @@ class HttpClientConfig {
   });
 
   /// Creates a production-ready configuration with conservative settings.
-  factory HttpClientConfig.production() {
+  factory production() {
     return const HttpClientConfig(
       connectTimeout: Duration(seconds: 30),
       receiveTimeout: Duration(seconds: 60),
@@ -53,7 +53,7 @@ class HttpClientConfig {
   }
 
   /// Creates a development configuration with verbose logging.
-  factory HttpClientConfig.development() {
+  factory development() {
     return const HttpClientConfig(
       connectTimeout: Duration(seconds: 10),
       receiveTimeout: Duration(seconds: 30),
@@ -77,7 +77,7 @@ class HttpClientConfig {
   }
 
   /// Creates a test configuration with minimal timeouts.
-  factory HttpClientConfig.test() {
+  factory test() {
     return const HttpClientConfig(
       connectTimeout: Duration(seconds: 5),
       receiveTimeout: Duration(seconds: 5),

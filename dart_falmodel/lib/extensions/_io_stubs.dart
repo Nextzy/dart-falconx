@@ -6,25 +6,25 @@
 // Do not add behaviour here — keep these as inert sentinel classes.
 
 /// Web stub for `dart:io` [HttpException].
-class HttpException implements Exception {}
+class HttpException implements Exception;
 
 /// Web stub for `dart:io` [TlsException].
-class TlsException implements Exception {}
+class TlsException implements Exception;
 
 /// Web stub for `dart:io` [HandshakeException].
-class HandshakeException extends TlsException {}
+class HandshakeException extends TlsException;
 
 /// Web stub for `dart:io` [CertificateException].
-class CertificateException extends TlsException {}
+class CertificateException extends TlsException;
 
 /// Web stub for `dart:io` [IOException].
-class IOException implements Exception {}
+class IOException implements Exception;
 
 /// Web stub for `dart:io` [FileSystemException].
-class FileSystemException extends IOException {}
+class FileSystemException extends IOException;
 
 /// Web stub for `dart:io` [PathNotFoundException].
-class PathNotFoundException extends FileSystemException {}
+class PathNotFoundException extends FileSystemException;
 
 /// Web stub for `dart:io` [SocketException].
-class SocketException extends IOException {}
+class SocketException extends IOException;

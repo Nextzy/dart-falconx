@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// it from fulfilling the request.
 class NetworkInternalServerException extends NetworkServerException {
   /// Creates a [NetworkInternalServerException].
-  const NetworkInternalServerException({
+  const new({
     super.statusCode = 500,
     super.type = NetworkErrorType.internalServerError,
     super.userMessage,

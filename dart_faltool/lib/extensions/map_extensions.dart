@@ -4,9 +4,7 @@ extension FalconToolMapJsonExtension on Map<String, dynamic> {
   ///
   /// Nested maps are merged recursively; null values in [patch] are skipped.
   /// Returns a new map — the original is not modified.
-  Map<String, dynamic> deepMerge(
-    Map<String, dynamic>? patch,
-  ) {
+  Map<String, dynamic> deepMerge(Map<String, dynamic>? patch) {
     if (patch == null) return this;
 
     final out = Map<String, dynamic>.of(this);
@@ -51,10 +49,7 @@ extension FalconToolMapExtension<K, V> on Map<K, V> {
               !_isNullOrEmptyString(entry.value),
         )
         .map(
-          (entry) => MapEntry(
-            entry.key,
-            _removeNullsDeep(entry.value) as V,
-          ),
+          (entry) => MapEntry(entry.key, _removeNullsDeep(entry.value) as V),
         ),
   );
 
@@ -253,9 +248,7 @@ extension FalconToolMapExtension<K, V> on Map<K, V> {
   /// // {'name': 'John', 'email': 'john@example.com'}
   /// ```
   Map<K, V> pick(Iterable<K> keys) {
-    return Map.fromEntries(
-      entries.where((entry) => keys.contains(entry.key)),
-    );
+    return Map.fromEntries(entries.where((entry) => keys.contains(entry.key)));
   }
 
   /// Omits specific keys from the map.
@@ -267,9 +260,7 @@ extension FalconToolMapExtension<K, V> on Map<K, V> {
   /// // {'id': 1, 'name': 'John'}
   /// ```
   Map<K, V> omit(Iterable<K> keys) {
-    return Map.fromEntries(
-      entries.where((entry) => !keys.contains(entry.key)),
-    );
+    return Map.fromEntries(entries.where((entry) => !keys.contains(entry.key)));
   }
 
   /// Transforms the map into a list using a transformer function.
@@ -408,10 +399,7 @@ Map<K, V> removeNullsFromMap<K, V>(Map<K, V> map) {
               !_isNullOrEmptyString(entry.value),
         )
         .map(
-          (entry) => MapEntry(
-            entry.key,
-            _removeNullsDeep(entry.value) as V,
-          ),
+          (entry) => MapEntry(entry.key, _removeNullsDeep(entry.value) as V),
         ),
   );
 }

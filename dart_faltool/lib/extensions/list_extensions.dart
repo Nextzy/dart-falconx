@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:dart_faltool/lib.dart';
 
 /// Extension methods for List type with enhanced functionality.
@@ -392,9 +393,9 @@ extension FalconToolListNullableExtensions<V> on List<V>? {
     FutureOr<T> Function(V element) toElement,
   ) async {
     return this != null
-        ? await Stream.fromIterable(
-            this!,
-          ).asyncMap((event) => toElement(event)).toList()
+        ? await Stream.fromIterable(this!)
+              .asyncMap((event) => toElement(event))
+              .toList()
         : [];
   }
 

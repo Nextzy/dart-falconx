@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Accept headers.
 class NetworkNotAcceptableException extends NetworkClientException {
   /// Creates a [NetworkNotAcceptableException].
-  const NetworkNotAcceptableException({
+  const new({
     super.statusCode = 406,
     super.type = NetworkErrorType.notAcceptable,
     super.userMessage,

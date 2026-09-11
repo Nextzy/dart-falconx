@@ -39,9 +39,7 @@ class TypeId {
         );
       }
     } else {
-      throw const FormatException(
-        'Invalid typeid. prefix cannot contain _',
-      );
+      throw const FormatException('Invalid typeid. prefix cannot contain _');
     }
 
     final prefix = parts[0];
@@ -89,9 +87,7 @@ class TypeId {
     }
 
     // ensure all characters fall within [a-z]
-    final isValidChars = prefix.runes.every(
-      (code) => code > 96 && code < 123,
-    );
+    final isValidChars = prefix.runes.every((code) => code > 96 && code < 123);
 
     if (!isValidChars) {
       throw const FormatException(
@@ -128,9 +124,7 @@ Uint8List _uuidStringToBytes(String uuidString) {
 /// Formats a 16-byte UUID into the canonical 8-4-4-4-12 lowercase hex string.
 String _uuidBytesToString(Uint8List bytes) {
   if (bytes.length != 16) {
-    throw FormatException(
-      'UUID bytes must be exactly 16, got ${bytes.length}',
-    );
+    throw FormatException('UUID bytes must be exactly 16, got ${bytes.length}');
   }
   final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   return '${hex.substring(0, 8)}-'

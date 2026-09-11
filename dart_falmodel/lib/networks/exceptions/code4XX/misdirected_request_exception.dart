@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// a response.
 class NetworkMisdirectedRequestException extends NetworkClientException {
   /// Creates a [NetworkMisdirectedRequestException].
-  const NetworkMisdirectedRequestException({
+  const new({
     super.statusCode = 421,
     super.type = NetworkErrorType.misdirectedRequest,
     super.userMessage,

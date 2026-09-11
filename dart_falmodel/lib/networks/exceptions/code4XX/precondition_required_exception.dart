@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server requires the request to be conditional.
 class NetworkPreconditionRequiredException extends NetworkClientException {
   /// Creates a [NetworkPreconditionRequiredException].
-  const NetworkPreconditionRequiredException({
+  const new({
     super.statusCode = 428,
     super.type = NetworkErrorType.preconditionRequired,
     super.userMessage,

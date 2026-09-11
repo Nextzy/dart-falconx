@@ -3,7 +3,7 @@ import 'package:dart_falconnect/lib.dart';
 /// Utility class providing static repository-pattern helpers that convert
 /// asynchronous local and remote operations into typed [Result] streams.
 class DatasourceBoundState<T, ResponseType> {
-  DatasourceBoundState._();
+  new _();
 
   /// Tag used for debug-logging identification.
   static const String TAG = 'DatasourceBoundState';
@@ -43,10 +43,7 @@ class DatasourceBoundState<T, ResponseType> {
   /// ```
   static Stream<Result<DsType>> asLocalResultStream<DsType>({
     required Future<DsType> Function() loadFromDbFuture,
-    CommonException Function(
-      CommonException error,
-      StackTrace? stacktrace,
-    )?
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
     handleError,
     bool log = false,
   }) async* {
@@ -83,10 +80,7 @@ class DatasourceBoundState<T, ResponseType> {
   /// [handleError] and [log] are optional.
   static Future<Result<DsType>> asLocalResultFuture<DsType>({
     required Future<DsType> Function() loadFromDbFuture,
-    CommonException Function(
-      CommonException error,
-      StackTrace? stacktrace,
-    )?
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
     handleError,
     bool log = false,
   }) => asLocalResultStream(
@@ -142,10 +136,7 @@ class DatasourceBoundState<T, ResponseType> {
   static Stream<Result<DsType>> asRemoteResultStream<ResponseType, DsType>({
     required Future<ResponseType> Function() callRemoteFuture,
     FutureOr<DsType> Function(ResponseType response)? processResponse,
-    CommonException Function(
-      CommonException error,
-      StackTrace? stacktrace,
-    )?
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
     handleError,
     bool log = false,
   }) async* {
@@ -200,10 +191,7 @@ class DatasourceBoundState<T, ResponseType> {
   static Future<Result<DsType>> asRemoteResultFuture<ResponseType, DsType>({
     required Future<ResponseType> Function() createCallFuture,
     FutureOr<DsType> Function(ResponseType response)? processResponse,
-    CommonException Function(
-      CommonException error,
-      StackTrace? stacktrace,
-    )?
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
     handleError,
   }) => asRemoteResultStream(
     callRemoteFuture: createCallFuture,
@@ -273,10 +261,7 @@ class DatasourceBoundState<T, ResponseType> {
     bool Function(DsType? data)? shouldFetch,
     Future<ResponseType> Function()? callRemoteFuture,
     FutureOr<DsType> Function(ResponseType response)? processResponse,
-    CommonException Function(
-      CommonException error,
-      StackTrace? stacktrace,
-    )?
+    CommonException Function(CommonException error, StackTrace? stacktrace)?
     handleError,
     bool log = false,
   }) async* {
@@ -355,11 +340,7 @@ class DatasourceBoundState<T, ResponseType> {
         // from external code.
         // ignore: avoid_catches_without_on_clauses
       } catch (exception, stackTrace) {
-        yield Result.failure(
-          exception.toException(
-            stackTrace: stackTrace,
-          ),
-        );
+        yield Result.failure(exception.toException(stackTrace: stackTrace));
         return;
       }
       if (log) {
@@ -394,11 +375,7 @@ class DatasourceBoundState<T, ResponseType> {
         // from external code.
         // ignore: avoid_catches_without_on_clauses
       } catch (exception, stackTrace) {
-        yield Result.failure(
-          exception.toException(
-            stackTrace: stackTrace,
-          ),
-        );
+        yield Result.failure(exception.toException(stackTrace: stackTrace));
         return;
       }
       if (log) {

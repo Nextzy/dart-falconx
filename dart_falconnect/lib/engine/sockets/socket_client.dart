@@ -11,7 +11,7 @@ abstract class SocketClient implements RequestSocketService {
   ///
   /// Initialises internal state, calls [setupConfig] with the default options,
   /// and calls [setupInterceptors] with the empty interceptor list.
-  SocketClient(String baseUrl) {
+  new(String baseUrl) {
     _tmpOptions = SocketOptions(uri: baseUrl);
     _replaySubject = PublishSubject<SocketResponse>();
     _retryLimitCounter = _tmpOptions.retryLimit;
@@ -50,9 +50,7 @@ abstract class SocketClient implements RequestSocketService {
   /// Registers interceptors on [interceptors] before the first connection.
   ///
   /// The default implementation is a no-op; override to add interceptors.
-  void setupInterceptors(
-    SocketInterceptors interceptors,
-  ) {}
+  void setupInterceptors(SocketInterceptors interceptors) {}
 
   @override
   Future<void> createChannel() async {
@@ -61,9 +59,7 @@ abstract class SocketClient implements RequestSocketService {
       _isClose = true;
     }
 
-    _channel = WebSocketChannel.connect(
-      Uri.parse(_tmpOptions.uri),
-    );
+    _channel = WebSocketChannel.connect(Uri.parse(_tmpOptions.uri));
     _subscription = _channel?.stream.listen(
       _onResponse,
       onError: _onError,
@@ -77,10 +73,7 @@ abstract class SocketClient implements RequestSocketService {
     await closeChannel();
   }
 
-  Future<void> _onError(
-    Exception? error,
-    StackTrace? stackTrace,
-  ) async {
+  Future<void> _onError(Exception? error, StackTrace? stackTrace) async {
     if (_retryLimitCounter > 0) {
       _executeInterceptorOnError(
         exception: SocketRetryException(
@@ -97,17 +90,11 @@ abstract class SocketClient implements RequestSocketService {
       }
     } else {
       _executeInterceptorOnError(
-        exception: SocketException(
-          exception: error,
-          stackTrace: stackTrace,
-        ),
+        exception: SocketException(exception: error, stackTrace: stackTrace),
         options: _tmpOptions.copyWith(),
       );
       _isClose = true;
-      _replaySubject.addError(
-        error!,
-        stackTrace,
-      );
+      _replaySubject.addError(error!, stackTrace);
       await _subscription?.cancel();
     }
   }
@@ -133,9 +120,7 @@ abstract class SocketClient implements RequestSocketService {
       protocol: _channel?.protocol,
       data: data,
     );
-    _executeInterceptorOnRequest(
-      options: _tmpOptions,
-    );
+    _executeInterceptorOnRequest(options: _tmpOptions);
     _channel?.sink.add(_tmpOptions.data);
   }
 
@@ -168,23 +153,17 @@ abstract class SocketClient implements RequestSocketService {
       data: response as String,
       requestOptions: _tmpOptions.copyWith(),
     );
-    _executeInterceptorOnResponse(
-      response: responseWrap,
-    );
+    _executeInterceptorOnResponse(response: responseWrap);
     _replaySubject.add(responseWrap);
   }
 
-  void _executeInterceptorOnRequest({
-    required SocketOptions options,
-  }) {
+  void _executeInterceptorOnRequest({required SocketOptions options}) {
     for (final interceptor in interceptors) {
       interceptor.onRequest(options);
     }
   }
 
-  void _executeInterceptorOnResponse({
-    required SocketResponse response,
-  }) {
+  void _executeInterceptorOnResponse({required SocketResponse response}) {
     for (final interceptor in interceptors) {
       interceptor.onResponse(response);
     }

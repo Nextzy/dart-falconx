@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the client must switch to a different protocol (e.g., TLS).
 class NetworkUpgradeRequiredException extends NetworkClientException {
   /// Creates a [NetworkUpgradeRequiredException].
-  const NetworkUpgradeRequiredException({
+  const new({
     super.statusCode = 426,
     super.type = NetworkErrorType.upgradeRequired,
     super.userMessage,

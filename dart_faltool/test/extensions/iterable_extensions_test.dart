@@ -1,11 +1,12 @@
 import 'dart:math' as math;
+
 import 'package:dart_faltool/lib.dart';
 import 'package:test/test.dart';
 
 // Test class for groupBy and other tests
 @immutable
 class Person {
-  const Person(this.name, this.age, this.city);
+  const new(this.name, this.age, this.city);
 
   final String name;
   final int age;
@@ -39,14 +40,11 @@ void main() {
         expect(result, null);
       });
 
-      test(
-        'should return single element for single-item collection',
-        () {
-          final numbers = [42];
-          final result = numbers.reduceOrNull((a, b) => a + b);
-          expect(result, 42);
-        },
-      );
+      test('should return single element for single-item collection', () {
+        final numbers = [42];
+        final result = numbers.reduceOrNull((a, b) => a + b);
+        expect(result, 42);
+      });
 
       test('should work with string concatenation', () {
         final words = ['Hello', ' ', 'World'];
@@ -62,34 +60,22 @@ void main() {
         expect(result, 15);
       });
 
-      test(
-        'should return default value for empty collection',
-        () {
-          final numbers = <int>[];
-          final result = numbers.reduceSafe((a, b) => a + b, 100);
-          expect(result, 100);
-        },
-      );
+      test('should return default value for empty collection', () {
+        final numbers = <int>[];
+        final result = numbers.reduceSafe((a, b) => a + b, 100);
+        expect(result, 100);
+      });
 
-      test(
-        'should return single element for single-item collection',
-        () {
-          final numbers = [42];
-          final result = numbers.reduceSafe((a, b) => a + b, 0);
-          expect(result, 42);
-        },
-      );
+      test('should return single element for single-item collection', () {
+        final numbers = [42];
+        final result = numbers.reduceSafe((a, b) => a + b, 0);
+        expect(result, 42);
+      });
     });
 
     group('groupBy', () {
       test('should group elements by key function', () {
-        final words = [
-          'hello',
-          'world',
-          'hi',
-          'dart',
-          'flutter',
-        ];
+        final words = ['hello', 'world', 'hi', 'dart', 'flutter'];
         final grouped = words.groupBy((word) => word.length);
 
         expect(grouped[2], ['hi']);
@@ -131,18 +117,13 @@ void main() {
         expect(evenIndexed, ['a', 'c', 'e']);
       });
 
-      test(
-        'should filter elements by value and index',
-        () {
-          final numbers = [10, 21, 32, 43, 54];
-          final result = numbers
-              .whereIndexed(
-                (value, index) => index.isOdd && value > 30,
-              )
-              .toList();
-          expect(result, [43]);
-        },
-      );
+      test('should filter elements by value and index', () {
+        final numbers = [10, 21, 32, 43, 54];
+        final result = numbers
+            .whereIndexed((value, index) => index.isOdd && value > 30)
+            .toList();
+        expect(result, [43]);
+      });
 
       test('should handle empty collection', () {
         final empty = <String>[];
@@ -230,27 +211,18 @@ void main() {
         expect(chunks[2], [5, 6]);
       });
 
-      test(
-        'should handle chunk size larger than collection',
-        () {
-          final numbers = [1, 2, 3];
-          final chunks = numbers.chunked(5).toList();
+      test('should handle chunk size larger than collection', () {
+        final numbers = [1, 2, 3];
+        final chunks = numbers.chunked(5).toList();
 
-          expect(chunks.length, 1);
-          expect(chunks[0], [1, 2, 3]);
-        },
-      );
+        expect(chunks.length, 1);
+        expect(chunks[0], [1, 2, 3]);
+      });
 
       test('should throw on non-positive chunk size', () {
         final numbers = [1, 2, 3];
-        expect(
-          () => numbers.chunked(0).toList(),
-          throwsArgumentError,
-        );
-        expect(
-          () => numbers.chunked(-1).toList(),
-          throwsArgumentError,
-        );
+        expect(() => numbers.chunked(0).toList(), throwsArgumentError);
+        expect(() => numbers.chunked(-1).toList(), throwsArgumentError);
       });
 
       test('should handle empty collection', () {
@@ -261,14 +233,11 @@ void main() {
     });
 
     group('intersperse', () {
-      test(
-        'should intersperse separator between elements',
-        () {
-          final letters = ['a', 'b', 'c'];
-          final result = letters.intersperse('-').toList();
-          expect(result, ['a', '-', 'b', '-', 'c']);
-        },
-      );
+      test('should intersperse separator between elements', () {
+        final letters = ['a', 'b', 'c'];
+        final result = letters.intersperse('-').toList();
+        expect(result, ['a', '-', 'b', '-', 'c']);
+      });
 
       test('should handle single element', () {
         final single = ['a'];
@@ -322,10 +291,7 @@ void main() {
           ['dart', 'flutter'],
         ];
         final flat = nested.flatten().toList();
-        expect(
-          flat,
-          ['hello', 'world', 'dart', 'flutter'],
-        );
+        expect(flat, ['hello', 'world', 'dart', 'flutter']);
       });
     });
 
@@ -359,16 +325,13 @@ void main() {
     });
 
     group('partition', () {
-      test(
-        'should partition elements based on predicate',
-        () {
-          final numbers = [1, 2, 3, 4, 5, 6];
-          final (odds, evens) = numbers.partition((n) => n.isEven);
+      test('should partition elements based on predicate', () {
+        final numbers = [1, 2, 3, 4, 5, 6];
+        final (odds, evens) = numbers.partition((n) => n.isEven);
 
-          expect(evens.toList(), [2, 4, 6]);
-          expect(odds.toList(), [1, 3, 5]);
-        },
-      );
+        expect(evens.toList(), [2, 4, 6]);
+        expect(odds.toList(), [1, 3, 5]);
+      });
 
       test('should handle all matching predicate', () {
         final numbers = [2, 4, 6, 8];
@@ -425,42 +388,31 @@ void main() {
         expect(result, '1, 2, 3');
       });
 
-      test(
-        'should use custom separator, prefix, and postfix',
-        () {
-          final numbers = [1, 2, 3];
-          final result = numbers.joinToString(
-            separator: ' | ',
-            prefix: '[',
-            postfix: ']',
-          );
-          expect(result, '[1] | [2] | [3]');
-        },
-      );
+      test('should use custom separator, prefix, and postfix', () {
+        final numbers = [1, 2, 3];
+        final result = numbers.joinToString(
+          separator: ' | ',
+          prefix: '[',
+          postfix: ']',
+        );
+        expect(result, '[1] | [2] | [3]');
+      });
 
       test('should apply transform function', () {
         final numbers = [1, 2, 3];
-        final result = numbers.joinToString(
-          transform: (n) => 'Item $n',
-        );
+        final result = numbers.joinToString(transform: (n) => 'Item $n');
         expect(result, 'Item 1, Item 2, Item 3');
       });
 
       test('should respect limit and truncate', () {
         final numbers = [1, 2, 3, 4, 5];
-        final result = numbers.joinToString(
-          limit: 3,
-          truncated: '...',
-        );
+        final result = numbers.joinToString(limit: 3, truncated: '...');
         expect(result, '1, 2, 3...');
       });
 
       test('should handle empty collection', () {
         final empty = <int>[];
-        final result = empty.joinToString(
-          prefix: '[',
-          postfix: ']',
-        );
+        final result = empty.joinToString(prefix: '[', postfix: ']');
         expect(result, '');
       });
     });
@@ -534,14 +486,11 @@ void main() {
         expect(result, null);
       });
 
-      test(
-        'should return null for empty non-null collection',
-        () {
-          final Iterable<int> numbers = <int>[];
-          final result = numbers.reduceOrNull((a, b) => a + b);
-          expect(result, null);
-        },
-      );
+      test('should return null for empty non-null collection', () {
+        final Iterable<int> numbers = <int>[];
+        final result = numbers.reduceOrNull((a, b) => a + b);
+        expect(result, null);
+      });
     });
 
     group('reduceSafe', () {
@@ -557,14 +506,11 @@ void main() {
         expect(result, 100);
       });
 
-      test(
-        'should return default for empty non-null collection',
-        () {
-          final Iterable<int> numbers = <int>[];
-          final result = numbers.reduceSafe((a, b) => a + b, 100);
-          expect(result, 100);
-        },
-      );
+      test('should return default for empty non-null collection', () {
+        final Iterable<int> numbers = <int>[];
+        final result = numbers.reduceSafe((a, b) => a + b, 100);
+        expect(result, 100);
+      });
     });
 
     group('isNullOrEmpty', () {
@@ -595,13 +541,10 @@ void main() {
         expect(numbers.isNotNullOrEmpty, false);
       });
 
-      test(
-        'should return true for non-empty collection',
-        () {
-          final Iterable<int> numbers = [1, 2, 3];
-          expect(numbers.isNotNullOrEmpty, true);
-        },
-      );
+      test('should return true for non-empty collection', () {
+        final Iterable<int> numbers = [1, 2, 3];
+        expect(numbers.isNotNullOrEmpty, true);
+      });
     });
 
     group('orEmpty', () {
@@ -649,20 +592,17 @@ void main() {
     });
 
     group('ifNotEmpty', () {
-      test(
-        'should execute action for non-empty collection',
-        () {
-          var executed = false;
-          Iterable<int>? values;
-          [1, 2, 3].ifNotEmpty((iterable) {
-            executed = true;
-            values = iterable;
-          });
+      test('should execute action for non-empty collection', () {
+        var executed = false;
+        Iterable<int>? values;
+        [1, 2, 3].ifNotEmpty((iterable) {
+          executed = true;
+          values = iterable;
+        });
 
-          expect(executed, true);
-          expect(values, [1, 2, 3]);
-        },
-      );
+        expect(executed, true);
+        expect(values, [1, 2, 3]);
+      });
 
       test('should not execute action for null', () {
         var executed = false;
@@ -673,17 +613,14 @@ void main() {
         expect(executed, false);
       });
 
-      test(
-        'should not execute action for empty collection',
-        () {
-          var executed = false;
-          <int>[].ifNotEmpty((iterable) {
-            executed = true;
-          });
+      test('should not execute action for empty collection', () {
+        var executed = false;
+        <int>[].ifNotEmpty((iterable) {
+          executed = true;
+        });
 
-          expect(executed, false);
-        },
-      );
+        expect(executed, false);
+      });
     });
   });
 }

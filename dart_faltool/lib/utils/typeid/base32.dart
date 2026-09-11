@@ -42,75 +42,51 @@ class Base32 {
       ..writeCharCode(alphabet.codeUnitAt(src[0] & 31))
       ..writeCharCode(alphabet.codeUnitAt((src[1] & 248) >> 3))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[1] & 7) << 2) | ((src[2] & 192) >> 6),
-        ),
+        alphabet.codeUnitAt(((src[1] & 7) << 2) | ((src[2] & 192) >> 6)),
       )
       ..writeCharCode(alphabet.codeUnitAt((src[2] & 62) >> 1))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[2] & 1) << 4) | ((src[3] & 240) >> 4),
-        ),
+        alphabet.codeUnitAt(((src[2] & 1) << 4) | ((src[3] & 240) >> 4)),
       )
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[3] & 15) << 1) | ((src[4] & 128) >> 7),
-        ),
+        alphabet.codeUnitAt(((src[3] & 15) << 1) | ((src[4] & 128) >> 7)),
       )
       ..writeCharCode(alphabet.codeUnitAt((src[4] & 124) >> 2))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[4] & 3) << 3) | ((src[5] & 224) >> 5),
-        ),
+        alphabet.codeUnitAt(((src[4] & 3) << 3) | ((src[5] & 224) >> 5)),
       )
       ..writeCharCode(alphabet.codeUnitAt(src[5] & 31))
       // 16 bytes of randomness
       ..writeCharCode(alphabet.codeUnitAt((src[6] & 248) >> 3))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[6] & 7) << 2) | ((src[7] & 192) >> 6),
-        ),
+        alphabet.codeUnitAt(((src[6] & 7) << 2) | ((src[7] & 192) >> 6)),
       )
       ..writeCharCode(alphabet.codeUnitAt((src[7] & 62) >> 1))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[7] & 1) << 4) | ((src[8] & 240) >> 4),
-        ),
+        alphabet.codeUnitAt(((src[7] & 1) << 4) | ((src[8] & 240) >> 4)),
       )
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[8] & 15) << 1) | ((src[9] & 128) >> 7),
-        ),
+        alphabet.codeUnitAt(((src[8] & 15) << 1) | ((src[9] & 128) >> 7)),
       )
       ..writeCharCode(alphabet.codeUnitAt((src[9] & 124) >> 2))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[9] & 3) << 3) | ((src[10] & 224) >> 5),
-        ),
+        alphabet.codeUnitAt(((src[9] & 3) << 3) | ((src[10] & 224) >> 5)),
       )
       ..writeCharCode(alphabet.codeUnitAt(src[10] & 31))
       ..writeCharCode(alphabet.codeUnitAt((src[11] & 248) >> 3))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[11] & 7) << 2) | ((src[12] & 192) >> 6),
-        ),
+        alphabet.codeUnitAt(((src[11] & 7) << 2) | ((src[12] & 192) >> 6)),
       )
       ..writeCharCode(alphabet.codeUnitAt((src[12] & 62) >> 1))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[12] & 1) << 4) | ((src[13] & 240) >> 4),
-        ),
+        alphabet.codeUnitAt(((src[12] & 1) << 4) | ((src[13] & 240) >> 4)),
       )
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[13] & 15) << 1) | ((src[14] & 128) >> 7),
-        ),
+        alphabet.codeUnitAt(((src[13] & 15) << 1) | ((src[14] & 128) >> 7)),
       )
       ..writeCharCode(alphabet.codeUnitAt((src[14] & 124) >> 2))
       ..writeCharCode(
-        alphabet.codeUnitAt(
-          ((src[14] & 3) << 3) | ((src[15] & 224) >> 5),
-        ),
+        alphabet.codeUnitAt(((src[14] & 3) << 3) | ((src[15] & 224) >> 5)),
       )
       ..writeCharCode(alphabet.codeUnitAt(src[15] & 31));
 

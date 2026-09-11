@@ -10,7 +10,7 @@ abstract class BaseHttpException extends NetworkException {
   ///
   /// All HTTP exceptions should extend this class to inherit
   /// common functionality and ensure consistent behavior.
-  const BaseHttpException({
+  const new({
     required super.type,
     required super.statusCode,
     super.userMessage,
@@ -73,9 +73,7 @@ abstract class BaseHttpException extends NetworkException {
   ///
   /// Attempts to extract error information from common API error
   /// response formats including JSON and plain text.
-  static Map<String, String?> extractErrorDetails(
-    Response<dynamic>? response,
-  ) {
+  static Map<String, String?> extractErrorDetails(Response<dynamic>? response) {
     final result = <String, String?>{
       'type': null,
       'message': null,

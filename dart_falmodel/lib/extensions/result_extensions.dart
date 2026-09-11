@@ -9,14 +9,13 @@ extension FalconFutureResultDataExtensions<DATA> on Future<DATA> {
   Future<Result<DATA>> toResult([
     CommonException Function(CommonException exception)? mapException,
   ]) {
-    return then(Result<DATA>.success).catchError(
-      (Object e, StackTrace stackTrace) {
-        final exception = e.toException(stackTrace: stackTrace);
-        return Result<DATA>.failure(
-          mapException != null ? mapException(exception) : exception,
-        );
-      },
-    );
+    return then(Result<DATA>.success)
+        .catchError((Object e, StackTrace stackTrace) {
+          final exception = e.toException(stackTrace: stackTrace);
+          return Result<DATA>.failure(
+            mapException != null ? mapException(exception) : exception,
+          );
+        });
   }
 }
 
@@ -166,14 +165,13 @@ extension FalconStreamResultDataExtensions<DATA> on Stream<DATA> {
   Stream<Result<DATA>> toResult([
     CommonException Function(CommonException exception)? mapException,
   ]) {
-    return map(Result<DATA>.success).handleError(
-      (Object error, StackTrace stackTrace) {
-        final exception = error.toException(stackTrace: stackTrace);
-        return Result<DATA>.failure(
-          mapException != null ? mapException(exception) : exception,
-        );
-      },
-    );
+    return map(Result<DATA>.success)
+        .handleError((Object error, StackTrace stackTrace) {
+          final exception = error.toException(stackTrace: stackTrace);
+          return Result<DATA>.failure(
+            mapException != null ? mapException(exception) : exception,
+          );
+        });
   }
 }
 
@@ -204,9 +202,7 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
   /// Chains Result operations (flatMap).
   ///
   /// If a Result is successful, applies transform which returns a new Result.
-  Stream<Result<R>> flatMapResult<R>(
-    Result<R> Function(DATA data) transform,
-  ) {
+  Stream<Result<R>> flatMapResult<R>(Result<R> Function(DATA data) transform) {
     return map((result) => result.flatMap(transform));
   }
 
@@ -234,9 +230,8 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
 
   /// Maps to a stream of exceptions only, discarding successes.
   Stream<CommonException> failureOnly() {
-    return where(
-      (result) => result.isFailure,
-    ).map((result) => result.exception);
+    return where((result) => result.isFailure)
+        .map((result) => result.exception);
   }
 
   /// Executes a callback for each successful Result.
@@ -303,10 +298,7 @@ extension FalconStreamResultExtensions<DATA> on Stream<Result<DATA>> {
   /// Returns a record with two streams: (successes, failures).
   (Stream<DATA>, Stream<CommonException>) partition() {
     final broadcast = asBroadcastStream();
-    return (
-      broadcast.successOnly(),
-      broadcast.failureOnly(),
-    );
+    return (broadcast.successOnly(), broadcast.failureOnly());
   }
 
   /// Collects all Results into a single Result containing a list.

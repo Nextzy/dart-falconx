@@ -3,7 +3,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Base class for all data models in the application.
 ///
 /// Provides common functionality including:
-/// - Equality comparison through [EquatableMixin]
+/// - Equality comparison through [Equatable]
 /// - String representation with [stringify]
 /// - Immutable updates through [copyWith]
 ///
@@ -27,9 +27,9 @@ import 'package:dart_falmodel/lib.dart';
 ///   List<Object?> get props => [name, email];
 /// }
 /// ```
-abstract class BaseModel<T> with EquatableMixin {
+abstract class BaseModel<T> with Equatable {
   /// Creates a base model instance.
-  const BaseModel();
+  const new();
 
   /// Enables automatic string representation for debugging.
   @override

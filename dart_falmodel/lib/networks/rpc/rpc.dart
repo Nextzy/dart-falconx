@@ -12,10 +12,7 @@ export 'json_rpc_result.dart';
 abstract class JsonRpc {
   /// Creates a [JsonRpc] instance with the given [jsonrpc] version
   /// and optional [id].
-  const JsonRpc({
-    this.jsonrpc = '2.0',
-    this.id,
-  });
+  const new({this.jsonrpc = '2.0', this.id});
 
   /// The JSON-RPC protocol version; always `'2.0'`.
   final String jsonrpc;

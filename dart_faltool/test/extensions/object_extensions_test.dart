@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 // Test class for object extensions
 class User {
-  User(this.name, this.age, [this.email]);
+  new(this.name, this.age, [this.email]);
 
   String name;
   int age;
@@ -107,13 +107,10 @@ void main() {
         const number = 42;
         var orElseCalled = false;
 
-        final result = number.mapOrElse(
-          (value) => value * 2,
-          () {
-            orElseCalled = true;
-            return 0;
-          },
-        );
+        final result = number.mapOrElse((value) => value * 2, () {
+          orElseCalled = true;
+          return 0;
+        });
 
         expect(result, 84);
         expect(orElseCalled, false);
@@ -135,10 +132,7 @@ void main() {
     group('orElse', () {
       test('should return value when not null', () {
         const cachedName = 'John';
-        expect(
-          cachedName.orElse(() => 'FetchedName'),
-          'John',
-        );
+        expect(cachedName.orElse(() => 'FetchedName'), 'John');
       });
 
       test('should call provider when null', () {
@@ -257,41 +251,29 @@ void main() {
     });
 
     group('chain', () {
-      test(
-        'should chain operations when all return non-null',
-        () {
-          const firstName = 'john';
-          final upperName = firstName
-              .chain(
-                (name) => name.isNotEmpty ? name : null,
-              )
-              .chain((name) => name.toUpperCase());
-          expect(upperName, 'JOHN');
-        },
-      );
+      test('should chain operations when all return non-null', () {
+        const firstName = 'john';
+        final upperName = firstName
+            .chain((name) => name.isNotEmpty ? name : null)
+            .chain((name) => name.toUpperCase());
+        expect(upperName, 'JOHN');
+      });
 
       test('should return null when chain breaks', () {
         const firstName = '';
         final upperName = firstName
-            .chain(
-              (name) => name.isNotEmpty ? name : null,
-            )
+            .chain((name) => name.isNotEmpty ? name : null)
             .chain((name) => name.toUpperCase());
         expect(upperName, null);
       });
 
-      test(
-        'should return null when initial value is null',
-        () {
-          String? firstName;
-          final upperName = firstName
-              .chain(
-                (name) => name.isNotEmpty ? name : null,
-              )
-              .chain((name) => name.toUpperCase());
-          expect(upperName, null);
-        },
-      );
+      test('should return null when initial value is null', () {
+        String? firstName;
+        final upperName = firstName
+            .chain((name) => name.isNotEmpty ? name : null)
+            .chain((name) => name.toUpperCase());
+        expect(upperName, null);
+      });
     });
 
     group('isNull and isNotNull', () {
@@ -321,27 +303,17 @@ void main() {
     });
 
     group('toFutureOr', () {
-      test(
-        'should convert non-null to successful Future',
-        () async {
-          const token = 'valid-token';
-          final future = token.toFutureOr(
-            () => Exception('Not authenticated'),
-          );
-          expect(await future, 'valid-token');
-        },
-      );
+      test('should convert non-null to successful Future', () async {
+        const token = 'valid-token';
+        final future = token.toFutureOr(() => Exception('Not authenticated'));
+        expect(await future, 'valid-token');
+      });
 
       test('should convert null to failed Future', () async {
         String? token;
-        final future = token.toFutureOr(
-          () => Exception('Not authenticated'),
-        );
+        final future = token.toFutureOr(() => Exception('Not authenticated'));
 
-        expect(
-          () => future,
-          throwsA(isA<Exception>()),
-        );
+        expect(() => future, throwsA(isA<Exception>()));
       });
     });
   });
@@ -387,80 +359,60 @@ void main() {
 
       test('should work with complex transformations', () {
         final user = User('John', 25);
-        final summary = user.run(
-          (u) => '${u.name} is ${u.age} years old',
-        );
+        final summary = user.run((u) => '${u.name} is ${u.age} years old');
         expect(summary, 'John is 25 years old');
       });
     });
 
     group('applyIf', () {
-      test(
-        'should apply transformation when condition is true',
-        () {
-          final number = 5
-              .applyIf(true, (n) => n * 2)
-              .applyIf(false, (n) => n + 10);
-          expect(number, 10);
-        },
-      );
+      test('should apply transformation when condition is true', () {
+        final number = 5
+            .applyIf(true, (n) => n * 2)
+            .applyIf(false, (n) => n + 10);
+        expect(number, 10);
+      });
 
-      test(
-        'should not apply when condition is false',
-        () {
-          final number = 5
-              .applyIf(false, (n) => n * 2)
-              .applyIf(false, (n) => n + 10);
-          expect(number, 5);
-        },
-      );
+      test('should not apply when condition is false', () {
+        final number = 5
+            .applyIf(false, (n) => n * 2)
+            .applyIf(false, (n) => n + 10);
+        expect(number, 5);
+      });
 
       test('should work with objects', () {
         const isDebug = true;
-        final user = User('John', 25).applyIf(
-          isDebug,
-          (u) => User('DEBUG_${u.name}', u.age),
-        );
+        final user = User(
+          'John',
+          25,
+        ).applyIf(isDebug, (u) => User('DEBUG_${u.name}', u.age));
         expect(user.name, 'DEBUG_John');
       });
     });
 
     group('applyIfLazy', () {
-      test(
-        'should apply when lazy condition is true',
-        () {
-          var conditionEvaluated = false;
+      test('should apply when lazy condition is true', () {
+        var conditionEvaluated = false;
 
-          final result = 10.applyIfLazy(
-            () {
-              conditionEvaluated = true;
-              return true;
-            },
-            (n) => n * 2,
-          );
+        final result = 10.applyIfLazy(() {
+          conditionEvaluated = true;
+          return true;
+        }, (n) => n * 2);
 
-          expect(result, 20);
-          expect(conditionEvaluated, true);
-        },
-      );
+        expect(result, 20);
+        expect(conditionEvaluated, true);
+      });
 
-      test(
-        'should not evaluate condition when not needed',
-        () {
-          var conditionEvaluated = false;
+      test('should not evaluate condition when not needed', () {
+        var conditionEvaluated = false;
 
-          final result = 10.applyIfLazy(
-            () {
-              conditionEvaluated = true;
-              return false;
-            },
-            (n) => n * 2,
-          );
+        final result = 10.applyIfLazy(() {
+          conditionEvaluated = true;
+          return false;
+        }, (n) => n * 2);
 
-          expect(result, 10);
-          expect(conditionEvaluated, true);
-        },
-      );
+        expect(result, 10);
+        expect(conditionEvaluated, true);
+      });
     });
 
     group('wrapInList', () {
@@ -512,10 +464,7 @@ void main() {
       test('should check if value is in collection', () {
         const status = 'active';
         expect(status.isIn(['active', 'pending']), true);
-        expect(
-          status.isIn(['inactive', 'deleted']),
-          false,
-        );
+        expect(status.isIn(['inactive', 'deleted']), false);
       });
 
       test('should work with empty collection', () {
@@ -532,14 +481,8 @@ void main() {
     group('isNotIn', () {
       test('should check if value is not in collection', () {
         const status = 'deleted';
-        expect(
-          status.isNotIn(['active', 'pending']),
-          true,
-        );
-        expect(
-          status.isNotIn(['deleted', 'archived']),
-          false,
-        );
+        expect(status.isNotIn(['active', 'pending']), true);
+        expect(status.isNotIn(['deleted', 'archived']), false);
       });
 
       test('should work with empty collection', () {

@@ -4,7 +4,7 @@
 
 ## `BaseModel<T>`
 
-`abstract class BaseModel<T> with EquatableMixin`: `stringify` is true, `T copyWith()` is abstract, you supply `props`. `UniqueModel<T>` adds `id` (defaults to `UuidGenerator.getV4()`) with `props = [id]`; it is not `const`. `FirebaseModel` and `FirebaseTimestampModel({createdAt, updatedAt})` are Equatable bases for Firestore documents.
+`abstract class BaseModel<T> with Equatable`: `stringify` is true, `T copyWith()` is abstract, you supply `props`. `UniqueModel<T>` adds `id` (defaults to `UuidGenerator.getV4()`) with `props = [id]`; it is not `const`. `FirebaseModel` and `FirebaseTimestampModel({createdAt, updatedAt})` are Equatable bases for Firestore documents.
 
 ```dart
 class User extends BaseModel<User> {

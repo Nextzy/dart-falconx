@@ -9,6 +9,7 @@
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falconnect/lib.dart';
+
 import '_stub_http_client.dart';
 
 void _sink(Object? o) {
@@ -36,11 +37,7 @@ void main() {
 
   // JSON-RPC
   _sink(
-    DefaultJsonRpcService(
-      dio,
-      baseUrl: 'https://example.test',
-      jsonrpc: '2.0',
-    ),
+    DefaultJsonRpcService(dio, baseUrl: 'https://example.test', jsonrpc: '2.0'),
   );
 
   // WebSocket — touch type only, do NOT call connect().

@@ -5,9 +5,9 @@ import 'package:test/test.dart';
 
 /// Minimal result model for the loopback round trips below.
 class _EchoResult extends JsonRpcModelResult {
-  _EchoResult(this.value);
+  new(this.value);
 
-  factory _EchoResult.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _EchoResult(json['value'] as String);
 
   final String value;
@@ -100,11 +100,10 @@ void main() {
           call(),
           throwsA(
             isA<JsonRpcErrorResponse>()
-                .having(
-                  (e) => e.errors.map((x) => x.code).toList(),
-                  'codes',
-                  ['INVALID_STATE', 'RATE_LIMITED'],
-                )
+                .having((e) => e.errors.map((x) => x.code).toList(), 'codes', [
+                  'INVALID_STATE',
+                  'RATE_LIMITED',
+                ])
                 .having(
                   (e) => e.errors.first.developerMessage,
                   'developerMessage',

@@ -10,10 +10,7 @@ import 'package:dio/dio.dart';
 /// and respects Retry-After headers for rate-limited requests.
 class RetryInterceptor extends Interceptor {
   /// Creates a new retry interceptor.
-  RetryInterceptor({
-    required this.config,
-    required this.dio,
-  });
+  new({required this.config, required this.dio});
 
   /// Configuration used to determine retry limits and delays.
   final HttpClientConfig config;
@@ -106,10 +103,7 @@ class RetryInterceptor extends Interceptor {
   }
 
   /// Determines if a request should be retried.
-  bool _shouldRetry(
-    DioException err,
-    int retryCount,
-  ) {
+  bool _shouldRetry(DioException err, int retryCount) {
     // Don't retry if we've exceeded max attempts
     if (retryCount >= config.maxRetryAttempts) {
       return false;
@@ -147,10 +141,7 @@ class RetryInterceptor extends Interceptor {
 
   /// Calculates the delay before the next retry
   /// attempt.
-  Duration _calculateDelay(
-    DioException err,
-    int retryCount,
-  ) {
+  Duration _calculateDelay(DioException err, int retryCount) {
     // Check for Retry-After header
     if (err.response != null && err.response!.statusCode == 429) {
       final retryAfter = err.response!.headers.value('retry-after');

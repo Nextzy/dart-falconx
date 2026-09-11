@@ -10,7 +10,7 @@ class SocketLogInterceptor extends SocketInterceptor {
   ///
   /// Pass `enabled: false` to silence all output. Use [logPrint] to redirect
   /// output to a custom sink instead of `print`.
-  SocketLogInterceptor({
+  new({
     this.enabled = true,
     this.requestBody = true,
     this.responseBody = true,
@@ -40,13 +40,9 @@ class SocketLogInterceptor extends SocketInterceptor {
   void Function(Object? object) logPrint;
 
   @override
-  Future<void> onRequest(
-    SocketOptions options,
-  ) async {
+  Future<void> onRequest(SocketOptions options) async {
     if (enabled) {
-      logPrint(
-        _title('*** Socket Request ***'),
-      );
+      logPrint(_title('*** Socket Request ***'));
       _printKV('URL', options.uri);
       _printKV('Protocol', options.protocol);
 
@@ -62,22 +58,15 @@ class SocketLogInterceptor extends SocketInterceptor {
   }
 
   @override
-  Future<void> onResponse(
-    SocketResponse response,
-  ) async {
+  Future<void> onResponse(SocketResponse response) async {
     if (enabled) {
-      logPrint(
-        _title('*** Socket Response ***'),
-      );
+      logPrint(_title('*** Socket Response ***'));
       _printResponse(response);
     }
   }
 
   @override
-  Future<void> onError(
-    SocketException err,
-    SocketOptions options,
-  ) async {
+  Future<void> onError(SocketException err, SocketOptions options) async {
     if (enabled) {
       if (error) {
         logPrint(_error('*** DioError ***:'));
@@ -94,14 +83,8 @@ class SocketLogInterceptor extends SocketInterceptor {
 
   void _printResponse(SocketResponse response) {
     if (enabled) {
-      _printKV(
-        'URL',
-        response.requestOptions.uri,
-      );
-      _printKV(
-        'Protocol',
-        response.requestOptions.protocol,
-      );
+      _printKV('URL', response.requestOptions.uri);
+      _printKV('Protocol', response.requestOptions.protocol);
       if (responseBody) {
         logPrint(_json('Response Text:'));
         const encoder = JsonEncoder.withIndent('  ');
@@ -124,9 +107,7 @@ class SocketLogInterceptor extends SocketInterceptor {
     }
   }
 
-  static Future<void> _logPrintLong(
-    Object? object,
-  ) async {
+  static Future<void> _logPrintLong(Object? object) async {
     const defaultPrintLength = 1020;
     if (object == null || object.toString().length <= defaultPrintLength) {
       // Intentional logging for socket diagnostics.

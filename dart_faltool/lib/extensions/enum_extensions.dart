@@ -40,9 +40,7 @@ extension FalconToolEnumStringExtension on String {
       if (defaultValue != null) {
         return defaultValue;
       }
-      throw ArgumentError(
-        'No enum value found for "$this" in $T',
-      );
+      throw ArgumentError('No enum value found for "$this" in $T');
     }
   }
 
@@ -112,10 +110,7 @@ extension FalconEnumExtension on Enum {
   /// Status.activeUser.toFormattedString(); // 'Active User'
   /// Status.activeUser.toFormattedString(separator: '-'); // 'active-user'
   /// ```
-  String toFormattedString({
-    String separator = ' ',
-    bool capitalize = true,
-  }) {
+  String toFormattedString({String separator = ' ', bool capitalize = true}) {
     final value = toValueString();
     final words = value.split(RegExp('(?=[A-Z])|_'));
 
@@ -209,9 +204,7 @@ extension FalconEnumListExtension<T extends Enum> on List<T> {
   /// Status.values.toMap(); // {Status.active: 'active', Status.inactive: 'inactive'}
   /// ```
   Map<T, String> toMap() {
-    return Map.fromEntries(
-      map((e) => MapEntry(e, e.toValueString())),
-    );
+    return Map.fromEntries(map((e) => MapEntry(e, e.toValueString())));
   }
 
   /// Gets a map of string representations to enum values.
@@ -223,9 +216,7 @@ extension FalconEnumListExtension<T extends Enum> on List<T> {
   /// Status.values.toReverseMap(); // {'active': Status.active, 'inactive': Status.inactive}
   /// ```
   Map<String, T> toReverseMap() {
-    return Map.fromEntries(
-      map((e) => MapEntry(e.toValueString(), e)),
-    );
+    return Map.fromEntries(map((e) => MapEntry(e.toValueString(), e)));
   }
 
   /// Filters enum values by a predicate on their string representation.

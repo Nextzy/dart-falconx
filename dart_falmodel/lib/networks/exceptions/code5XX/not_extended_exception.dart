@@ -6,7 +6,7 @@ import 'package:dart_falmodel/lib.dart';
 /// the request.
 class NetworkNotExtendedException extends NetworkServerException {
   /// Creates a [NetworkNotExtendedException].
-  const NetworkNotExtendedException({
+  const new({
     super.statusCode = 510,
     super.type = NetworkErrorType.notExtended,
     super.userMessage,

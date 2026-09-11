@@ -39,7 +39,7 @@ class PaginatedResponse<T> extends BaseRequest {
   /// [pageSize] is the number of items per page.
   /// [totalItems] is the total number of items across all pages.
   /// [totalPages] is the total number of pages.
-  const PaginatedResponse({
+  const new({
     required this.items,
     required this.page,
     required this.pageSize,
@@ -155,7 +155,7 @@ class PaginatedResponse<T> extends BaseRequest {
 /// ```
 class PaginatedResponseWithMetadata<T> extends PaginatedResponse<T> {
   /// Creates a paginated response with metadata.
-  const PaginatedResponseWithMetadata({
+  const new({
     required super.items,
     required super.page,
     required super.pageSize,
@@ -187,10 +187,7 @@ class PaginatedResponseWithMetadata<T> extends PaginatedResponse<T> {
   }
 
   @override
-  Map<String, dynamic> toJson() => {
-    ...super.toJson(),
-    'metadata': metadata,
-  };
+  Map<String, dynamic> toJson() => {...super.toJson(), 'metadata': metadata};
 
   @override
   List<Object?> get props => [...super.props, metadata];

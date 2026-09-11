@@ -5,7 +5,7 @@ import 'package:dart_falmodel/lib.dart';
 /// Raised when the server timed out waiting for the client's request.
 class NetworkTimeoutException extends NetworkClientException {
   /// Creates a [NetworkTimeoutException].
-  const NetworkTimeoutException({
+  const new({
     super.statusCode = 408,
     super.type = NetworkErrorType.requestTimeout,
     super.userMessage,

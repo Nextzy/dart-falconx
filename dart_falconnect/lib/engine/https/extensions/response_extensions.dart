@@ -20,9 +20,7 @@ extension DartFalconnectHttpFutureDynamicExtensions
         map['result'] = response.data;
         data = await f(map);
       } else {
-        data = await f(
-          response.data as Map<String, Object?>,
-        );
+        data = await f(response.data as Map<String, Object?>);
       }
 
       return response.copyWith(data: data);
@@ -47,11 +45,7 @@ extension DartFalconnectFutureResponseExtensions<T> on Future<Response<T>> {
   /// If [f] returns a non-null value the resolved response carries that value
   /// as its data; otherwise the original error is rethrown.
   Future<Response<T>> catchWhenError(
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    f,
+    T? Function(DioException exception, StackTrace? stackTrace)? f,
   ) {
     return then(
       (value) => value,
@@ -91,11 +85,7 @@ extension DartFalconnectHttpFutureRpcResponseExtensions<
   /// If [f] returns a non-null value the resolved response carries that value
   /// as its result; otherwise the original error is rethrown.
   Future<JsonRpcResponse<RESULT>> catchWhenError(
-    RESULT? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    f,
+    RESULT? Function(DioException exception, StackTrace? stackTrace)? f,
   ) {
     return then(
       (value) => value,
@@ -131,11 +121,7 @@ extension DartFalconnectHttpFutureResponseExtensions<T>
   /// If [f] returns a non-null value the resolved response carries that value
   /// as its data; otherwise the original error is rethrown.
   Future<HttpResponse<T>> catchWhenError(
-    T? Function(
-      DioException exception,
-      StackTrace? stackTrace,
-    )?
-    f,
+    T? Function(DioException exception, StackTrace? stackTrace)? f,
   ) {
     return then(
       (value) => value,

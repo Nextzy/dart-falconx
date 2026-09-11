@@ -12,7 +12,7 @@ part 'generated/json_rpc_request.g.dart';
 abstract class JsonRpcRequest extends JsonRpc with _$JsonRpcRequest {
   /// Creates a [JsonRpcRequest] with the required [jsonrpc] version
   /// and [method].
-  const factory JsonRpcRequest({
+  const factory({
     @JsonKey(includeFromJson: true, includeToJson: true)
     required String jsonrpc,
     @JsonKey(includeFromJson: true, includeToJson: true) required String method,
@@ -20,12 +20,8 @@ abstract class JsonRpcRequest extends JsonRpc with _$JsonRpcRequest {
     int? id,
   }) = _JsonRpcRequest;
 
-  const JsonRpcRequest._({
-    super.jsonrpc,
-    super.id,
-  }) : super();
+  const new _({super.jsonrpc, super.id}) : super();
 
   /// Deserializes a [JsonRpcRequest] from a JSON map.
-  factory JsonRpcRequest.fromJson(Map<String, dynamic> json) =>
-      _$JsonRpcRequestFromJson(json);
+  factory fromJson(Map<String, dynamic> json) => _$JsonRpcRequestFromJson(json);
 }
