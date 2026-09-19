@@ -13,7 +13,7 @@ Answers "does falconx already provide this?" here and routes "how do I call it?"
 dependencies:
   dart_falconx:                      # or only dart_falconnect / dart_falmodel / dart_faltool
     git:
-      url: git@github.com:Nextzy/dart-falconx.git
+      url: https://github.com/Nextzy/dart-falconx
       ref: <latest_tag>              # e.g. 1.0.11 — see `git ls-remote --tags`
       path: dart_falconx             # dart_falconnect / dart_falmodel / dart_faltool
 environment:
