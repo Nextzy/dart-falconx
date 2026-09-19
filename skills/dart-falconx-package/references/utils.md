@@ -2,21 +2,21 @@
 
 `package: dart_faltool`.
 
-| Symbol | Signature | Notes |
-|---|---|---|
-| `nowUtc` | `DateTime get nowUtc` | `DateTime.now().toUtc()` |
-| `runCatching<T>` | `Future<Result<T>> runCatching(Future<Result<T>> Function() execute)` | `CommonException` passes through; anything else goes through `toException()`; both become `Result.failure` |
-| `constantTimeEquals` | `bool constantTimeEquals(String a, String b)` | timing-safe comparison for tokens and signatures |
-| `randomDelay` | `Future<void> randomDelay({int minMs = 100, int maxMs = 300})` | secure-random jitter against timing oracles; asserts `maxMs > minMs` |
-| `TypeId.generate` | `String generate(String prefix)` | UUIDv7-based TypeID `prefix_` + 26 base32 chars; prefix is `[a-z]` up to 63 chars, `''` for none; throws `FormatException` |
-| `TypeId.decode` | `DecodedTypeId decode(String typeid)` | throws `FormatException` on bad input |
-| `TypeId.decodeOrNull`, `TypeId.isValid` | | non-throwing variants |
-| `DecodedTypeId` | Freezed `{prefix, suffix, uuid}` | `toString()` rebuilds the id |
-| `Base32` | `encode(Uint8List)`, `decode(String)` | TypeID alphabet, 16-byte input |
-| `UuidGenerator.getV4()` | `String` | random UUID v4 via `hashlib` |
-| `AppInfo.init([path = 'pubspec.yaml'])`, `AppInfo.version` | | reads `version:` from the pubspec on IO; no-op on web; default `'1.0.0'` |
-| `JsonSerializeUtil` | `dateTimeToUnix`, `unixToDateTime`, `dateTimeToIso`, `isoToDateTime`, `bigIntToString`, `stringToBigInt` | static helpers for `@JsonKey(fromJson:, toJson:)` |
-| `VoidErrorCallback` | `void Function(Object error, StackTrace? stacktrace)` | used by `SocketBoundResource.asStream(error:)` |
+| Symbol                                                     | Signature                                                                                                | Notes                                                                                                                      |
+|------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `nowUtc`                                                   | `DateTime get nowUtc`                                                                                    | `DateTime.now().toUtc()`                                                                                                   |
+| `runCatching<T>`                                           | `Future<Result<T>> runCatching(Future<Result<T>> Function() execute)`                                    | `CommonException` passes through; anything else goes through `toException()`; both become `Result.failure`                 |
+| `constantTimeEquals`                                       | `bool constantTimeEquals(String a, String b)`                                                            | timing-safe comparison for tokens and signatures                                                                           |
+| `randomDelay`                                              | `Future<void> randomDelay({int minMs = 100, int maxMs = 300})`                                           | secure-random jitter against timing oracles; asserts `maxMs > minMs`                                                       |
+| `TypeId.generate`                                          | `String generate(String prefix)`                                                                         | UUIDv7-based TypeID `prefix_` + 26 base32 chars; prefix is `[a-z]` up to 63 chars, `''` for none; throws `FormatException` |
+| `TypeId.decode`                                            | `DecodedTypeId decode(String typeid)`                                                                    | throws `FormatException` on bad input                                                                                      |
+| `TypeId.decodeOrNull`, `TypeId.isValid`                    |                                                                                                          | non-throwing variants                                                                                                      |
+| `DecodedTypeId`                                            | Freezed `{prefix, suffix, uuid}`                                                                         | `toString()` rebuilds the id                                                                                               |
+| `Base32`                                                   | `encode(Uint8List)`, `decode(String)`                                                                    | TypeID alphabet, 16-byte input                                                                                             |
+| `UuidGenerator.getV4()`                                    | `String`                                                                                                 | random UUID v4 via `hashlib`                                                                                               |
+| `AppInfo.init([path = 'pubspec.yaml'])`, `AppInfo.version` |                                                                                                          | reads `version:` from the pubspec on IO; no-op on web; default `'1.0.0'`                                                   |
+| `JsonSerializeUtil`                                        | `dateTimeToUnix`, `unixToDateTime`, `dateTimeToIso`, `isoToDateTime`, `bigIntToString`, `stringToBigInt` | static helpers for `@JsonKey(fromJson:, toJson:)`                                                                          |
+| `VoidErrorCallback`                                        | `void Function(Object error, StackTrace? stacktrace)`                                                    | used by `SocketBoundResource.asStream(error:)`                                                                             |
 
 ```dart
 final id = TypeId.generate('user');        // user_01h455vb4pex5vsknk084sn02q

@@ -50,13 +50,13 @@ Freezed sealed class with variants `Success`, `Warning`, `Failure`, `Information
 
 Static helpers that turn local and remote calls into `Result` streams. Every thrown error becomes `Result.failure(e.toException())`, optionally rewritten by `handleError: (CommonException, StackTrace?) => CommonException`.
 
-| Method | Parameters | Emits |
-|---|---|---|
-| `asLocalResultStream<D>` | `loadFromDbFuture` (required), `handleError`, `log` | one local result |
-| `asLocalResultFuture<D>` | same | first result |
-| `asRemoteResultStream<R, D>` | `callRemoteFuture` (required), `processResponse` (required when `R != D`), `handleError`, `log` | one remote result |
-| `asRemoteResultFuture<R, D>` | `createCallFuture` (required), `processResponse`, `handleError` | first result |
-| `asResultStream<R, D>` | `loadFromDbFuture`, `shouldFetch(D?)`, `callRemoteFuture`, `processResponse`, `handleError`, `log` | local, then remote when `shouldFetch` returns true |
+| Method                       | Parameters                                                                                         | Emits                                              |
+|------------------------------|----------------------------------------------------------------------------------------------------|----------------------------------------------------|
+| `asLocalResultStream<D>`     | `loadFromDbFuture` (required), `handleError`, `log`                                                | one local result                                   |
+| `asLocalResultFuture<D>`     | same                                                                                               | first result                                       |
+| `asRemoteResultStream<R, D>` | `callRemoteFuture` (required), `processResponse` (required when `R != D`), `handleError`, `log`    | one remote result                                  |
+| `asRemoteResultFuture<R, D>` | `createCallFuture` (required), `processResponse`, `handleError`                                    | first result                                       |
+| `asResultStream<R, D>`       | `loadFromDbFuture`, `shouldFetch(D?)`, `callRemoteFuture`, `processResponse`, `handleError`, `log` | local, then remote when `shouldFetch` returns true |
 
 ```dart
 Stream<Result<User>> watchUser(String id) =>
