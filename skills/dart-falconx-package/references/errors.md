@@ -26,17 +26,17 @@ const CommonException({required Object type, String? userMessage, String? develo
 
 `type` is any `Object`; use a `DefaultErrorType` enum so `defaultMessage` resolves:
 
-| Enum | Values |
-|---|---|
-| `SystemErrorType` | `unknown`, `system`, `unexpected`, `concurrency` |
-| `InputErrorType` | `validation`, `invalidFormat`, `invalidValue`, `outOfRange`, `argument`, `type` |
-| `TimeoutErrorType` | `timeout`, `deadline` |
-| `StorageErrorType` | `storage`, `cache`, `database`, `fileSystem` |
-| `ConnectivityErrorType` | `connection`, `socket`, `tls`, `dns`, `http` |
-| `AsyncErrorType` | `stream`, `future`, `isolate` |
-| `AccessErrorType` | `permission`, `unauthorized`, `deviceNotSupported` |
-| `ExternalErrorType` | `thirdParty`, `serviceUnavailable` |
-| `BusinessErrorType` | `businessRule`, `notFound`, `conflict`, `deprecated` |
+| Enum                    | Values                                                                          |
+|-------------------------|---------------------------------------------------------------------------------|
+| `SystemErrorType`       | `unknown`, `system`, `unexpected`, `concurrency`                                |
+| `InputErrorType`        | `validation`, `invalidFormat`, `invalidValue`, `outOfRange`, `argument`, `type` |
+| `TimeoutErrorType`      | `timeout`, `deadline`                                                           |
+| `StorageErrorType`      | `storage`, `cache`, `database`, `fileSystem`                                    |
+| `ConnectivityErrorType` | `connection`, `socket`, `tls`, `dns`, `http`                                    |
+| `AsyncErrorType`        | `stream`, `future`, `isolate`                                                   |
+| `AccessErrorType`       | `permission`, `unauthorized`, `deviceNotSupported`                              |
+| `ExternalErrorType`     | `thirdParty`, `serviceUnavailable`                                              |
+| `BusinessErrorType`     | `businessRule`, `notFound`, `conflict`, `deprecated`                            |
 
 Members: `message` (user, then developer, then generic), `copyWith`, `mapMessage`, `mapUserMessage`, `mapDeveloperMessage`, `toJsonRpcError()`, `toFailure()` / `toWarning()` / `toInformation()` (return `UserFeedback`). There is no `category` field. Subclasses `DataLayerException`, `DomainLayerException`, `TodoException<T>` override `copyWith` to keep their type.
 
@@ -52,49 +52,49 @@ const NetworkException({required Object type, required int statusCode, String? u
 
 `NetworkErrorType` values: `unknown`, `network`, `timeout`, `noInternet`, `clientError`, `serverError`, plus one per status code below (`fromStatusCode(int)`, `statusCode`, `defaultMessage`, `isClientError`, `isServerError`). `BaseHttpException` adds `isRetryable` (5xx, 408, 409, 429), `recommendedRetryDelay` (honours `Retry-After`), `statusCategory`, `toLogString()`, static `extractErrorDetails(response)`. `NetworkClientException` and `NetworkServerException` accept any code in their range. Each class below defaults `statusCode` to its code and `type` to `NetworkErrorType.fromStatusCode(code)`:
 
-| Code | Class |
-|---|---|
-| 0 | `NoInternetConnectException` (`noInternet`) |
-| 400 | `NetworkBadRequestException` |
-| 401 | `NetworkAuthenticationException`, `UnauthorizedException` |
-| 402 | `NetworkPaymentRequiredException` |
-| 403 | `NetworkForbiddenException` |
-| 404 | `NetworkNotFoundException` |
-| 405 | `MethodNotAllowedException` |
-| 406 | `NetworkNotAcceptableException` |
-| 407 | `NetworkProxyAuthRequiredException` |
-| 408 | `NetworkTimeoutException` (extra `timeout: Duration?`) |
-| 409 | `NetworkConflictException` |
-| 410 | `NetworkGoneException` |
-| 411 | `NetworkLengthRequiredException` |
-| 412 | `NetworkPreconditionFailedException` |
-| 413 | `NetworkContentTooLargeException` |
-| 414 | `NetworkUriTooLongException` |
-| 415 | `NetworkUnsupportedMediaTypeException` |
-| 416 | `NetworkRangeNotSatisfiableException` |
-| 417 | `NetworkExpectationFailedException` |
-| 421 | `NetworkMisdirectedRequestException` |
-| 422 | `NetworkInvalidException` (`unprocessableContent`) |
-| 423 | `NetworkLockedException` |
-| 424 | `NetworkFailedDependencyException` |
-| 425 | `NetworkTooEarlyException` |
-| 426 | `NetworkUpgradeRequiredException` |
-| 428 | `NetworkPreconditionRequiredException` |
-| 429 | `NetworkLimitExceededException` (`tooManyRequests`) |
-| 431 | `NetworkHeaderFieldsTooLargeException` |
-| 451 | `NetworkUnavailableForLegalException` |
-| 500 | `NetworkInternalServerException` |
-| 501 | `NetworkNotImplementException` |
-| 502 | `NetworkBadGatewayException` |
-| 503 | `ServiceUnavailableException` |
-| 504 | `NetworkGatewayTimeoutException` |
-| 505 | `NetworkHttpVersionNotSupportedException` |
-| 506 | `NetworkVariantAlsoNegotiatesException` |
-| 507 | `NetworkInsufficientStorageException` |
-| 508 | `NetworkLoopDetectedException` |
-| 510 | `NetworkNotExtendedException` |
-| 511 | `NetworkAuthRequiredException` |
-| other 4xx/5xx | `NetworkNonStandardException(statusCode:)` (`unknown`) |
+| Code          | Class                                                     |
+|---------------|-----------------------------------------------------------|
+| 0             | `NoInternetConnectException` (`noInternet`)               |
+| 400           | `NetworkBadRequestException`                              |
+| 401           | `NetworkAuthenticationException`, `UnauthorizedException` |
+| 402           | `NetworkPaymentRequiredException`                         |
+| 403           | `NetworkForbiddenException`                               |
+| 404           | `NetworkNotFoundException`                                |
+| 405           | `MethodNotAllowedException`                               |
+| 406           | `NetworkNotAcceptableException`                           |
+| 407           | `NetworkProxyAuthRequiredException`                       |
+| 408           | `NetworkTimeoutException` (extra `timeout: Duration?`)    |
+| 409           | `NetworkConflictException`                                |
+| 410           | `NetworkGoneException`                                    |
+| 411           | `NetworkLengthRequiredException`                          |
+| 412           | `NetworkPreconditionFailedException`                      |
+| 413           | `NetworkContentTooLargeException`                         |
+| 414           | `NetworkUriTooLongException`                              |
+| 415           | `NetworkUnsupportedMediaTypeException`                    |
+| 416           | `NetworkRangeNotSatisfiableException`                     |
+| 417           | `NetworkExpectationFailedException`                       |
+| 421           | `NetworkMisdirectedRequestException`                      |
+| 422           | `NetworkInvalidException` (`unprocessableContent`)        |
+| 423           | `NetworkLockedException`                                  |
+| 424           | `NetworkFailedDependencyException`                        |
+| 425           | `NetworkTooEarlyException`                                |
+| 426           | `NetworkUpgradeRequiredException`                         |
+| 428           | `NetworkPreconditionRequiredException`                    |
+| 429           | `NetworkLimitExceededException` (`tooManyRequests`)       |
+| 431           | `NetworkHeaderFieldsTooLargeException`                    |
+| 451           | `NetworkUnavailableForLegalException`                     |
+| 500           | `NetworkInternalServerException`                          |
+| 501           | `NetworkNotImplementException`                            |
+| 502           | `NetworkBadGatewayException`                              |
+| 503           | `ServiceUnavailableException`                             |
+| 504           | `NetworkGatewayTimeoutException`                          |
+| 505           | `NetworkHttpVersionNotSupportedException`                 |
+| 506           | `NetworkVariantAlsoNegotiatesException`                   |
+| 507           | `NetworkInsufficientStorageException`                     |
+| 508           | `NetworkLoopDetectedException`                            |
+| 510           | `NetworkNotExtendedException`                             |
+| 511           | `NetworkAuthRequiredException`                            |
+| other 4xx/5xx | `NetworkNonStandardException(statusCode:)` (`unknown`)    |
 
 ## JSON-RPC exceptions
 
