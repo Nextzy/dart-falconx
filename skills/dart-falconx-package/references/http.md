@@ -109,7 +109,10 @@ interceptors.addAll([
 - `CacheInterceptor` comes first: a cache hit answers in `onRequest` without calling the response interceptors, so it takes no concurrency slot and spends no token. Any interceptor that answers in `onRequest`, such as a cache or a mock, goes before `ConcurrencyLimitInterceptor`; placed after it, every answer it gives keeps a slot forever.
 - `ConcurrencyLimitInterceptor` comes before the rate limiter: the slot is taken before the tokens, so the token ceiling holds on the wire and the pause gate sees every request. A request holds its slot while the rate limiter holds it, so set `perHost` below `global`, for example 4 and 16, so one slow or paused host cannot take every global slot.
 - The rate limiter comes before `RetryInterceptor`: dio runs `onError` in list order, so the limiter sees a server 429 and starts the pause before the retry is sent. The retry then passes the pause gate, and the total wait is the longer of the retry delay and the pause, never their sum.
-- An interceptor that re-sends from `onError`, such as an auth refresh, goes after `ConcurrencyLimitInterceptor`. Placed before it, the re-send reuses its request's slot, which also works.
+- An interceptor that re-sends from `onError`, such as an auth refresh, goes after `ConcurrencyLimitInterceptor`. Placed before it, the re-send reuses its request's slot, which also works as long as the interceptor ends the error phase by the slot-safety rule below.
+- **Slot safety.** dio has no "request finished" hook, so `ConcurrencyLimitInterceptor` gives a slot back only when its own `onResponse` or `onError` runs, or when the request's `CancelToken` cancels. Keep both reachable:
+  - Interceptors after it end `onRequest` with `handler.next(...)`, `handler.resolve(response, true)`, or `handler.reject(err, true)`. A plain `resolve` or `reject` skips the limiter's `onResponse` and `onError` (a cancel-type reject is safe). An auth interceptor that rejects when it has no token must pass `true`.
+  - Interceptors before it end `onResponse` and `onError` with `handler.next(...)` or `handler.reject(err, true)`. A business-error interceptor that turns a 200 into a `DioException` must pass `true`, or go after the limiter. `handler.resolve(...)` in their `onError` is safe only with the response of a re-send of the same `RequestOptions`, which gives the slot back itself.
 - `DefaultNetworkExceptionHandlerInterceptor` comes last: it rejects without calling later error interceptors, so a `ConcurrencyLimitInterceptor` placed after it would never get its slots back.
 - Every retry passes the whole chain again, so error interceptors see each attempt. Placed before `RetryInterceptor`, one sees every attempt exactly once with a distinct `requestOptions.retryAttempt`; placed after it, one sees attempts 1..n from inside the retries plus the final error again, so it reports the last failure twice. Place error loggers and crash reporters before `RetryInterceptor`.
 - A retry is a fresh `dio.fetch` of a copy of the original options. To replay a failed request by hand, call `dio.get(...)` (or `fetch` with fresh options) again, not `dio.fetch(error.requestOptions)`: the failed options carry `retryAttempt > 0`, which reads as a nested attempt and is never retried.
@@ -189,10 +192,10 @@ A request takes a slot in `onRequest` and gives it back when its response or err
 Limitations:
 
 - Nothing limits the time a request spends in the queue. Pass a `CancelToken` with a deadline to bound it.
-- A request cancelled while it waits keeps its queue place until it reaches the head, so it counts toward `maxQueueSize` until then.
+- A request cancelled while it waits keeps its queue place until it reaches the head, so it counts toward `maxQueueSize` until then. One cancelled while it waits for the global slot also keeps its host slot until then.
 - A request that never ends holds its slot. Keep `connectTimeout` and `receiveTimeout` set.
 - A `ResponseType.stream` response gives its slot back when its headers arrive, before its body is read.
-- Two concurrent fetches of one `RequestOptions` object share one slot.
+- Two concurrent fetches of one `RequestOptions` object share one slot: the second waits for the first one's slot, and may still run after the first gives it back.
 
 `getStatistics()` returns `ConcurrencyLimitStatistics`: `forwarded`, `rejected`, `activeByHost` and `waitingByHost` (only hosts with a request in flight or queued; idle hosts are forgotten), `globalActive`, `globalWaiting`. `dispose()` cancels queued requests and lets requests in flight finish; afterwards, requests to a limited host are cancelled and requests to an unlimited host pass. `Bulkhead` keeps no timer, so a missing `dispose()` never delays a CLI exit or fails `testWidgets`.
 
