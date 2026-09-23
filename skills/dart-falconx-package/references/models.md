@@ -41,6 +41,7 @@ class CreateUserBody extends BaseRequestBody {
 - `BaseResponse<T> extends Response<T>` (Dio): `BaseResponse.success(data:, requestOptions:, headers?)`, `BaseResponse.noContent(requestOptions:)`, `isSuccessful`, `isClientError`, `isServerError`. Typedefs `BoolResponse`, `IntResponse`, `DoubleResponse`, `StringResponse`, `ListResponse<T>`, `MapResponse<K, V>`, `EmptyResponse`.
 - `PaginatedResponse<T>({items, page, pageSize, totalItems, totalPages})`: `hasNextPage`, `hasPreviousPage`, `nextPage`, `previousPage`, `isFirstPage`, `isLastPage`, `itemCount`, `isEmpty`, `isNotEmpty`, `startIndex`, `endIndex`, `copyWith`. `PaginatedResponseWithMetadata<T>` adds `metadata`.
 - `RemoteError({code, message, userMessage, developerMessage})` (Freezed): `fromJson`, `fromData(dynamic)`.
+- `parseRetryAfter(String? value, {DateTime? serverDate})` returns the `Retry-After` delay (delay-seconds or any HTTP-date; past dates give zero; unreadable values give null); `Headers.retryAfter` measures an HTTP-date from the response's `Date` header.
 
 ## `UserFeedback`
 

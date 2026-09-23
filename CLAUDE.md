@@ -206,15 +206,16 @@ Packages flow upward: `dart_faltool` re-exports many of these via `dart_faltool.
 
 ### Networking (`dart_falconnect`, `dart_falmodel`)
 
-| Package                                 | Purpose                                                             |
-|-----------------------------------------|---------------------------------------------------------------------|
-| `dio`                                   | HTTP client — base of `BaseHttpClient`, JSON-RPC, interceptor chain |
-| `dio_cache_interceptor`                 | Response caching strategy for `CacheInterceptor`                    |
-| `retrofit` + `retrofit_generator`       | Annotation-driven REST client codegen                               |
-| `web_socket_channel`                    | Cross-platform WebSocket — auto-resolves to `IO`/`Html` channel     |
-| `freezed_annotation` + `freezed`        | Sealed unions / immutable models (request/response, errors)         |
-| `json_annotation` + `json_serializable` | JSON serialization codegen                                          |
-| `ansicolor`                             | ANSI-colored log output for `LogInterceptor`                        |
+| Package                                   | Purpose                                                               |
+|-------------------------------------------|-----------------------------------------------------------------------|
+| `dio`                                     | HTTP client — base of `BaseHttpClient`, JSON-RPC, interceptor chain   |
+| `dio_cache_interceptor`                   | Response caching strategy for `CacheInterceptor`                      |
+| `retrofit` + `retrofit_generator`         | Annotation-driven REST client codegen                                 |
+| `web_socket_channel`                      | Cross-platform WebSocket — auto-resolves to `IO`/`Html` channel       |
+| `freezed_annotation` + `freezed`          | Sealed unions / immutable models (request/response, errors)           |
+| `json_annotation` + `json_serializable`   | JSON serialization codegen                                            |
+| `http_parser`                             | `parseHttpDate` for HTTP-date `Retry-After` values (`dart_falmodel`)  |
+| `ansicolor`                               | ANSI-colored log output for `LogInterceptor`                          |
 
 ### Utilities (`dart_faltool`, re-exported)
 

@@ -63,14 +63,17 @@ All return `Result<DataType>` (success/failure union from dart_falmodel). When `
 
 ### HTTP Interceptor Chain
 
-Seven interceptors available (barrel: `interceptors/interceptors.dart`):
+Eight interceptors available (barrel: `interceptors/interceptors.dart`):
 1. `CacheInterceptor` — Response caching via dio_cache_interceptor
-2. `RetryInterceptor` — Exponential backoff with jitter, respects `Retry-After` header, retries on 5xx/408/429/409/timeouts
+2. `RetryInterceptor` — Loop up to `maxRetryAttempts`; idempotent-only for 5xx/408/409/timeouts (429 and `connectionTimeout` for every method); `Retry-After` capped by `maxRetryDelay`; total `maxRetryDuration`; per-request `disableRetry`, `retryAttempts`, `retryNonIdempotent`
 3. `NetworkExceptionHandlerInterceptor` — Abstract: routes errors to `onClientError()`/`onServerError()`/`onNonStandardError()` based on status code ranges
 4. `DefaultNetworkExceptionHandlerInterceptor` — Concrete: rejects all errors (no custom handling)
 5. `PerformanceInterceptor` — Request timing
-6. `TokenBucketRateLimitInterceptor` — Token bucket rate limiting from `TokenBucketPolicy` lists; unlimited when no policy is set
-7. `LogInterceptor` — Request/response logging with ANSI colors
+6. `TokenBucketRateLimitInterceptor` — Token buckets from `TokenBucketPolicy` lists plus a per-host pause on 429/503 `Retry-After`; unlimited when no policy is set
+7. `RetryAfterPauseInterceptor` — The pause alone; never add it next to `TokenBucketRateLimitInterceptor`
+8. `LogInterceptor` — Request/response logging with ANSI colors
+
+Order: rate limiter → `RetryInterceptor` → exception handler. The pause core lives in `lib/src/engine/https/interceptors/retry_after_pause.dart` (not exported).
 
 When adding new interceptors, add the export to `interceptors/interceptors.dart` (alphabetically sorted per lint rules).
 
@@ -85,7 +88,7 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 ## Gotchas
 
 - `TokenBucketRateLimitInterceptor` refill timers outlive the last request: in `testWidgets` call `dispose()` in the test body (`addTearDown` is too late); on servers build one instance per process
-- `test/unit_test.dart` is a stub with an empty test; the real tests are the web verification gates under `test/web/`
+- Interceptor tests live in `test/engine/https/interceptors/` (run under `fakeAsync`); `test/unit_test.dart` is an empty stub; the web gates are under `test/web/`
 - `NetworkExceptionHandlerInterceptor` uses `err.toException()` extension method (from dart_falmodel) to convert `DioException` to `NetworkException`
 - WebSocket uses RxDart's `PublishSubject` (not `ReplaySubject` despite the variable name `_replaySubject`)
 - Generated files go to `lib/{{path}}/generated/` subdirectories per `build.yaml` configuration

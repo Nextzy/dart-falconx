@@ -50,7 +50,7 @@ const NetworkException({required Object type, required int statusCode, String? u
     StackTrace? stackTrace, List<NetworkException>? errors});
 ```
 
-`NetworkErrorType` values: `unknown`, `network`, `timeout`, `noInternet`, `clientError`, `serverError`, plus one per status code below (`fromStatusCode(int)`, `statusCode`, `defaultMessage`, `isClientError`, `isServerError`). `BaseHttpException` adds `isRetryable` (5xx, 408, 409, 429), `recommendedRetryDelay` (honours `Retry-After`), `statusCategory`, `toLogString()`, static `extractErrorDetails(response)`. `NetworkClientException` and `NetworkServerException` accept any code in their range. Each class below defaults `statusCode` to its code and `type` to `NetworkErrorType.fromStatusCode(code)`:
+`NetworkErrorType` values: `unknown`, `network`, `timeout`, `noInternet`, `clientError`, `serverError`, plus one per status code below (`fromStatusCode(int)`, `statusCode`, `defaultMessage`, `isClientError`, `isServerError`). `BaseHttpException` adds `isRetryable` (5xx, 408, 409, 429), `recommendedRetryDelay` (honours `Retry-After` as seconds or HTTP-date), `statusCategory`, `toLogString()`, static `extractErrorDetails(response)`. `NetworkClientException` and `NetworkServerException` accept any code in their range. Each class below defaults `statusCode` to its code and `type` to `NetworkErrorType.fromStatusCode(code)`:
 
 | Code          | Class                                                     |
 |---------------|-----------------------------------------------------------|

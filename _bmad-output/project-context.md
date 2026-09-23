@@ -211,9 +211,8 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Missing barrel exports cause errors like "method can't be unconditionally invoked because receiver can be 'null'" — NOT a null safety issue, it's a missing export
 - `NetworkNotImplementException` (501) — typo preserved for backward compatibility, do NOT rename
 - Both `NetworkAuthenticationException` and `UnauthorizedException` exist for 401 — both intentional
-- `RateLimiter` in dart_falconnect `utils/` is a placeholder (all code commented out) — do not use
 - WebSocket var named `_replaySubject` is actually a `PublishSubject` — ignore the name
-- `dart_falconnect` test file is a stub with empty test — no real tests exist
+- `dart_falconnect` has real interceptor tests under `test/engine/https/interceptors/`; `test/unit_test.dart` is an empty stub
 
 #### Barrel File Rules
 - New exception files → add to `networks/exceptions/exceptions.dart`
