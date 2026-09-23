@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
 /// Request information for rate limiting.
@@ -16,7 +17,7 @@ class _RequestInfo {
 class _TokenBucket {
   new({required this.capacity, required this.refillRate})
     : _tokens = capacity,
-      _lastRefill = DateTime.now();
+      _lastRefill = clock.now();
 
   final int capacity;
   final int refillRate; // tokens per second
@@ -42,7 +43,7 @@ class _TokenBucket {
     }
 
     // Calculate time until next token
-    final timeSinceLastRefill = DateTime.now().difference(_lastRefill);
+    final timeSinceLastRefill = clock.now().difference(_lastRefill);
     final tokensToAdd = (timeSinceLastRefill.inMilliseconds / 1000 * refillRate)
         .floor();
 
@@ -56,7 +57,7 @@ class _TokenBucket {
 
   /// Refills tokens based on time elapsed.
   void _refill() {
-    final now = DateTime.now();
+    final now = clock.now();
     final timeSinceLastRefill = now.difference(_lastRefill);
     final secondsElapsed = timeSinceLastRefill.inMilliseconds / 1000;
 
@@ -178,7 +179,7 @@ class RateLimitInterceptor extends Interceptor {
 
   /// Records a request for monitoring.
   void _recordRequest(String host) {
-    final now = DateTime.now();
+    final now = clock.now();
     _requestHistory.add(_RequestInfo(timestamp: now, host: host));
 
     // Clean old entries
@@ -297,7 +298,7 @@ class RateLimitInterceptor extends Interceptor {
   /// per-host request counts within the sliding [windowSize], plus queue
   /// lengths.
   Map<String, dynamic> getStatistics() {
-    final now = DateTime.now();
+    final now = clock.now();
     final cutoff = now.subtract(windowSize);
 
     // Calculate global rate

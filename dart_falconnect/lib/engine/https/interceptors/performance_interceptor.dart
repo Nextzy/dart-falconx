@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
 /// Performance metrics for a single request.
@@ -63,7 +64,7 @@ class RequestMetrics {
   /// Total request duration.
   Duration get totalDuration => endTime != null
       ? endTime!.difference(startTime)
-      : DateTime.now().difference(startTime);
+      : clock.now().difference(startTime);
 
   /// Request body size in bytes.
   int? requestSize;
@@ -274,7 +275,7 @@ class PerformanceInterceptor extends Interceptor {
         RequestMetrics(
             method: options.method,
             url: options.uri.toString(),
-            startTime: DateTime.now(),
+            startTime: clock.now(),
           )
           // Estimate request size
           ..requestSize = _estimateRequestSize(options);
@@ -303,7 +304,7 @@ class PerformanceInterceptor extends Interceptor {
 
     // Update metrics
     metrics
-      ..endTime = DateTime.now()
+      ..endTime = clock.now()
       ..statusCode = response.statusCode
       // Estimate response size
       ..responseSize = _estimateResponseSize(response);
@@ -341,7 +342,7 @@ class PerformanceInterceptor extends Interceptor {
 
     // Update metrics
     metrics
-      ..endTime = DateTime.now()
+      ..endTime = clock.now()
       ..statusCode = err.response?.statusCode
       ..error = err.type.toString();
 

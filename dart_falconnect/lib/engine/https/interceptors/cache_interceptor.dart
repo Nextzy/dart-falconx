@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
 /// Response cache entry.
@@ -20,7 +21,7 @@ class CacheEntry {
 
   /// Returns `true` if the entry has exceeded its [maxAge].
   bool get isExpired {
-    final age = DateTime.now().difference(timestamp);
+    final age = clock.now().difference(timestamp);
     return age > maxAge;
   }
 }
@@ -171,7 +172,7 @@ class CacheInterceptor extends Interceptor {
       try {
         // Parse common HTTP date formats
         final expiresDate = DateTime.parse(expires);
-        final duration = expiresDate.difference(DateTime.now());
+        final duration = expiresDate.difference(clock.now());
         if (duration.isNegative) {
           return Duration.zero;
         }
@@ -205,7 +206,7 @@ class CacheInterceptor extends Interceptor {
     // Add to cache
     _cache[key] = CacheEntry(
       response: response,
-      timestamp: DateTime.now(),
+      timestamp: clock.now(),
       maxAge: maxAge,
     );
     _currentCacheSize += responseSize;
