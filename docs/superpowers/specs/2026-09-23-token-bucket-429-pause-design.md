@@ -146,8 +146,8 @@ sealed class PauseAdmission {}
 **Holding (`wait`)**
 
 - Held requests wait in FIFO order per host.
-- A `Timer` exists only while a host has held requests. It fires at the end time; if the pause was extended meanwhile, it is rescheduled. A pause with nobody held creates no timer, so a 10-minute pause does not keep a CLI alive or fail `testWidgets`.
-- When the timer fires, every held request of the host is released in order. Each released request runs `admit` again, so a new 429 received during the hold is honoured.
+- A `Timer` exists only while a host has held requests. It fires at the end time; if the pause was extended meanwhile, it is rescheduled only while the remaining pause is still at most `maxPauseWait`. A pause with nobody held creates no timer, so a 10-minute pause does not keep a CLI alive or fail `testWidgets`.
+- When the timer fires, every held request of the host is released in order. Each released request runs `admit` again, so a new 429 received during the hold is honoured: an extension that pushes the remaining pause past `maxPauseWait` releases every held waiter, which re-admits, is rejected, and fails with a local 429 carrying `Retry-After`. A held request therefore waits at most about `maxPauseWait` from admission, exactly like a request that arrives after the extension.
 - A `CancelToken` that cancels removes its request from the queue at once and fails the wait.
 - `dispose()` cancels the timers, fails every held request with `StateError('RetryAfterPause disposed')`, and forgets every pause. Afterwards `admit` always passes and `observe` does nothing.
 
@@ -418,7 +418,7 @@ Per the skill maintenance rule, in the same change:
 |---|---|
 | With `applyTo`, `RetryInterceptor` never sees a 429, so a server 429 is not retried. | The pause still works through `onResponse`. The client-config phase owns the `validateStatus` fix; `http.md` states the gap. |
 | Tokens taken by requests that meet a pause after their tokens are wasted. | Accepted. Nothing is forwarded with them, so the ceiling is unaffected. |
-| Error interceptors see the error of every retry attempt, not only the last. | Inherent to re-entering the chain; `dio_smart_retry` behaves the same. Documented; `retryAttempt` lets a logger skip intermediate attempts. |
+| Error interceptors see the error of every retry attempt, not only the last. | Inherent to re-entering the chain; `dio_smart_retry` behaves the same. Documented; place error loggers before `RetryInterceptor`, where `retryAttempt` sees each attempt exactly once. |
 | Retrying a `POST` after 429 assumes the server did not act on it. | `disableRetry` per request. |
 | Full jitter can retry almost at once. | Accepted pattern; a `Retry-After` still wins, and the pause gate still holds the host. |
 | Local 429s now reach crash reporting. | `isLocalRateLimit` lets a reporter filter them. |
