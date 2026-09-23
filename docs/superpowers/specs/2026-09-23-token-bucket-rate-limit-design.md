@@ -20,7 +20,7 @@ The owner chose to rebuild the interceptor on the pub.dev package `resilience` (
 
 **Goals**
 
-- `dart_faltool` owns the `resilience` dependency and re-exports the whole package, so other projects can use every policy it offers.
+- `dart_faltool` owns the `resilience` dependency and re-exports it (except the names that clash with `package:test`, section 3.2), so other projects can use its policies.
 - A `TokenBucketPolicy` states a limit in any time unit, with ceiling semantics: never more than `permits` requests in any window of length `per`.
 - A renamed `TokenBucketRateLimitInterceptor` applies policies globally, per host by default, and per host by override, with any number of tiers per scope.
 - No policy means no limit. Limiting only happens where the consumer sets a policy.
@@ -42,9 +42,11 @@ The owner chose to rebuild the interceptor on the pub.dev package `resilience` (
 
 ### 3.2 `dart_faltool/lib/dart_faltool.dart`
 
-Add `export 'package:resilience/resilience.dart';` between `package:numeral/numeral.dart` and `package:retry/retry.dart` (alphabetical, enforced by `directives_ordering`).
+Add `export 'package:resilience/resilience.dart' hide Retry, RetryEvent, Timeout;` between `package:numeral/numeral.dart` and `package:retry/retry.dart` (alphabetical, enforced by `directives_ordering`).
 
-A scan of the 116 packages in `pubspec.lock` plus the four workspace packages found one clashing name: the dead `RateLimiter` class in `dart_falconnect/lib/utils/rate_limiter.dart`, which this change deletes (section 6).
+`package:test` and `flutter_test` export their own `Retry` and `Timeout`. With a full re-export, a consumer test that imports the umbrella package and writes `timeout: Timeout(...)` or `@Retry(n)` fails with `ambiguous_import` (reproduced with `flutter analyze` on 2026-09-23). Hiding the two names follows the existing precedent (`fpdart hide State, Task`, `data hide Field`, `rrule hide DateTimeRrule`) and also avoids a fourth retry API in scope. `RetryEvent` is hidden with `Retry` because it only serves `Retry`. Consumers who want them import `package:resilience/resilience.dart` with a prefix.
+
+A scan of the 116 packages in `pubspec.lock` plus the four workspace packages found one other clashing name: the dead `RateLimiter` class in `dart_falconnect/lib/utils/rate_limiter.dart`, which this change deletes (section 6).
 
 ## 4. `TokenBucketPolicy` (`dart_faltool`)
 
@@ -68,12 +70,16 @@ class TokenBucketPolicy {
   /// Defaults to 10% of [permits], at least 1.
   int get burst => _burst ?? math.max(1, permits ~/ 10);
 
+  /// Throws an [ArgumentError] when this policy cannot be enforced.
+  void validate();
+
   /// Builds the `resilience` limiter that enforces this policy.
+  /// Calls [validate] first.
   RateLimiter toRateLimiter({int? maxQueueLength});
 }
 ```
 
-**Validation** (`ArgumentError` from `toRateLimiter`, `assert` in the constructor where const allows): `permits > 0`, `per > Duration.zero`, `1 <= burst <= permits`, and `per.inMicroseconds >= permits - burst + 1` (the floor `resilience` needs to schedule a refill).
+**Validation** (`validate()` throws `ArgumentError`; `toRateLimiter` calls it): `permits > 0`, `per > Duration.zero`, `1 <= burst <= permits`, and `per.inMicroseconds >= permits - burst + 1` (the floor `resilience` needs to schedule a refill). The const constructor has no asserts, so an invalid policy reports the same `ArgumentError` in debug and release builds.
 
 **Ceiling mapping.** A token bucket with capacity `C` that adds one token every `Δ` admits at most `C + ceil(T / Δ) - 1` requests in a half-open window of length `T`. `toRateLimiter` sets capacity to `burst` and refills `permits - burst + 1` tokens per `per`:
 
@@ -127,6 +133,8 @@ TokenBucketRateLimitInterceptor({
 | `queueRequests` | `false` sets every tier's `maxQueueLength` to 0: a request with no token is rejected at once. |
 | `maxQueueSize` | `maxQueueLength` of each host tier. |
 | `maxGlobalQueueSize` | `maxQueueLength` of each global tier. |
+
+The constructor fails fast with `ArgumentError` when a `hosts` key is not lowercase (it could never match) or when any `global`, `perHost`, or `hosts` policy is invalid. Host limiters are built lazily, so without this check an invalid host policy would only surface on that host's first request.
 
 ### 5.2 Request flow
 
@@ -236,7 +244,7 @@ Per the repository's skill maintenance rule, in the same change:
 | `skills/dart-falconx-package/SKILL.md` | Interceptor list (line 38); third-party list gains `resilience` (line 53). |
 | `skills/dart-falconx-package/references/http.md` | New interceptor and parameters; the `dispose()` table from 5.4; a dart_frog warning: build the client once, never inside a per-request `provider` (a per-request client gave the partner 151 calls in one second with a 10 req/s limit). |
 | `skills/dart-falconx-package/references/utils.md` | `TokenBucketPolicy`, ceiling semantics, burst trade-off. |
-| `skills/dart-falconx-package/references/third-party.md` | `resilience` row; which retry to use (`retry()`, `retryWithBackoff`, `RetryInterceptor`, `Retry`); pass `now: clock.now` to `CircuitBreaker` in `fakeAsync` tests, because its default `Stopwatch` is not faked. |
+| `skills/dart-falconx-package/references/third-party.md` | `resilience` row with hidden `Retry`, `RetryEvent`, `Timeout` and why; which retry to use (`retry()`, `retryWithBackoff`, `RetryInterceptor`); pass `now: clock.now` to `CircuitBreaker` in `fakeAsync` tests, because its default `Stopwatch` is not faked. |
 | `CLAUDE.md` (root) | Third-party table gains `resilience`. |
 | `dart_falconnect/CLAUDE.md` | Interceptor list; drop the `utils/RateLimiter` gotcha; add the `dispose()` gotcha. |
 
@@ -255,6 +263,7 @@ Per the repository's skill maintenance rule, in the same change:
 | Refill timers outlive the last request. | `dispose()` plus the call-site table; unlimited hosts create no timer. |
 | Consumers build the client per request on a server. | Warning in `http.md` with the measured failure. |
 | The synthetic 429 bypasses `NetworkExceptionHandlerInterceptor`. | Same behaviour as the old class; SP2 revisits error routing. |
+| `resilience`'s `Retry` and `Timeout` clash with `package:test` in consumer tests. | Hidden in the re-export (section 3.2); a policy test uses `Timeout` to pin it. |
 
 ## 11. Success criteria
 
