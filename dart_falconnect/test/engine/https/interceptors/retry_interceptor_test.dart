@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/engine/https/interceptors/retry_interceptor.dart';
+import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dio/dio.dart';
 import 'package:fake_async/fake_async.dart';
@@ -329,6 +330,23 @@ void main() {
       async.elapse(const Duration(seconds: 30));
 
       expect(client.sent, 1);
+    });
+  });
+
+  test('retry waits leave no cancel watch on a long-lived token', () {
+    fakeAsync((async) {
+      final token = CancelToken();
+      final client = _Client([reply(503), reply(503), reply(200)])
+        ..send((d) => d.get('/x', cancelToken: token));
+      async.elapse(const Duration(milliseconds: 1));
+      expect(client.retries, hasLength(1));
+      expect(activeCancelWatches(token), 1);
+
+      async.elapse(const Duration(seconds: 10));
+
+      expect((client.outcome! as Response<dynamic>).statusCode, 200);
+      expect(client.sent, 3);
+      expect(activeCancelWatches(token), 0);
     });
   });
 }

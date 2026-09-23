@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
+import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
 import 'package:dart_falmodel/networks/https/retry_after.dart';
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
@@ -252,16 +253,16 @@ class RetryInterceptor extends Interceptor {
       return Future.value(false);
     }
     final done = Completer<bool>();
+    void Function()? unwatch;
     final timer = Timer(delay, () {
+      unwatch?.call();
       if (!done.isCompleted) done.complete(true);
     });
     if (cancelToken != null) {
-      unawaited(
-        cancelToken.whenCancel.then((_) {
-          timer.cancel();
-          if (!done.isCompleted) done.complete(false);
-        }),
-      );
+      unwatch = watchCancel(cancelToken, (_) {
+        timer.cancel();
+        if (!done.isCompleted) done.complete(false);
+      });
     }
     return done.future;
   }
