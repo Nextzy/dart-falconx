@@ -110,6 +110,22 @@ final rateLimit = TokenBucketRateLimitInterceptor(
 
 `hosts` keys must be lowercase. An empty list (`'api.my-backend.com': []`) opts a host out of `perHost`.
 
+Tokens are never returned. When a later tier's full queue rejects a request, tokens already taken by earlier tiers stay spent. A request cancelled with a `CancelToken` while it waits keeps its queue place and still spends a token when it reaches the front: the caller gets the cancel error at once, the quota is used anyway, and `getStatistics().forwarded` counts it. For screens that cancel queued requests often, keep `maxQueueSize` small or set `queueRequests: false`.
+
+### Migrating from 1.x `RateLimitInterceptor`
+
+Renaming the class is not enough. `RateLimitInterceptor(config: config)` limited every request by default (100 req/s global, 10 req/s per host); `TokenBucketRateLimitInterceptor(config: config)` limits nothing. The closest equivalent of the 1.x defaults:
+
+```dart
+final rateLimit = TokenBucketRateLimitInterceptor(
+  config: config,
+  global: const [TokenBucketPolicy(permits: 100, per: Duration(seconds: 1))],
+  perHost: const [TokenBucketPolicy(permits: 10, per: Duration(seconds: 1))],
+);
+```
+
+1.x let a full bucket release ten seconds of quota at once (1,000 global, 100 per host); 2.0.0 never releases more than `permits` in any window of `per`. `globalRateLimit`, `perHostRateLimit`, and `windowSize` become policy lists; `clearQueues()` has no replacement (`dispose()` cancels waiting requests); `getStatistics()` returns `TokenBucketRateLimitStatistics` instead of a `Map`.
+
 Refill timers outlive the last request, so call `dispose()` where timers must stop:
 
 | Context                                      | Call `dispose()`                                                                                       |
