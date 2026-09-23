@@ -28,13 +28,36 @@ class RetryAfterPauseInterceptor extends Interceptor {
     Duration maxPause = const Duration(minutes: 10),
     Duration? defaultPause = const Duration(seconds: 5),
     int maxQueueSize = 50,
-  }) : _pause = RetryAfterPause(
+  }) : _pause = _buildPause(
          maxPauseWait: maxPauseWait,
          maxPause: maxPause,
          defaultPause: defaultPause,
-         maxHeld: maxQueueSize,
-         holdRequests: true,
+         maxQueueSize: maxQueueSize,
        );
+
+  /// Builds the pause core, reporting a negative queue size under its
+  /// public name before the core's own check can.
+  static RetryAfterPause _buildPause({
+    required Duration maxPauseWait,
+    required Duration maxPause,
+    required Duration? defaultPause,
+    required int maxQueueSize,
+  }) {
+    if (maxQueueSize < 0) {
+      throw ArgumentError.value(
+        maxQueueSize,
+        'maxQueueSize',
+        'must not be negative',
+      );
+    }
+    return RetryAfterPause(
+      maxPauseWait: maxPauseWait,
+      maxPause: maxPause,
+      defaultPause: defaultPause,
+      maxHeld: maxQueueSize,
+      holdRequests: true,
+    );
+  }
 
   /// Configuration; `enableLogging` gates diagnostic prints.
   final HttpClientConfig config;

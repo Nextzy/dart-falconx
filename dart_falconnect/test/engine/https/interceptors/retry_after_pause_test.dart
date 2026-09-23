@@ -166,6 +166,25 @@ void main() {
     });
   });
 
+  test('releases held requests when an extension exceeds maxPauseWait', () {
+    fakeAsync((async) {
+      final pause = _pause()..observe(_response(429, retryAfter: '3'));
+      var released = false;
+      unawaited(pause.wait('a.test', null).then((_) => released = true));
+
+      async.elapse(const Duration(seconds: 2));
+      pause.observe(_response(429, retryAfter: '60'));
+      async.elapse(const Duration(seconds: 1));
+      expect(released, isTrue, reason: 'released at the old end time');
+      expect(
+        _remaining(pause.admit('a.test')),
+        const Duration(seconds: 59),
+        reason: 'the extension stands for new requests',
+      );
+      expect(async.pendingTimers, isEmpty);
+    });
+  });
+
   test('rejects once the hold queue is full', () {
     fakeAsync((async) {
       final pause = _pause(maxHeld: 2)

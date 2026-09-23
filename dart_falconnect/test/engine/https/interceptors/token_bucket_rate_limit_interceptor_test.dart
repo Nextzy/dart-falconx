@@ -466,6 +466,33 @@ void main() {
       });
     });
 
+    test('a held request is released with a local 429 when an extension '
+        'exceeds maxPauseWait', () {
+      fakeAsync((async) {
+        final interceptor = TokenBucketRateLimitInterceptor(config: _config);
+        final log = _Log();
+        _respond(interceptor, _serverResponse(429, retryAfter: '3'));
+
+        _send(interceptor, log);
+        async.flushMicrotasks();
+        expect(log.rejected, isEmpty);
+
+        async.elapse(const Duration(seconds: 2));
+        _respond(interceptor, _serverResponse(429, retryAfter: '60'));
+        expect(interceptor.getStatistics().heldByHost, {'a.test': 1});
+        async
+          ..elapse(const Duration(seconds: 1))
+          ..flushMicrotasks();
+        expect(log.forwarded, isEmpty);
+        final error = log.rejected.single;
+        expect(error.type, DioExceptionType.badResponse);
+        expect(error.response?.isLocalRateLimit, isTrue);
+        expect(error.response?.headers.value('retry-after'), '59');
+        expect(interceptor.getStatistics().rejected, 1);
+        interceptor.dispose();
+      });
+    });
+
     test('queueRequests false rejects instead of holding', () {
       fakeAsync((async) {
         final interceptor = TokenBucketRateLimitInterceptor(
@@ -596,6 +623,13 @@ void main() {
         ),
         throwsArgumentError,
       );
+      expect(
+        () =>
+            TokenBucketRateLimitInterceptor(config: _config, maxQueueSize: -1),
+        throwsA(
+          isA<ArgumentError>().having((e) => e.name, 'name', 'maxQueueSize'),
+        ),
+      );
     });
   });
 
@@ -655,6 +689,40 @@ void main() {
           () => interceptor.getStatistics().waitingByHost['x'] = 1,
           throwsUnsupportedError,
         );
+      });
+    });
+
+    test('later changes to a caller policy list do not reach the '
+        'interceptor', () {
+      fakeAsync((async) {
+        final perHost = <TokenBucketPolicy>[
+          const TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
+        ];
+        final hostPolicies = <String, List<TokenBucketPolicy>>{
+          'b.test': [
+            const TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
+          ],
+        };
+        final interceptor = TokenBucketRateLimitInterceptor(
+          config: _config,
+          perHost: perHost,
+          hosts: hostPolicies,
+        );
+        perHost.clear();
+        hostPolicies['b.test']!.clear();
+        final log = _Log();
+
+        _send(interceptor, log, times: 3);
+        _send(interceptor, log, url: 'https://b.test/items', times: 3);
+        async.flushMicrotasks();
+
+        // Each cleared policy still limits its host to its one burst token.
+        expect(log.forwarded, hasLength(2));
+        expect(log.forwarded.map((o) => o.uri.host).toSet(), {
+          'a.test',
+          'b.test',
+        });
+        interceptor.dispose();
       });
     });
   });

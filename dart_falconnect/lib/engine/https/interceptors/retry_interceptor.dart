@@ -89,8 +89,12 @@ int? _checkAttempts(int? value) {
 /// zero and `min(maxRetryDelay, retryDelay * 2^(attempt - 1))`. No retry is
 /// sent when its delay would end past `maxRetryDuration`.
 ///
-/// Error interceptors after this one see the error of every attempt; read
-/// `requestOptions.retryAttempt` to tell them apart.
+/// Error interceptors see the error of every attempt. Placed before this
+/// interceptor, one sees each attempt exactly once, with a distinct
+/// `requestOptions.retryAttempt`. Placed after it, one sees attempts
+/// 1..n from inside the retries plus the final error again, so it reports
+/// the last failure twice; place error loggers and crash reporters before
+/// this interceptor.
 class RetryInterceptor extends Interceptor {
   /// Creates a retry interceptor.
   ///
@@ -226,9 +230,16 @@ class RetryInterceptor extends Interceptor {
   }
 
   Duration _backoff(int attempt) {
-    final exponential = config.retryDelay.inMilliseconds * pow(2, attempt - 1);
-    final cap = min(config.maxRetryDelay.inMilliseconds, exponential).toInt();
-    return Duration(milliseconds: _random.nextInt(cap + 1));
+    // A shift cap keeps the exponent from overflowing int at attempt ~55;
+    // 2^30 ms of delay already exceeds any sane maxRetryDelay.
+    final exponential =
+        config.retryDelay.inMilliseconds << min(attempt - 1, 30);
+    // Random.nextInt rejects anything above 2^32 - 1.
+    const nextIntMax = (1 << 32) - 1;
+    final cap = min(config.maxRetryDelay.inMilliseconds, exponential);
+    return Duration(
+      milliseconds: _random.nextInt(cap < nextIntMax ? cap + 1 : nextIntMax),
+    );
   }
 
   /// Waits [delay]; returns false at once when [cancelToken] cancels.

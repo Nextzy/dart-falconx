@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/engine/https/interceptors/retry_after_pause_interceptor.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dio/dio.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:test/test.dart';
@@ -107,6 +108,24 @@ void main() {
     });
   });
 
+  test('a local 429 fed back through onError starts no pause', () {
+    fakeAsync((async) {
+      final interceptor = RetryAfterPauseInterceptor(config: config);
+      final local = localRateLimitRejection(
+        RequestOptions(path: 'https://a.test/items'),
+        retryAfter: const Duration(seconds: 30),
+      );
+
+      interceptor.onError(local, _SilentErrorHandler());
+      async.flushMicrotasks();
+      send(interceptor);
+
+      expect(forwarded, hasLength(1));
+      expect(rejected, isEmpty);
+      expect(async.pendingTimers, isEmpty);
+    });
+  });
+
   test('dispose cancels held requests and lifts every pause', () {
     fakeAsync((async) {
       final interceptor = RetryAfterPauseInterceptor(config: config)
@@ -127,7 +146,9 @@ void main() {
   test('rejects invalid settings', () {
     expect(
       () => RetryAfterPauseInterceptor(config: config, maxQueueSize: -1),
-      throwsArgumentError,
+      throwsA(
+        isA<ArgumentError>().having((e) => e.name, 'name', 'maxQueueSize'),
+      ),
     );
   });
 }
