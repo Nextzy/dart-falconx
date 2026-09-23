@@ -142,7 +142,7 @@ An abandoned permit that later receives its slot releases it at once, so the nex
 3. When this interceptor's key in `extra` holds a permit in state `held`, reuse it: count the request in `forwarded` and call `handler.next(options)` without taking a slot. This is how a retry attempt or a re-send avoids waiting for the slot its own earlier attempt still holds (section 1, item 4).
 4. When `options.cancelToken` is already cancelled, reject with `DioExceptionType.cancel` and the token's cancel error.
 5. Create a permit in state `waiting`, store it in `extra`, and register it with `watchCancel` (section 10) when the request has a `CancelToken`.
-6. Take the host slot, then the global slot, host first as in SP1: the host `Bulkhead` runs an action that, while the permit is still waiting, calls the global `Bulkhead`. A permit abandoned while it waited for the host slot gives that slot back before it would join the global queue (found in task review). Hosts without a host limit call the global `Bulkhead` directly and store nothing per host. The innermost action tells the permit it holds the slot and returns a future that completes when the permit is released.
+6. Take the host slot, then the global slot, host first as in SP1: the host `Bulkhead` runs an action that, while the permit is still waiting, calls the global `Bulkhead`. A permit abandoned while it waited for the host slot gives that slot back before it would join the global queue (found in task review). Hosts without a host limit call the global `Bulkhead` directly and store nothing per host. The innermost action tells the permit it holds the slot and returns a future that completes when the permit is released. When the permit is still `waiting` (a second fetch of options whose first fetch is queued), wait for its grant and forward the same way; if the grant fails, fail as the first fetch does: a local 429 for a full queue, a cancel otherwise (found in the final review).
 7. Slot granted: the permit becomes `held`; count the request in `forwarded`; call `handler.next(options)`.
 8. A `Bulkhead` queue is full (`BulkheadRejectedException`): remove the cancel watch, count the request in `rejected`, and call `handler.reject(localRateLimitRejection(options, error: e), true)`. No `Retry-After` is set; the wait is unknown. When the global `Bulkhead` rejects after the host slot was taken, the host `Bulkhead`'s `finally` returns the host slot. Unlike SP1's tokens, no slot stays spent.
 
@@ -165,10 +165,11 @@ A cancel error whose `err.requestOptions` names another request on the same toke
 
 **Stream responses.** For `ResponseType.stream`, dio calls `onResponse` when the headers arrive, while the body is still streaming. The slot is released then. For other response types, dio reads the whole body before `onResponse`.
 
-**Paths that still lose a slot.** Both are placement errors; section 12 forbids them.
+**Paths that still lose a slot.** All three are placement errors; section 12 forbids them.
 
-1. An interceptor after this one answers in `onRequest` with `resolve`, or with a `reject` whose type is not `cancel`, without the call-following flag. Every `onResponse` or `onError` is skipped. Place caches and mocks before this interceptor.
+1. An interceptor after this one answers in `onRequest` with `resolve`, or with a `reject` whose type is not `cancel`, without the call-following flag. Every `onResponse` or `onError` is skipped. Place caches and mocks before this interceptor. An auth interceptor that rejects when it has no token is the common case; it must pass the flag.
 2. An error interceptor before this one ends the error phase with `resolve`, or with `reject` without the call-following flag. Place exception handlers after this interceptor.
+3. A response interceptor before this one ends the response phase with `resolve`, or with `reject` without the call-following flag, for example a business-error interceptor that turns a 200 into a `DioException`. Place it after this interceptor, or have it pass the flag (found in the final review).
 
 **Requests that never end.** A request that stalls holds its slot until a dio timeout fires. With `connectTimeout` or `receiveTimeout` set to null, a stalled request holds its slot forever. The doc comment requires timeouts.
 
@@ -374,7 +375,7 @@ Per the skill maintenance rule, in the same change:
 | A misplaced interceptor loses slots (section 7). | Section 12 order in the docs; chain tests in that order. Placement cannot be checked at run time. |
 | Cancelled waiters keep their queue places. | Documented, as SP1 does for tokens. |
 | Head-of-line blocking across hosts with a `global` limit. | Documented advice: `perHost` below `global`. |
-| Two concurrent fetches of one `RequestOptions` object share a permit and exceed the limit. | Rare (for example, hedging); documented. |
+| Two concurrent fetches of one `RequestOptions` object share one slot; the second may run on after the first gives it back. | Rare (for example, hedging); documented. |
 | Stream responses release the slot before the body ends. | Documented. |
 | `Retry-After` and `Date` are hidden on the web. | Section 14; a server checklist item. |
 | Limits are per process. | Section 14. |
