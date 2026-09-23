@@ -1,6 +1,6 @@
 import 'package:dart_faltool/lib.dart';
 
-DateTime get nowUtc => DateTime.now().toUtc();
+DateTime get nowUtc => clock.now().toUtc();
 
 /// Cryptographically secure random number generator shared across utilities.
 final Random _secureRandom = Random.secure();

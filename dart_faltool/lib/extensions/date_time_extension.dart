@@ -63,10 +63,10 @@ extension FalconToolDateTimeExtensions on DateTime {
   }
 
   /// Checks if this date is in the past.
-  bool get isPast => isBefore(DateTime.now());
+  bool get isPast => isBefore(clock.now());
 
   /// Checks if this date is in the future.
-  bool get isFuture => isAfter(DateTime.now());
+  bool get isFuture => isAfter(clock.now());
 
   /// Checks if this date is in the same day as another date.
   bool isSameDay(DateTime other) =>
@@ -198,7 +198,12 @@ extension FalconToolDateTimeExtensions on DateTime {
   /// DateTime.now().add(Duration(hours: 2)).toRelative(allowFromNow: true); // '2 hours from now'
   /// ```
   String toRelative({String? locale, bool allowFromNow = false}) {
-    return timeago.format(this, locale: locale, allowFromNow: allowFromNow);
+    return timeago.format(
+      this,
+      locale: locale,
+      clock: clock.now(),
+      allowFromNow: allowFromNow,
+    );
   }
 
   /// Gets a human-readable string for the day with localization support.
@@ -229,7 +234,7 @@ extension FalconToolDateTimeExtensions on DateTime {
   ///
   /// Useful for calculating someone's age from their birthdate.
   int get age {
-    final now = DateTime.now();
+    final now = clock.now();
     var age = now.year - year;
     if (now.month < month || (now.month == month && now.day < day)) {
       age--;
@@ -240,10 +245,10 @@ extension FalconToolDateTimeExtensions on DateTime {
   /// Gets the number of days until this date.
   ///
   /// Returns negative values for dates in the future.
-  int get daysUntil => DateTime.now().difference(this).inDays;
+  int get daysUntil => clock.now().difference(this).inDays;
 
   /// Gets the number of hours until this date.
-  int get hoursUntil => DateTime.now().difference(this).inHours;
+  int get hoursUntil => clock.now().difference(this).inHours;
 }
 
 /// Extension methods for int to DateTime conversions.
@@ -292,7 +297,7 @@ extension FalconToolDateTimeNullExtensions on DateTime? {
       this?.toRelative(locale: locale, allowFromNow: allowFromNow);
 
   /// Returns the DateTime or the current time if null.
-  DateTime get orNow => this ?? DateTime.now();
+  DateTime get orNow => this ?? clock.now();
 
   /// Returns the DateTime or the provided default if null.
   DateTime orDefault(DateTime defaultValue) => this ?? defaultValue;

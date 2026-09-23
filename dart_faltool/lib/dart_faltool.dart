@@ -4,6 +4,7 @@ export 'dart:math';
 export 'dart:typed_data';
 
 export 'package:big_decimal/big_decimal.dart';
+export 'package:clock/clock.dart' show Clock, clock, withClock;
 export 'package:dartx/dartx.dart'
     hide
         IterableAll,

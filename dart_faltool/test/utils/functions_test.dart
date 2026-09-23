@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:dart_faltool/lib.dart';
 import 'package:test/test.dart';
 
@@ -10,6 +11,20 @@ void main() {
     test('is close to DateTime.now()', () {
       final diff = nowUtc.difference(DateTime.now().toUtc()).abs();
       expect(diff.inSeconds, lessThan(2));
+    });
+
+    test('reads the current time through the zone clock', () {
+      final fixed = DateTime.utc(2024, 6, 15, 12, 0, 0);
+      withClock(Clock.fixed(fixed), () {
+        expect(nowUtc, fixed);
+      });
+    });
+
+    test('normalizes a non-UTC clock value to UTC', () {
+      final fixedLocal = DateTime(2024, 6, 15, 12, 0, 0);
+      withClock(Clock.fixed(fixedLocal), () {
+        expect(nowUtc, fixedLocal.toUtc());
+      });
     });
   });
 
