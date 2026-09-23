@@ -92,6 +92,7 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 - `NetworkExceptionHandlerInterceptor` uses `err.toException()` extension method (from dart_falmodel) to convert `DioException` to `NetworkException`
 - WebSocket uses RxDart's `PublishSubject` (not `ReplaySubject` despite the variable name `_replaySubject`)
 - Generated files go to `lib/{{path}}/generated/` subdirectories per `build.yaml` configuration
+- `dart_falconnect` compiles to the web, where `int` bitwise and shift operators (`<<`, `>>`, `>>>`, `&`, `|`, `^`, `~`) truncate operands to 32-bit unsigned values: never shift or mask a value that may exceed 32 bits; use `*`, `pow`, or a literal, and cover the path with a `dart test -p chrome` test (see `RetryInterceptor._backoff`)
 
 ## Web Support
 
