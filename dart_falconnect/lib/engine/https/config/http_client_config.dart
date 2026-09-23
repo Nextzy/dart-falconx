@@ -13,6 +13,7 @@ class HttpClientConfig {
     this.maxRetryAttempts = 3,
     this.retryDelay = const Duration(seconds: 1),
     this.maxRetryDelay = const Duration(seconds: 30),
+    this.maxRetryDuration = const Duration(seconds: 60),
     this.enableCache = true,
     this.maxCacheSize = 50 * 1024 * 1024, // 50 MB
     this.cacheDuration = const Duration(minutes: 15),
@@ -37,6 +38,7 @@ class HttpClientConfig {
       maxRetryAttempts: 3,
       retryDelay: Duration(seconds: 2),
       maxRetryDelay: Duration(minutes: 1),
+      maxRetryDuration: Duration(minutes: 2),
       enableCache: true,
       // 100 MB
       maxCacheSize: 100 * 1024 * 1024,
@@ -61,6 +63,7 @@ class HttpClientConfig {
       maxRetryAttempts: 1,
       retryDelay: Duration(seconds: 1),
       maxRetryDelay: Duration(seconds: 5),
+      maxRetryDuration: Duration(seconds: 10),
       enableCache: false,
       maxCacheSize: 10 * 1024 * 1024,
       // 10 MB
@@ -85,6 +88,7 @@ class HttpClientConfig {
       maxRetryAttempts: 0,
       retryDelay: Duration(milliseconds: 100),
       maxRetryDelay: Duration(seconds: 1),
+      maxRetryDuration: Duration(seconds: 5),
       enableCache: false,
       maxCacheSize: 1 * 1024 * 1024,
       // 1 MB
@@ -117,6 +121,10 @@ class HttpClientConfig {
 
   /// Maximum delay between retry attempts.
   final Duration maxRetryDelay;
+
+  /// Most time spent retrying one request, measured from its first
+  /// failure. A retry whose delay would end past it is not sent.
+  final Duration maxRetryDuration;
 
   /// Whether to enable response caching.
   final bool enableCache;
@@ -184,6 +192,7 @@ class HttpClientConfig {
     int? maxRetryAttempts,
     Duration? retryDelay,
     Duration? maxRetryDelay,
+    Duration? maxRetryDuration,
     bool? enableCache,
     int? maxCacheSize,
     Duration? cacheDuration,
@@ -205,6 +214,7 @@ class HttpClientConfig {
       maxRetryAttempts: maxRetryAttempts ?? this.maxRetryAttempts,
       retryDelay: retryDelay ?? this.retryDelay,
       maxRetryDelay: maxRetryDelay ?? this.maxRetryDelay,
+      maxRetryDuration: maxRetryDuration ?? this.maxRetryDuration,
       enableCache: enableCache ?? this.enableCache,
       maxCacheSize: maxCacheSize ?? this.maxCacheSize,
       cacheDuration: cacheDuration ?? this.cacheDuration,
