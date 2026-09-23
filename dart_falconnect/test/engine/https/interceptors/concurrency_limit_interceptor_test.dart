@@ -680,4 +680,39 @@ void main() {
       expect(limiter.getStatistics().activeByHost, isEmpty);
     });
   });
+
+  test('a waiter cancelled in the host queue never joins the global queue', () {
+    fakeAsync((async) {
+      final adapter = GatedAdapter();
+      final limiter = ConcurrencyLimitInterceptor(
+        config: _config,
+        global: 1,
+        perHost: 1,
+      );
+      final dio = _dio(adapter, (_) => [limiter]);
+      final outcomes = <Object>[];
+      final token = CancelToken();
+
+      _get(dio, 'https://a.test/1', outcomes);
+      _get(dio, 'https://a.test/2', outcomes, cancelToken: token);
+      _get(dio, 'https://a.test/3', outcomes);
+      _get(dio, 'https://b.test/1', outcomes);
+      _settle(async);
+      token.cancel();
+      _settle(async);
+
+      adapter.requests.single.respond(200);
+      _settle(async);
+      // a/2 gave its host slot back at once, so a/3 now waits for the
+      // global slot that b/1 holds.
+      expect(limiter.getStatistics().waitingByHost['a.test'], 0);
+      expect(limiter.getStatistics().globalWaiting, 1);
+
+      _get(dio, 'https://c.test/1', outcomes);
+      _settle(async);
+      adapter.inFlight.single.respond(200);
+      _settle(async);
+      expect(_urls(adapter.inFlight), ['https://a.test/3']);
+    });
+  });
 }

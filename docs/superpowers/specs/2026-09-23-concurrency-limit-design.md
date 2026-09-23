@@ -45,7 +45,7 @@ dio has no hook that fires when a request ends. The interceptor takes a slot in 
 
 ## 3. Dependency changes
 
-None. `Bulkhead`, `BulkheadRejectedException`, and `ResiliencePipeline` come from `resilience`, re-exported by `dart_faltool`.
+None. `Bulkhead` and `BulkheadRejectedException` come from `resilience`, re-exported by `dart_faltool`.
 
 ## 4. `ConcurrencyLimitInterceptor`
 
@@ -142,7 +142,7 @@ An abandoned permit that later receives its slot releases it at once, so the nex
 3. When this interceptor's key in `extra` holds a permit in state `held`, reuse it: count the request in `forwarded` and call `handler.next(options)` without taking a slot. This is how a retry attempt or a re-send avoids waiting for the slot its own earlier attempt still holds (section 1, item 4).
 4. When `options.cancelToken` is already cancelled, reject with `DioExceptionType.cancel` and the token's cancel error.
 5. Create a permit in state `waiting`, store it in `extra`, and register it with `watchCancel` (section 10) when the request has a `CancelToken`.
-6. Take a slot through the host's pipeline: a `ResiliencePipeline` of the host `Bulkhead` followed by the global `Bulkhead`, host first as in SP1. A pipeline leaves out a `Bulkhead` whose limit is null. Hosts without a host limit share one pipeline that holds only the global `Bulkhead`, so they store nothing per host. The action tells the permit it holds the slot and returns a future that completes when the permit is released.
+6. Take the host slot, then the global slot, host first as in SP1: the host `Bulkhead` runs an action that, while the permit is still waiting, calls the global `Bulkhead`. A permit abandoned while it waited for the host slot gives that slot back before it would join the global queue (found in task review). Hosts without a host limit call the global `Bulkhead` directly and store nothing per host. The innermost action tells the permit it holds the slot and returns a future that completes when the permit is released.
 7. Slot granted: the permit becomes `held`; count the request in `forwarded`; call `handler.next(options)`.
 8. A `Bulkhead` queue is full (`BulkheadRejectedException`): remove the cancel watch, count the request in `rejected`, and call `handler.reject(localRateLimitRejection(options, error: e), true)`. No `Retry-After` is set; the wait is unknown. When the global `Bulkhead` rejects after the host slot was taken, the host `Bulkhead`'s `finally` returns the host slot. Unlike SP1's tokens, no slot stays spent.
 
@@ -174,7 +174,7 @@ A cancel error whose `err.requestOptions` names another request on the same toke
 
 ## 8. Pruning idle state
 
-**Host `Bulkhead`s.** When a pipeline execution completes, and the host `Bulkhead` then has `activeCount == 0` and `queueLength == 0`, the interceptor removes that host's `Bulkhead` and pipeline, provided the map still holds that same pipeline. The next request to the host builds new ones. An empty `Bulkhead` has no timer and no memory of past calls, so a new one behaves the same. The check is race-free: `ResiliencePipeline.execute` calls the first policy synchronously (`pipeline.dart:35-41`), and `Bulkhead.execute` takes a free slot before its first `await` (`bulkhead.dart:79-80`), so no request can hold a reference to a pipeline that is about to be removed without already counting as active. The global `Bulkhead` is never removed.
+**Host `Bulkhead`s.** When a slot request completes, and the host `Bulkhead` then has `activeCount == 0` and `queueLength == 0`, the interceptor removes that host's `Bulkhead`, provided the map still holds that same entry. The next request to the host builds a new one. An empty `Bulkhead` has no timer and no memory of past calls, so a new one behaves the same. The check is race-free: `onRequest` calls the host `Bulkhead` synchronously, and `Bulkhead.execute` takes a free slot before its first `await` (`bulkhead.dart:79-80`), so no request can hold a reference to a `Bulkhead` that is about to be removed without already counting as active. The global `Bulkhead` is never removed.
 
 Without pruning, every distinct host would keep a `Bulkhead` forever: tenant subdomains, content hosts, or a server that forwards to many hosts would grow memory without bound.
 
