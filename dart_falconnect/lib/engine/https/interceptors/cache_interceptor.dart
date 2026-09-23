@@ -5,6 +5,10 @@ import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
 /// Response cache entry.
+///
+/// Store and read the [timestamp] in the same clock zone: the age is
+/// computed from `clock.now()` at read time, so mixing zones yields a
+/// negative age (the entry never expires) or an inflated one.
 class CacheEntry {
   /// Creates a cache entry with the given [response], creation [timestamp],
   /// and cache [maxAge].
@@ -30,6 +34,10 @@ class CacheEntry {
 ///
 /// This interceptor implements a simple in-memory cache for GET
 /// requests with configurable cache duration and size limits.
+///
+/// Time is read through `clock.now()`: store and read cache entries in
+/// the same clock zone, including eviction ordering, which sorts
+/// timestamps stamped by that zone.
 class CacheInterceptor extends Interceptor {
   /// Creates a new cache interceptor.
   new({required this.config});

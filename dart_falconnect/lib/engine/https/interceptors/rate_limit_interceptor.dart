@@ -74,6 +74,13 @@ class _TokenBucket {
 ///
 /// This interceptor uses a token bucket algorithm to limit
 /// the rate of requests per host and globally.
+///
+/// Time is read through `clock.now()`, so build the interceptor and send
+/// its requests in one clock zone. In tests, exercise the queue under
+/// `fakeAsync` (its `elapse` advances timers and the clock together);
+/// never a bare `withClock(Clock.fixed(...))`, because a fixed clock
+/// never refills the bucket while real `Future.delayed` timers keep
+/// firing, so the queue never drains.
 class RateLimitInterceptor extends Interceptor {
   /// Creates a new rate limit interceptor.
   new({
