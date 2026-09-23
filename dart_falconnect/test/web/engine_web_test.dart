@@ -78,16 +78,16 @@ void main() {
     });
 
     test(
-      'ConcurrencyLimitInterceptor runs requests one at a time on web',
+      'ConcurrencyLimitInterceptor passes requests through a limit of 1 on web',
       () async {
         final adapter = ScriptedAdapter([reply(200)]);
-        final limiter = ConcurrencyLimitInterceptor(
+        final concurrency = ConcurrencyLimitInterceptor(
           config: HttpClientConfig.development(),
           perHost: 1,
         );
         final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
           ..httpClientAdapter = adapter;
-        dio.interceptors.add(limiter);
+        dio.interceptors.add(concurrency);
 
         final responses = await Future.wait([
           dio.get<dynamic>('/1'),
@@ -95,8 +95,8 @@ void main() {
         ]);
 
         expect(responses.map((r) => r.statusCode), [200, 200]);
-        expect(limiter.getStatistics().forwarded, 2);
-        expect(limiter.getStatistics().activeByHost, isEmpty);
+        expect(concurrency.getStatistics().forwarded, 2);
+        expect(concurrency.getStatistics().activeByHost, isEmpty);
       },
     );
   });

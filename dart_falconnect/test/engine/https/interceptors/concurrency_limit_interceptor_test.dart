@@ -466,6 +466,7 @@ void main() {
 
       expect((outcomes.single as DioException).type, DioExceptionType.cancel);
       expect(adapter.requests, hasLength(1));
+      expect(limiter.getStatistics().activeByHost, isEmpty);
     });
   });
 
@@ -713,6 +714,43 @@ void main() {
       adapter.inFlight.single.respond(200);
       _settle(async);
       expect(_urls(adapter.inFlight), ['https://a.test/3']);
+    });
+  });
+
+  test('two fetches of one queued RequestOptions share its slot', () {
+    fakeAsync((async) {
+      final adapter = GatedAdapter();
+      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final dio = _dio(adapter, (_) => [limiter]);
+      final outcomes = <Object>[];
+      final shared = RequestOptions(path: '/shared', baseUrl: 'https://a.test');
+
+      _get(dio, '/x', outcomes);
+      _settle(async);
+      for (var i = 0; i < 2; i++) {
+        unawaited(
+          dio.fetch<dynamic>(shared).then(outcomes.add, onError: outcomes.add),
+        );
+      }
+      _settle(async);
+      expect(_urls(adapter.inFlight), ['https://a.test/x']);
+
+      adapter.requests.single.respond(200);
+      _settle(async);
+      expect(_urls(adapter.inFlight), [
+        'https://a.test/shared',
+        'https://a.test/shared',
+      ]);
+      for (final request in adapter.inFlight) {
+        request.respond(200);
+      }
+      _settle(async);
+
+      expect(outcomes.whereType<Response<dynamic>>(), hasLength(3));
+      expect(limiter.getStatistics().activeByHost, isEmpty);
+      _get(dio, '/after', outcomes);
+      _settle(async);
+      expect(_urls(adapter.inFlight), ['https://a.test/after']);
     });
   });
 }
