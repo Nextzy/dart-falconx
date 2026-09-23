@@ -3,18 +3,21 @@ import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
+import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
 import 'package:dart_falmodel/networks/https/retry_after.dart';
-import 'package:dart_faltool/dart_faltool.dart' show clock;
+import 'package:dart_faltool/dart_faltool.dart' show clock, visibleForTesting;
 import 'package:dio/dio.dart';
 
 /// Key in `Response.extra` that marks a 429 built on the client.
 const String localRateLimitKey = 'dart_falconnect.localRateLimit';
 
-/// Builds the 429 that `TokenBucketRateLimitInterceptor` and
-/// `RetryAfterPauseInterceptor` reject with.
+/// Builds the 429 that `TokenBucketRateLimitInterceptor`,
+/// `RetryAfterPauseInterceptor`, and `ConcurrencyLimitInterceptor` reject
+/// with.
 ///
-/// [error] is the cause (a `RateLimitExceededException` when a queue is
-/// full). [retryAfter] is the remaining pause; when given, it becomes a
+/// [error] is the cause: a `RateLimitExceededException` when a token queue
+/// is full, a `BulkheadRejectedException` when a concurrency queue is
+/// full. [retryAfter] is the remaining pause; when given, it becomes a
 /// `Retry-After` header in whole seconds, rounded up, at least 1.
 DioException localRateLimitRejection(
   RequestOptions options, {
@@ -148,23 +151,21 @@ class RetryAfterPause {
       return Future.error(StateError('RetryAfterPause disposed'));
     }
     final held = _held.putIfAbsent(host, _Held.new);
-    final waiter = Completer<void>();
+    final waiter = _Waiter();
     held.waiters.add(waiter);
     _schedule(host, held);
     if (cancelToken != null) {
-      unawaited(
-        cancelToken.whenCancel.then((error) {
-          if (held.waiters.remove(waiter)) {
-            waiter.completeError(error);
-            if (held.waiters.isEmpty) {
-              held.timer?.cancel();
-              _held.remove(host);
-            }
+      waiter.unwatch = watchCancel(cancelToken, (error) {
+        if (held.waiters.remove(waiter)) {
+          waiter.completer.completeError(error);
+          if (held.waiters.isEmpty) {
+            held.timer?.cancel();
+            _held.remove(host);
           }
-        }),
-      );
+        }
+      });
     }
-    return waiter.future;
+    return waiter.completer.future;
   }
 
   /// Starts or extends a pause from a server response.
@@ -184,13 +185,21 @@ class RetryAfterPause {
     if (length == null || length <= Duration.zero) {
       return;
     }
+    final now = clock.now();
+    // Forget ended pauses, so hosts that are never requested again do not
+    // stay in the map.
+    _until.removeWhere((_, end) => !end.isAfter(now));
     final host = response.requestOptions.uri.host;
-    final until = clock.now().add(length > maxPause ? maxPause : length);
+    final until = now.add(length > maxPause ? maxPause : length);
     final current = _until[host];
     if (current == null || until.isAfter(current)) {
       _until[host] = until;
     }
   }
+
+  /// Pause end times kept, ended ones included until the next [observe].
+  @visibleForTesting
+  int get trackedPauses => _until.length;
 
   /// Requests held per host.
   Map<String, int> get heldByHost => Map.unmodifiable({
@@ -217,9 +226,7 @@ class RetryAfterPause {
     for (final held in _held.values) {
       held.timer?.cancel();
       while (held.waiters.isNotEmpty) {
-        held.waiters.removeFirst().completeError(
-          StateError('RetryAfterPause disposed'),
-        );
+        held.waiters.removeFirst().fail(StateError('RetryAfterPause disposed'));
       }
     }
     _held.clear();
@@ -265,6 +272,24 @@ class RetryAfterPause {
 }
 
 class _Held {
-  final Queue<Completer<void>> waiters = Queue<Completer<void>>();
+  final Queue<_Waiter> waiters = Queue<_Waiter>();
   Timer? timer;
+}
+
+/// A held request and the watch on its `CancelToken`.
+class _Waiter {
+  final Completer<void> completer = Completer<void>();
+
+  /// Removes the `CancelToken` watch; set when the request has a token.
+  void Function()? unwatch;
+
+  void complete() {
+    unwatch?.call();
+    completer.complete();
+  }
+
+  void fail(Object error) {
+    unwatch?.call();
+    completer.completeError(error);
+  }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
+import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dio/dio.dart';
 import 'package:fake_async/fake_async.dart';
@@ -280,5 +281,45 @@ void main() {
     expect(paused.response?.headers.value('retry-after'), '3');
     expect(brief.response?.headers.value('retry-after'), '1');
     expect(full.response?.headers.value('retry-after'), isNull);
+  });
+
+  test('finished holds leave no cancel watch on a long-lived token', () {
+    fakeAsync((async) {
+      final pause = _pause()..observe(_response(429, retryAfter: '3'));
+      final token = CancelToken();
+      for (var i = 0; i < 3; i++) {
+        unawaited(pause.wait('a.test', token));
+      }
+      expect(activeCancelWatches(token), 3);
+
+      async.elapse(const Duration(seconds: 3));
+      expect(activeCancelWatches(token), 0);
+
+      pause.observe(_response(429, retryAfter: '3'));
+      final failures = <Object>[];
+      unawaited(pause.wait('a.test', token).catchError(failures.add));
+      pause.dispose();
+      async.flushMicrotasks();
+      expect(failures.single, isA<StateError>());
+      expect(activeCancelWatches(token), 0);
+    });
+  });
+
+  test('observe forgets pauses that have ended', () {
+    fakeAsync((async) {
+      final pause = _pause()
+        ..observe(_response(429, retryAfter: '3'))
+        ..observe(_response(429, host: 'b.test', retryAfter: '60'));
+      expect(pause.trackedPauses, 2);
+
+      async.elapse(const Duration(seconds: 4));
+      pause.observe(_response(429, host: 'c.test', retryAfter: '3'));
+
+      expect(pause.trackedPauses, 2);
+      expect(
+        pause.pausedUntilByHost.keys,
+        unorderedEquals(['b.test', 'c.test']),
+      );
+    });
   });
 }
