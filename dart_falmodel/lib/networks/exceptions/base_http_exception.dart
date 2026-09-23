@@ -54,17 +54,12 @@ abstract class BaseHttpException extends NetworkException {
   Duration get recommendedRetryDelay {
     if (!isRetryable) return Duration.zero;
 
-    // Check for Retry-After header (429 errors)
-    if (statusCode == 429 && response?.headers != null) {
-      final retryAfter = response!.headers.value('retry-after');
-      if (retryAfter != null) {
-        final seconds = int.tryParse(retryAfter);
-        if (seconds != null) return Duration(seconds: seconds);
-      }
+    // Retry-After (delay-seconds or HTTP-date), else one minute
+    if (statusCode == 429) {
+      return response?.headers.retryAfter ?? const Duration(minutes: 1);
     }
 
     // Default retry delays
-    if (statusCode == 429) return const Duration(minutes: 1);
     if (isServerError) return const Duration(seconds: 5);
     return const Duration(seconds: 3);
   }
