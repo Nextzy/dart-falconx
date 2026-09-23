@@ -1,6 +1,6 @@
 name: dart_falconx_core
 description: A dart falcon package.
-version: 1.0.11
+version: 2.0.0
 
 environment:
   sdk: ">=3.13.0 <4.0.0"
