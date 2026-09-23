@@ -45,6 +45,11 @@ class TokenBucketRateLimitStatistics {
 /// clock: `fakeAsync`'s `elapse` advances them, and
 /// `withClock(Clock.fixed(...))` has no effect on them.
 ///
+/// Tokens are never returned. When a later tier rejects a request, tokens
+/// already taken by earlier tiers stay spent. A request cancelled through
+/// its `CancelToken` while it waits keeps its queue place, still spends a
+/// token when it reaches the front, and is counted as forwarded.
+///
 /// Refill timers keep running until every bucket is full again. Call
 /// [dispose] at the end of a `testWidgets` body (`addTearDown` runs after
 /// Flutter's pending-timer check), before a CLI's `main` returns, or when a
