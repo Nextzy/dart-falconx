@@ -6,7 +6,7 @@ import 'package:dart_falconnect/src/engine/https/interceptors/host_key.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart'
     show localRateLimitRejection;
 import 'package:dart_faltool/dart_faltool.dart'
-    show Bulkhead, BulkheadRejectedException, ResiliencePipeline, immutable;
+    show Bulkhead, BulkheadRejectedException, immutable;
 import 'package:dio/dio.dart';
 
 /// Activity counters of a [ConcurrencyLimitInterceptor].
@@ -138,9 +138,6 @@ class ConcurrencyLimitInterceptor extends Interceptor {
 
   final Map<String, int?> _hosts;
   final Bulkhead? _globalBulkhead;
-  late final ResiliencePipeline? _globalPipeline = _globalBulkhead == null
-      ? null
-      : ResiliencePipeline([_globalBulkhead]);
   final Map<String, _HostSlots> _hostSlots = {};
   final Set<_Permit> _waiting = {};
   int _forwarded = 0;
@@ -194,10 +191,9 @@ class ConcurrencyLimitInterceptor extends Interceptor {
             host,
             () => _HostSlots(_hostBulkhead(hostLimit), _globalBulkhead),
           );
-    final pipeline = slots?.pipeline ?? _globalPipeline!;
+    final taking = slots?.take(permit) ?? _globalBulkhead!.execute(permit.hold);
     unawaited(
-      pipeline
-          .execute(permit.hold)
+      taking
           .then<void>((_) {}, onError: permit.reject)
           .whenComplete(() => _prune(host, slots)),
     );
@@ -346,13 +342,22 @@ class ConcurrencyLimitInterceptor extends Interceptor {
   }
 }
 
-/// A host's own limit and the pipeline that also takes a global slot.
+/// A host's own limit, taken before the global one.
 class _HostSlots {
-  new(this.bulkhead, Bulkhead? global)
-    : pipeline = ResiliencePipeline([bulkhead, ?global]);
+  new(this.bulkhead, this._global);
 
   final Bulkhead bulkhead;
-  final ResiliencePipeline pipeline;
+  final Bulkhead? _global;
+
+  /// Takes the host slot, then the global slot. A permit abandoned while it
+  /// waited for the host slot gives that slot back before it would join the
+  /// global queue.
+  Future<void> take(_Permit permit) => bulkhead.execute(() {
+    final global = _global;
+    return global == null || !permit.isWaiting
+        ? permit.hold()
+        : global.execute(permit.hold);
+  });
 }
 
 enum _PermitState { waiting, held, abandoned, released }
@@ -368,11 +373,13 @@ class _Permit {
 
   bool get isHeld => _state == _PermitState.held;
 
+  bool get isWaiting => _state == _PermitState.waiting;
+
   /// Completes when every slot is taken; fails when the queue is full, or
   /// when the request is cancelled or disposed while it waits.
   Future<void> get granted => _granted.future;
 
-  /// The pipeline action: holds every slot until [release].
+  /// The innermost slot action: holds every slot until [release].
   Future<void> hold() {
     if (_state == _PermitState.abandoned) {
       // Cancelled while waiting: pass the slot straight on.
@@ -384,7 +391,7 @@ class _Permit {
     return _released.future;
   }
 
-  /// Fails a permit the pipeline rejected before granting it.
+  /// Fails a permit a full queue rejected before granting it.
   void reject(Object error, StackTrace stackTrace) {
     if (_state == _PermitState.waiting) {
       _state = _PermitState.released;
