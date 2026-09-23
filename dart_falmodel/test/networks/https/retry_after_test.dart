@@ -89,6 +89,29 @@ void main() {
     test('is null without a Retry-After header', () {
       expect(_headers({}).retryAfter, isNull);
     });
+
+    test('uses the first value of a duplicated Retry-After header', () {
+      final headers = Headers.fromMap({
+        'retry-after': ['5', '9'],
+      });
+      expect(headers.retryAfter, const Duration(seconds: 5));
+    });
+
+    test('uses the first value of a duplicated Date header', () {
+      final headers = Headers.fromMap({
+        'retry-after': ['Wed, 23 Sep 2026 12:00:10 GMT'],
+        'date': [
+          'Wed, 23 Sep 2026 12:00:00 GMT',
+          'Wed, 23 Sep 2026 13:00:00 GMT',
+        ],
+      });
+      expect(headers.retryAfter, const Duration(seconds: 10));
+    });
+
+    test('is null for an empty Retry-After value list', () {
+      final headers = Headers.fromMap({'retry-after': <String>[]});
+      expect(headers.retryAfter, isNull);
+    });
   });
 
   group('recommendedRetryDelay', () {
@@ -108,6 +131,23 @@ void main() {
         response: _response(429, {}),
       );
       expect(exception.recommendedRetryDelay, const Duration(minutes: 1));
+    });
+
+    test('429 with a duplicated Date header reads delay-seconds', () {
+      final exception = NetworkLimitExceededException(
+        response: Response<dynamic>(
+          requestOptions: RequestOptions(path: 'https://a.test/x'),
+          statusCode: 429,
+          headers: Headers.fromMap({
+            'retry-after': ['7'],
+            'date': [
+              'Wed, 23 Sep 2026 12:00:00 GMT',
+              'Wed, 23 Sep 2026 13:00:00 GMT',
+            ],
+          }),
+        ),
+      );
+      expect(exception.recommendedRetryDelay, const Duration(seconds: 7));
     });
 
     test('503 reads Retry-After and falls back to 30 seconds', () {
