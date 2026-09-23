@@ -61,11 +61,12 @@ class ConcurrencyLimitStatistics {
 /// There is no limit on the time spent in a queue; pass a `CancelToken`
 /// with a deadline to bound it. A cancelled request keeps its queue place
 /// until it reaches the head of the queue, so it still counts toward the
-/// queue size until then.
+/// queue size until then; one cancelled while it waits for the global slot
+/// also keeps its host slot until then.
 ///
-/// A retry attempt or a re-send that carries the `RequestOptions.extra` of
-/// a request still holding a slot reuses that slot, so a retry never waits
-/// for its own earlier attempt.
+/// A retry attempt, a re-send, or a second fetch that carries the
+/// `RequestOptions.extra` of a request holding or waiting for a slot
+/// shares that slot, so a retry never waits for its own earlier attempt.
 ///
 /// Place it after `CacheInterceptor` and any interceptor that answers in
 /// `onRequest`: a request answered after this interceptor without calling
@@ -74,7 +75,11 @@ class ConcurrencyLimitStatistics {
 /// `RetryInterceptor`, and before the network exception handler, which
 /// stops the error chain. A request holds its slot while the rate limiter
 /// holds it, so set `perHost` below `global` to keep one slow or paused
-/// host from taking every global slot.
+/// host from taking every global slot. Interceptors after it must end
+/// `onRequest` with `next` or with the call-following flag
+/// (`reject(err, true)`), and interceptors before it must end `onResponse`
+/// and `onError` the same way; otherwise dio skips this interceptor's
+/// `onResponse` and `onError` and the slot is never given back.
 ///
 /// A request that never ends holds its slot: keep dio's connect and
 /// receive timeouts set. A `ResponseType.stream` response gives its slot
@@ -166,8 +171,19 @@ class ConcurrencyLimitInterceptor extends Interceptor {
       );
       return;
     }
-    if (_permitOf(options)?.isHeld ?? false) {
-      // A retry attempt or re-send of a request that still holds its slot.
+    final existing = _permitOf(options);
+    if (existing != null && (existing.isHeld || existing.isWaiting)) {
+      // A retry attempt or re-send of a request that still holds its slot,
+      // or a second fetch of options whose first fetch still waits for one:
+      // share that slot.
+      if (existing.isWaiting) {
+        try {
+          await existing.granted;
+        } on Object catch (error) {
+          _rejectWaiter(options, handler, host, error);
+          return;
+        }
+      }
       _forwarded++;
       handler.next(options);
       return;
@@ -199,16 +215,9 @@ class ConcurrencyLimitInterceptor extends Interceptor {
     );
     try {
       await permit.granted;
-    } on BulkheadRejectedException catch (error) {
-      _waiting.remove(permit);
-      _rejected++;
-      _log('Concurrency queue full for $host');
-      handler.reject(localRateLimitRejection(options, error: error), true);
-      return;
     } on Object catch (error) {
-      // Cancelled, or disposed, while waiting for a slot.
       _waiting.remove(permit);
-      handler.reject(_cancelled(options, error, 'Request cancelled'));
+      _rejectWaiter(options, handler, host, error);
       return;
     }
     _waiting.remove(permit);
@@ -260,7 +269,9 @@ class ConcurrencyLimitInterceptor extends Interceptor {
     _disposed = true;
     final disposed = StateError('ConcurrencyLimitInterceptor disposed');
     for (final permit in _waiting.toList()) {
-      permit.release(disposed);
+      if (permit.isWaiting) {
+        permit.release(disposed);
+      }
     }
     _waiting.clear();
   }
@@ -309,6 +320,29 @@ class ConcurrencyLimitInterceptor extends Interceptor {
   _Permit? _permitOf(RequestOptions options) {
     final permit = options.extra[_permitKey];
     return permit is _Permit ? permit : null;
+  }
+
+  /// Fails a request whose wait for a slot failed: a full queue gives a
+  /// local 429; a cancel or `dispose()` gives a cancel.
+  void _rejectWaiter(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+    String host,
+    Object error,
+  ) {
+    if (error is BulkheadRejectedException) {
+      _rejected++;
+      _log('Concurrency queue full for $host');
+      handler.reject(localRateLimitRejection(options, error: error), true);
+      return;
+    }
+    handler.reject(
+      _cancelled(
+        options,
+        error,
+        _disposed ? 'Concurrency limiter disposed' : 'Request cancelled',
+      ),
+    );
   }
 
   /// Forgets an idle host limit; an empty `Bulkhead` is the same as a new

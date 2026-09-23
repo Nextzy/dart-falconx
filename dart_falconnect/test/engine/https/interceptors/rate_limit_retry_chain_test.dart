@@ -282,4 +282,34 @@ void main() {
       limiter.dispose();
     });
   });
+
+  test('a request waiting for a slot is not sent to a host paused '
+      'meanwhile, when the 429 arrives as a response', () {
+    fakeAsync((async) {
+      final adapter = GatedAdapter();
+      final concurrency = ConcurrencyLimitInterceptor(
+        config: _config,
+        perHost: 1,
+      );
+      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final dio = _limitedChain(adapter, concurrency, limiter, retry: false)
+        ..options.validateStatus = (status) => status != null && status < 500;
+      final outcomes = <Object>[];
+
+      for (final path in ['/1', '/2']) {
+        unawaited(
+          dio.get<dynamic>(path).then(outcomes.add, onError: outcomes.add),
+        );
+      }
+      async.elapse(Duration.zero);
+      adapter.requests.single.respond(429, headers: {'retry-after': '3'});
+      async.elapse(const Duration(milliseconds: 2900));
+      expect(adapter.requests, hasLength(1), reason: 'held by the pause');
+
+      async.elapse(const Duration(milliseconds: 200));
+      expect(adapter.requests, hasLength(2));
+      concurrency.dispose();
+      limiter.dispose();
+    });
+  });
 }
