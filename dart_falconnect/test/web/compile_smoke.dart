@@ -32,6 +32,7 @@ void main() {
   _sink(RetryInterceptor(config: cfg, dio: dio));
   _sink(PerformanceInterceptor(config: cfg));
   _sink(TokenBucketRateLimitInterceptor(config: cfg));
+  _sink(RetryAfterPauseInterceptor(config: cfg));
   _sink(HttpLogInterceptor());
   _sink(DefaultNetworkExceptionHandlerInterceptor());
 

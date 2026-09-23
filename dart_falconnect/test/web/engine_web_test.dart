@@ -3,6 +3,7 @@ library;
 
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falmodel/dart_falmodel.dart' show parseRetryAfter;
 import 'package:test/test.dart';
 
 import '_stub_http_client.dart';
@@ -29,8 +30,19 @@ void main() {
       expect(RetryInterceptor(config: cfg, dio: dio), isNotNull);
       expect(PerformanceInterceptor(config: cfg), isNotNull);
       expect(TokenBucketRateLimitInterceptor(config: cfg), isNotNull);
+      expect(RetryAfterPauseInterceptor(config: cfg), isNotNull);
       expect(HttpLogInterceptor(), isNotNull);
       expect(DefaultNetworkExceptionHandlerInterceptor(), isNotNull);
+    });
+
+    test('parseRetryAfter reads an HTTP-date on web', () {
+      expect(
+        parseRetryAfter(
+          'Wed, 21 Oct 2026 07:28:30 GMT',
+          serverDate: DateTime.utc(2026, 10, 21, 7, 28),
+        ),
+        const Duration(seconds: 30),
+      );
     });
 
     test('DefaultJsonRpcService builds on web', () {
