@@ -6,6 +6,7 @@ import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falmodel/dart_falmodel.dart' show parseRetryAfter;
 import 'package:test/test.dart';
 
+import '../engine/https/interceptors/_scripted_adapter.dart';
 import '_stub_http_client.dart';
 
 void main() {
@@ -53,6 +54,26 @@ void main() {
         jsonrpc: '2.0',
       );
       expect(rpc, isNotNull);
+    });
+
+    test('RetryInterceptor backs off and retries on web', () async {
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = ScriptedAdapter([reply(500), reply(200)]);
+      dio.interceptors.add(
+        RetryInterceptor(
+          config: const HttpClientConfig(
+            maxRetryAttempts: 2,
+            retryDelay: Duration(milliseconds: 1),
+            maxRetryDelay: Duration(milliseconds: 5),
+          ),
+          dio: dio,
+        ),
+      );
+
+      final response = await dio.get<dynamic>('/x');
+
+      expect(response.statusCode, 200);
+      expect((dio.httpClientAdapter as ScriptedAdapter).requests, hasLength(2));
     });
   });
 }
