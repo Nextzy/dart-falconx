@@ -29,6 +29,24 @@ Dio _chain(ScriptedAdapter adapter, TokenBucketRateLimitInterceptor limiter) {
   return dio;
 }
 
+/// The full order of the SP3 spec, section 12, without a cache.
+Dio _limitedChain(
+  HttpClientAdapter adapter,
+  ConcurrencyLimitInterceptor concurrency,
+  TokenBucketRateLimitInterceptor limiter, {
+  bool retry = true,
+}) {
+  final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+    ..httpClientAdapter = adapter;
+  dio.interceptors.addAll([
+    concurrency,
+    limiter,
+    if (retry) RetryInterceptor(config: _config, dio: dio),
+    DefaultNetworkExceptionHandlerInterceptor(),
+  ]);
+  return dio;
+}
+
 void main() {
   test('a retry waits for Retry-After once, not twice', () {
     fakeAsync((async) {
@@ -160,6 +178,107 @@ void main() {
       expect(adapter.requests, hasLength(1));
       async.elapse(const Duration(seconds: 1));
       expect(adapter.requests, hasLength(2));
+      limiter.dispose();
+    });
+  });
+
+  test('the token ceiling holds on the wire behind a concurrency limit', () {
+    fakeAsync((async) {
+      final adapter = GatedAdapter();
+      final concurrency = ConcurrencyLimitInterceptor(
+        config: _config,
+        perHost: 4,
+      );
+      final limiter = TokenBucketRateLimitInterceptor(
+        config: _config,
+        perHost: const [
+          TokenBucketPolicy(permits: 2, per: Duration(seconds: 1), burst: 2),
+        ],
+      );
+      final dio = _limitedChain(adapter, concurrency, limiter);
+      for (var i = 0; i < 12; i++) {
+        unawaited(dio.get<dynamic>('/$i').then((_) {}, onError: (_) {}));
+      }
+
+      // The server answers every request in flight at once, every 6 s, so
+      // four slots free up together. Requests that took tokens before
+      // their slot would all leave at that moment.
+      for (var second = 6; second <= 30; second += 6) {
+        async.elapse(const Duration(seconds: 6));
+        for (final request in adapter.inFlight) {
+          request.respond(200);
+        }
+      }
+
+      final sentAt = [for (final r in adapter.requests) r.sentAt];
+      expect(sentAt, hasLength(12));
+      for (final start in sentAt) {
+        final end = start.add(const Duration(seconds: 1));
+        final window = sentAt.where(
+          (t) => !t.isBefore(start) && t.isBefore(end),
+        );
+        expect(window.length, lessThanOrEqualTo(2), reason: 'from $start');
+      }
+      concurrency.dispose();
+      limiter.dispose();
+    });
+  });
+
+  test('a request waiting for a slot is not sent to a host paused '
+      'meanwhile', () {
+    fakeAsync((async) {
+      final adapter = GatedAdapter();
+      final concurrency = ConcurrencyLimitInterceptor(
+        config: _config,
+        perHost: 1,
+      );
+      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final dio = _limitedChain(adapter, concurrency, limiter, retry: false);
+      final outcomes = <Object>[];
+
+      for (final path in ['/1', '/2']) {
+        unawaited(
+          dio.get<dynamic>(path).then(outcomes.add, onError: outcomes.add),
+        );
+      }
+      async.elapse(Duration.zero);
+      adapter.requests.single.respond(429, headers: {'retry-after': '3'});
+      async.elapse(const Duration(milliseconds: 2900));
+      expect(adapter.requests, hasLength(1), reason: 'held by the pause');
+
+      async.elapse(const Duration(milliseconds: 200));
+      expect(adapter.requests, hasLength(2));
+      concurrency.dispose();
+      limiter.dispose();
+    });
+  });
+
+  test('a 429 pauses the host, and the retry passes the pause with a '
+      'concurrency limit of 1', () {
+    fakeAsync((async) {
+      final adapter = ScriptedAdapter([
+        reply(429, headers: {'retry-after': '2'}),
+        reply(200),
+      ]);
+      final concurrency = ConcurrencyLimitInterceptor(
+        config: _config,
+        perHost: 1,
+      );
+      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final dio = _limitedChain(adapter, concurrency, limiter);
+      Object? outcome;
+
+      unawaited(
+        dio
+            .get<dynamic>('/x')
+            .then((r) => outcome = r, onError: (Object e) => outcome = e),
+      );
+      async.elapse(const Duration(seconds: 3));
+
+      expect((outcome! as Response<dynamic>).statusCode, 200);
+      expect(adapter.requests, hasLength(2));
+      expect(concurrency.getStatistics().activeByHost, isEmpty);
+      concurrency.dispose();
       limiter.dispose();
     });
   });

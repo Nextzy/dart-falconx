@@ -29,6 +29,7 @@ void main() {
   // All interceptors
   final cfg = HttpClientConfig.development();
   _sink(CacheInterceptor(config: cfg));
+  _sink(ConcurrencyLimitInterceptor(config: cfg, global: 16, perHost: 4));
   _sink(RetryInterceptor(config: cfg, dio: dio));
   _sink(PerformanceInterceptor(config: cfg));
   _sink(TokenBucketRateLimitInterceptor(config: cfg));

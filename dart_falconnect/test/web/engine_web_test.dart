@@ -28,6 +28,7 @@ void main() {
       final cfg = HttpClientConfig.development();
       final dio = Dio();
       expect(CacheInterceptor(config: cfg), isNotNull);
+      expect(ConcurrencyLimitInterceptor(config: cfg), isNotNull);
       expect(RetryInterceptor(config: cfg, dio: dio), isNotNull);
       expect(PerformanceInterceptor(config: cfg), isNotNull);
       expect(TokenBucketRateLimitInterceptor(config: cfg), isNotNull);
@@ -75,5 +76,28 @@ void main() {
       expect(response.statusCode, 200);
       expect((dio.httpClientAdapter as ScriptedAdapter).requests, hasLength(2));
     });
+
+    test(
+      'ConcurrencyLimitInterceptor runs requests one at a time on web',
+      () async {
+        final adapter = ScriptedAdapter([reply(200)]);
+        final limiter = ConcurrencyLimitInterceptor(
+          config: HttpClientConfig.development(),
+          perHost: 1,
+        );
+        final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+          ..httpClientAdapter = adapter;
+        dio.interceptors.add(limiter);
+
+        final responses = await Future.wait([
+          dio.get<dynamic>('/1'),
+          dio.get<dynamic>('/2'),
+        ]);
+
+        expect(responses.map((r) => r.statusCode), [200, 200]);
+        expect(limiter.getStatistics().forwarded, 2);
+        expect(limiter.getStatistics().activeByHost, isEmpty);
+      },
+    );
   });
 }
