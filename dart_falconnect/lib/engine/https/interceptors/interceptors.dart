@@ -1,4 +1,5 @@
 export 'cache_interceptor.dart';
+export 'concurrency_limit_interceptor.dart';
 export 'default_network_exception_handler_interceptor.dart';
 export 'local_rate_limit.dart';
 export 'log_interceptor.dart';
