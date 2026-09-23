@@ -90,8 +90,8 @@ class HttpClientConfig {
       maxRetryDelay: Duration(seconds: 1),
       maxRetryDuration: Duration(seconds: 5),
       enableCache: false,
-      maxCacheSize: 1 * 1024 * 1024,
       // 1 MB
+      maxCacheSize: 1 * 1024 * 1024,
       cacheDuration: Duration(seconds: 30),
       enableLogging: true,
       logBodies: false,
