@@ -1,4 +1,3 @@
-import 'package:clock/clock.dart';
 import 'package:dart_faltool/lib.dart';
 import 'package:test/test.dart';
 
