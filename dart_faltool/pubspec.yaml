@@ -12,6 +12,7 @@ dependencies:
   #PLATFORM: All
   ansicolor: ^2.0.3
   big_decimal: ^0.7.0
+  clock: ^1.1.3
   dart_falmodel:
     path: ../dart_falmodel
   dartx: ^1.2.0

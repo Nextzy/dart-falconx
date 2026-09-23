@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:dart_faltool/lib.dart';
 import 'package:test/test.dart';
 
@@ -205,6 +206,20 @@ void main() {
           and('isPast should return false', () {
             expect(futureDate.isPast, isFalse);
           });
+        });
+      });
+
+      test('should read isPast and isFuture through the zone clock', () {
+        // Given
+        final fixed = DateTime(2024, 6, 15, 12, 0, 0);
+        final past = fixed.subtract(const Duration(hours: 1));
+        final future = fixed.add(const Duration(hours: 1));
+
+        withClock(Clock.fixed(fixed), () {
+          expect(past.isPast, isTrue);
+          expect(past.isFuture, isFalse);
+          expect(future.isFuture, isTrue);
+          expect(future.isPast, isFalse);
         });
       });
 
@@ -633,6 +648,36 @@ void main() {
         });
       });
 
+      test('should format relative time through the zone clock', () {
+        // Given
+        final fixed = DateTime(2024, 6, 15, 12, 0, 0);
+
+        withClock(Clock.fixed(fixed), () {
+          when('formatting 5 minutes before the fixed clock', () {
+            final result = fixed
+                .subtract(const Duration(minutes: 5))
+                .toRelative();
+
+            then('it should return "5 minutes ago"', () {
+              expect(result, equals('5 minutes ago'));
+            });
+          });
+
+          when(
+            'formatting a date after the fixed clock without allowFromNow',
+            () {
+              final result = fixed
+                  .add(const Duration(minutes: 30))
+                  .toRelative();
+
+              then('it should return "a moment ago"', () {
+                expect(result, equals('a moment ago'));
+              });
+            },
+          );
+        });
+      });
+
       test('should format human readable day names', () {
         // Given
         late DateTime now;
@@ -775,6 +820,33 @@ void main() {
 
           then('it should be more than 5 days in hours', () {
             expect(hours, lessThan(-120));
+          });
+        });
+      });
+
+      test('should calculate days and hours until through the zone clock', () {
+        // Given
+        final fixed = DateTime(2024, 6, 15, 12, 0, 0);
+        final futureDate = fixed.add(const Duration(days: 5, hours: 3));
+        final pastDate = fixed.subtract(const Duration(days: 2));
+
+        withClock(Clock.fixed(fixed), () {
+          when('calculating days until future date', () {
+            then('it should be negative (in the future)', () {
+              expect(futureDate.daysUntil, equals(-5));
+            });
+          });
+
+          when('calculating days until past date', () {
+            then('it should be positive (in the past)', () {
+              expect(pastDate.daysUntil, equals(2));
+            });
+          });
+
+          when('calculating hours until future date', () {
+            then('it should be more than 5 days in hours', () {
+              expect(futureDate.hoursUntil, lessThan(-120));
+            });
           });
         });
       });
@@ -977,6 +1049,20 @@ void main() {
 
           and('valid date should return itself', () {
             expect(validDate.orDefault(defaultDate), equals(validDate));
+          });
+        });
+      });
+
+      test('should resolve orNow through the zone clock', () {
+        // Given
+        final fixed = DateTime(2024, 6, 15, 12, 0, 0);
+        DateTime? nullDate;
+
+        withClock(Clock.fixed(fixed), () {
+          when('using orNow on null', () {
+            then('it should return the fixed clock time', () {
+              expect(nullDate.orNow, equals(fixed));
+            });
           });
         });
       });
