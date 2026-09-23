@@ -38,14 +38,6 @@
     "deny": [],
     "ask": []
   },
-  "model": "opus[1m]",
-  "availableModels": [
-    "opus[1m]",
-    "sonnet[1m]",
-    "sonnet",
-    "fable[1m]",
-    "haiku"
-  ],
   "hooks": {
   },
   "worktree": {
