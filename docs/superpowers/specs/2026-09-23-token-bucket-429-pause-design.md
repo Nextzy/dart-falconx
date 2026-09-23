@@ -57,7 +57,7 @@ A review of `dio_smart_retry` 7.0.1 (MIT) and its issue tracker supplied ideas a
 /// value cannot be read.
 Duration? parseRetryAfter(String? value, {DateTime? serverDate});
 
-extension RetryAfterHeaders on Headers {
+extension FalconRetryAfterHeadersExtensions on Headers {
   /// The `Retry-After` delay of this response, measured from the server's
   /// `Date` header when it is present and readable.
   Duration? get retryAfter;
@@ -69,7 +69,7 @@ extension RetryAfterHeaders on Headers {
 | Input (after trimming) | Result |
 |---|---|
 | `null` or empty | `null` |
-| Digits only, for example `120` | `Duration(seconds: 120)`; `null` when `int.tryParse` overflows |
+| Digits only, for example `120` | `Duration(seconds: 120)`; values above 2^31 seconds (about 68 years), including ones `int.tryParse` cannot hold, become 2^31 seconds so the `Duration` cannot overflow |
 | Anything `parseHttpDate` accepts | The date minus `serverDate`, or minus `clock.now()` when `serverDate` is null; `Duration.zero` when the date is in the past |
 | Anything else, including `-5`, `1.5`, and garbage | `null` |
 
@@ -85,10 +85,9 @@ The only behaviour change for the exceptions: an HTTP-date `Retry-After` is now 
 
 ## 5. Pause core (`dart_falconnect`, internal)
 
-**File:** `dart_falconnect/lib/engine/https/interceptors/retry_after_pause.dart`. Annotated `@internal` and not exported from `interceptors.dart`. Both interceptors in sections 6 and 7 use it, so the pause logic exists once.
+**File:** `dart_falconnect/lib/src/engine/https/interceptors/retry_after_pause.dart`, not exported. It lives under `lib/src/` because the analyzer rejects `@internal` on a public library (`invalid_internal_annotation`, verified 2026-09-23). Both interceptors in sections 6 and 7 use it, so the pause logic exists once. The same file holds `localRateLimitKey` and `localRateLimitRejection` (section 8).
 
 ```dart
-@internal
 class RetryAfterPause {
   RetryAfterPause({
     required Duration maxPauseWait,
@@ -117,7 +116,6 @@ class RetryAfterPause {
   void dispose();
 }
 
-@internal
 sealed class PauseAdmission {}
 // PausePass, PauseHold, PauseReject(Duration remaining)
 ```
@@ -229,17 +227,19 @@ DioException(
     statusCode: 429,
     statusMessage: 'Too Many Requests',
     headers: headers, // pause only: retry-after = remaining time, rounded up to whole seconds, at least 1
-    extra: {_localRateLimitKey: true},
+    extra: {localRateLimitKey: true},
   ),
 )
 ```
 
 It is sent with `handler.reject(error, true)`, so every error interceptor runs, from the first in the list.
 
+The builder is `localRateLimitRejection(options, {error, retryAfter})` in the pause core file.
+
 **Public marker.** `dart_falconnect/lib/engine/https/interceptors/local_rate_limit.dart`, exported from `interceptors.dart`:
 
 ```dart
-extension LocalRateLimitResponse on Response<dynamic> {
+extension FalconLocalRateLimitResponseExtensions on Response<dynamic> {
   /// Whether this 429 was produced on the client, with no request sent.
   bool get isLocalRateLimit;
 }
@@ -260,7 +260,7 @@ extension LocalRateLimitResponse on Response<dynamic> {
 RetryInterceptor({
   required HttpClientConfig config,
   required Dio dio,
-  void Function(DioException error, int attempt, Duration delay)? onRetry,
+  RetryCallback? onRetry, // void Function(DioException error, int attempt, Duration delay)
   Random? random, // tests pass a seeded Random
 })
 ```
@@ -269,7 +269,7 @@ RetryInterceptor({
 
 **`HttpClientConfig`.** Adds `maxRetryDuration`, the most time spent on retries of one request, measured from the first failure. Defaults: 60 seconds in the constructor, 2 minutes in `production()`, 10 seconds in `development()`, 5 seconds in `test()`. `copyWith` gains the parameter. SP2 owns the retry fields of `HttpClientConfig` (`maxRetryAttempts`, `retryDelay`, `maxRetryDelay`, `maxRetryDuration`); the client-config phase owns the rest.
 
-**Per-request settings.** `dart_falconnect/lib/engine/https/interceptors/retry_request_options.dart`, exported from `interceptors.dart`. Extensions on `RequestOptions` and `Options`:
+**Per-request settings.** Declared in `retry_interceptor.dart` itself, so the `extra` keys stay private to the library: `FalconRetryRequestOptionsExtensions` on `RequestOptions` and `FalconRetryOptionsExtensions` on `Options`. The `Falcon` prefix follows the repository's extension naming and avoids a clash with `RetryOptions` from the re-exported `retry` package.
 
 | Member | Type | Meaning |
 |---|---|---|
