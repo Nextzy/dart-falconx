@@ -1,4 +1,5 @@
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/host_key.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dart_faltool/dart_faltool.dart'
     show
@@ -120,7 +121,7 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
          holdRequests: queueRequests,
        ) {
     for (final host in hosts.keys) {
-      if (!_isHostKey(host)) {
+      if (!isHostKey(host)) {
         throw ArgumentError.value(
           host,
           'hosts',
@@ -311,17 +312,6 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
       maxHeld: maxQueueSize,
       holdRequests: holdRequests,
     );
-  }
-
-  static bool _isHostKey(String key) {
-    if (key.isEmpty) {
-      return false;
-    }
-    try {
-      return Uri(scheme: 'http', host: key).host == key;
-    } on FormatException {
-      return false;
-    }
   }
 
   ResiliencePipeline _buildPipeline(
