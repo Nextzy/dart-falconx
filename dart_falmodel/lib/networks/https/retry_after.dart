@@ -43,20 +43,30 @@ Duration? parseRetryAfter(String? value, {DateTime? serverDate}) {
 /// Reads `Retry-After` from response headers.
 extension FalconRetryAfterHeadersExtensions on Headers {
   /// The `Retry-After` delay of this response, or null when the header is
-  /// missing or unreadable.
+  /// missing or unreadable. A duplicated header uses its first value.
   ///
   /// An HTTP-date is measured from the response's `Date` header when it is
   /// readable, so a wrong client clock does not change the delay.
   Duration? get retryAfter {
-    DateTime? serverDate;
-    final date = value('date');
-    if (date != null) {
-      try {
-        serverDate = parseHttpDate(date);
-      } on FormatException {
-        serverDate = null;
-      }
+    final values = this['retry-after'];
+    if (values == null || values.isEmpty) {
+      return null;
     }
-    return parseRetryAfter(value('retry-after'), serverDate: serverDate);
+    final value = values.first;
+    if (!_delaySeconds.hasMatch(value.trim())) {
+      // An HTTP-date needs the response's Date header as the reference
+      // time; delay-seconds never does.
+      DateTime? serverDate;
+      final dates = this['date'];
+      if (dates != null && dates.isNotEmpty) {
+        try {
+          serverDate = parseHttpDate(dates.first);
+        } on FormatException {
+          serverDate = null;
+        }
+      }
+      return parseRetryAfter(value, serverDate: serverDate);
+    }
+    return parseRetryAfter(value);
   }
 }
