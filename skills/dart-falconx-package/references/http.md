@@ -84,10 +84,11 @@ final user = res.data;
 |-----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `RetryInterceptor`                            | `(config:, dio:, onRetry:, random:)`                                                                                                                                     | loops up to `retryAttempts ?? config.maxRetryAttempts`; 429 and `connectionTimeout` for every method; timeouts, connection errors, 408/409/5xx only for idempotent methods unless `retryNonIdempotent`; `Retry-After` on 429/503 (not retried above `maxRetryDelay`), else full jitter; stops at `config.maxRetryDuration`; never retries cancels, local 429s, `Stream` bodies, bad certificates |
 | `CacheInterceptor`                            | `(config:)`                                                                                                                                                              | in-memory cache of 2xx GET responses; respects `Cache-Control` and `Expires`; `clearCache()`, `evictExpired()`                                                                                                                                                                                                                                                                                   |
+| `ConcurrencyLimitInterceptor`                 | `(config:, global:, perHost:, hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500)`                                                                | most requests in flight per host and in total, on `resilience` `Bulkhead`; a null limit means none; full queue → local 429 with `BulkheadRejectedException` and no `Retry-After`; a retry or re-send reuses its request's slot; `getStatistics()`, `dispose()` |
 | `TokenBucketRateLimitInterceptor`             | `(config:, global: [], perHost: [], hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500, maxPauseWait: 10 s, maxPause: 10 min, defaultPause: 5 s)` | token buckets from `TokenBucketPolicy` lists; no policy means no token limit; pauses a host on 429, or 503 with `Retry-After`; full queue or long pause → local 429 through the error chain; `getStatistics()`, `dispose()`; do not add `RetryAfterPauseInterceptor` next to it                                                                                                                  |
 | `RetryAfterPauseInterceptor`                  | `(config:, maxPauseWait: 10 s, maxPause: 10 min, defaultPause: 5 s, maxQueueSize: 50)`                                                                                   | the pause of `TokenBucketRateLimitInterceptor` without token limits; `dispose()`                                                                                                                                                                                                                                                                                                                 |
 | `PerformanceInterceptor`                      | `(config:, maxMetricsHistory: 1000, collectDetailedTimings: true)`                                                                                                       | `getRecentMetrics()`, `getStatistics()` returning `PerformanceStatistics`                                                                                                                                                                                                                                                                                                                        |
-| `HttpLogInterceptor`                          | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, logPrint)`                                                                          | ANSI-coloured chunked printing; add last                                                                                                                                                                                                                                                                                                                                                         |
+| `HttpLogInterceptor`                          | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, logPrint)`                                                                          | ANSI-coloured chunked printing; logs requests and responses from anywhere in the chain, errors only when placed before `RetryInterceptor` and the exception handler |
 | `NetworkExceptionHandlerInterceptor`          | abstract `QueuedInterceptor`                                                                                                                                             | implement `onClientError` (4xx) and `onServerError` (5xx), optionally `onNonStandardError`; connect/receive timeouts become `NetworkTimeoutException` first                                                                                                                                                                                                                                      |
 | `DefaultNetworkExceptionHandlerInterceptor`   | `()`                                                                                                                                                                     | rejects every error as-is                                                                                                                                                                                                                                                                                                                                                                        |
 
@@ -97,14 +98,19 @@ final user = res.data;
 
 ```dart
 interceptors.addAll([
+  CacheInterceptor(config: config),
+  ConcurrencyLimitInterceptor(config: config, global: 16, perHost: 4),
   TokenBucketRateLimitInterceptor(config: config), // or RetryAfterPauseInterceptor, never both
   RetryInterceptor(config: config, dio: dio),
   DefaultNetworkExceptionHandlerInterceptor(),
 ]);
 ```
 
+- `CacheInterceptor` comes first: a cache hit answers in `onRequest` without calling the response interceptors, so it takes no concurrency slot and spends no token. Any interceptor that answers in `onRequest`, such as a cache or a mock, goes before `ConcurrencyLimitInterceptor`; placed after it, every answer it gives keeps a slot forever.
+- `ConcurrencyLimitInterceptor` comes before the rate limiter: the slot is taken before the tokens, so the token ceiling holds on the wire and the pause gate sees every request. A request holds its slot while the rate limiter holds it, so set `perHost` below `global`, for example 4 and 16, so one slow or paused host cannot take every global slot.
 - The rate limiter comes before `RetryInterceptor`: dio runs `onError` in list order, so the limiter sees a server 429 and starts the pause before the retry is sent. The retry then passes the pause gate, and the total wait is the longer of the retry delay and the pause, never their sum.
-- `DefaultNetworkExceptionHandlerInterceptor` comes last: it rejects without calling later error interceptors.
+- An interceptor that re-sends from `onError`, such as an auth refresh, goes after `ConcurrencyLimitInterceptor`. Placed before it, the re-send reuses its request's slot, which also works.
+- `DefaultNetworkExceptionHandlerInterceptor` comes last: it rejects without calling later error interceptors, so a `ConcurrencyLimitInterceptor` placed after it would never get its slots back.
 - Every retry passes the whole chain again, so error interceptors see each attempt. Placed before `RetryInterceptor`, one sees every attempt exactly once with a distinct `requestOptions.retryAttempt`; placed after it, one sees attempts 1..n from inside the retries plus the final error again, so it reports the last failure twice. Place error loggers and crash reporters before `RetryInterceptor`.
 - A retry is a fresh `dio.fetch` of a copy of the original options. To replay a failed request by hand, call `dio.get(...)` (or `fetch` with fresh options) again, not `dio.fetch(error.requestOptions)`: the failed options carry `retryAttempt > 0`, which reads as a nested attempt and is never retried.
 
@@ -162,6 +168,52 @@ Refill timers outlive the last request, so call `dispose()` where timers must st
 | Server (dart_frog)                             | not needed                                                                                               |
 
 On a server, build the client once per process (a top-level variable returned by `provider`). A client built inside a per-request `provider` starts with full buckets on every request and limits nothing.
+
+## Concurrency limit
+
+`ConcurrencyLimitInterceptor` limits how many requests are in flight at once. Every scope is unlimited until you set it.
+
+```dart
+final concurrency = ConcurrencyLimitInterceptor(
+  config: config,
+  global: 16,
+  perHost: 4,
+  hosts: const {'pay.partner.com': 2, 'cdn.example.com': null},
+);
+```
+
+`pay.partner.com` runs 2 requests at once; `cdn.example.com` has no host limit but still counts toward the 16 global slots; every other host gets 4. `hosts` keys follow the token bucket rule: bare lowercase hosts as `Uri.host` returns them.
+
+A request takes a slot in `onRequest` and gives it back when its response or error passes the interceptor, or when its `CancelToken` cancels. Without a free slot it waits in a FIFO queue (`maxQueueSize` per host, `maxGlobalQueueSize` for the global limit), or fails at once with `queueRequests: false`. A full queue fails the request with a local 429: `isLocalRateLimit` is true, `err.error` is a `BulkheadRejectedException` until the exception handler maps it to `NetworkLimitExceededException`, and there is no `Retry-After`, so `recommendedRetryDelay` falls back to 1 minute. A retry attempt, or a re-send of `err.requestOptions`, reuses the slot its request still holds, so a limit of 1 never deadlocks.
+
+Limitations:
+
+- Nothing limits the time a request spends in the queue. Pass a `CancelToken` with a deadline to bound it.
+- A request cancelled while it waits keeps its queue place until it reaches the head, so it counts toward `maxQueueSize` until then.
+- A request that never ends holds its slot. Keep `connectTimeout` and `receiveTimeout` set.
+- A `ResponseType.stream` response gives its slot back when its headers arrive, before its body is read.
+- Two concurrent fetches of one `RequestOptions` object share one slot.
+
+`getStatistics()` returns `ConcurrencyLimitStatistics`: `forwarded`, `rejected`, `activeByHost` and `waitingByHost` (only hosts with a request in flight or queued; idle hosts are forgotten), `globalActive`, `globalWaiting`. `dispose()` cancels queued requests and lets requests in flight finish; afterwards, requests to a limited host are cancelled and requests to an unlimited host pass. `Bulkhead` keeps no timer, so a missing `dispose()` never delays a CLI exit or fails `testWidgets`.
+
+## Client and server deployment
+
+**Web**
+
+- A browser hides every cross-origin response header outside the CORS safelist, including `Retry-After` and `Date`. Have the server send `Access-Control-Expose-Headers: Retry-After, Date`. Without it, a 429 pauses for `defaultPause`, a 503 does not pause, `RetryInterceptor` uses backoff instead of `Retry-After`, and the pause runs on the client clock. Tests with a fake adapter cannot catch this.
+- Chrome opens at most 6 connections per host over HTTP/1.1, so a `perHost` above 6 changes nothing on the web.
+
+**Apps**
+
+- A request that stalls, for example while the app is in the background, holds its concurrency slot until a dio timeout fires.
+
+**Servers**
+
+- Limits count per process, isolate, or container instance. Divide a partner's limit by the instance count; with autoscaling, rely on the 429 pause as the last line.
+- Limits are keyed by host. When a partner limits per API key and you use one key per tenant, build one client per key; otherwise one tenant's 429 pauses every tenant.
+- Queued requests outlive the incoming request that started them. Give each incoming request a `CancelToken` that cancels at its deadline; it bounds the concurrency queue, the token wait, the pause hold, retry backoff, and the request in flight together.
+- Build the client once per process (see the `dispose()` table above).
+- For an open-ended set of hosts, prefer named `hosts` keys over `perHost` in `TokenBucketRateLimitInterceptor`: its per-host buckets are never freed. `ConcurrencyLimitInterceptor` forgets idle hosts itself.
 
 ## Retry
 

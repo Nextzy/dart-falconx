@@ -99,7 +99,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 #### HTTP Client (Dio + Retrofit)
 - All HTTP methods in `BaseHttpClient` require a `converter: (Map<String, dynamic>) → T` parameter — no raw response API
 - POST/PUT/PATCH/DELETE data must be `BaseRequestBody` (requires `.toJson()`)
-- Interceptor order matters: auth → retry → cache → logging
+- Interceptor order matters: cache → concurrency limit → rate limiter → retry → exception handler
 - New interceptors must be exported in `interceptors/interceptors.dart` (alphabetically)
 
 #### Code Generation (Freezed + Retrofit)

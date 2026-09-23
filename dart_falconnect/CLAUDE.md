@@ -63,7 +63,7 @@ All return `Result<DataType>` (success/failure union from dart_falmodel). When `
 
 ### HTTP Interceptor Chain
 
-Eight interceptors available (barrel: `interceptors/interceptors.dart`):
+Nine interceptors available (barrel: `interceptors/interceptors.dart`):
 1. `CacheInterceptor` — Response caching via dio_cache_interceptor
 2. `RetryInterceptor` — Loop up to `maxRetryAttempts`; idempotent-only for 5xx/408/409/timeouts (429 and `connectionTimeout` for every method); `Retry-After` capped by `maxRetryDelay`; total `maxRetryDuration`; per-request `disableRetry`, `retryAttempts`, `retryNonIdempotent`
 3. `NetworkExceptionHandlerInterceptor` — Abstract: routes errors to `onClientError()`/`onServerError()`/`onNonStandardError()` based on status code ranges
@@ -72,8 +72,9 @@ Eight interceptors available (barrel: `interceptors/interceptors.dart`):
 6. `TokenBucketRateLimitInterceptor` — Token buckets from `TokenBucketPolicy` lists plus a per-host pause on 429/503 `Retry-After`; unlimited when no policy is set
 7. `RetryAfterPauseInterceptor` — The pause alone; never add it next to `TokenBucketRateLimitInterceptor`
 8. `LogInterceptor` — Request/response logging with ANSI colors
+9. `ConcurrencyLimitInterceptor` — Most requests in flight per host and in total on `resilience` `Bulkhead`; takes a slot in `onRequest` and gives it back on response, error, `CancelToken` cancel, or `dispose()`; a retry or re-send reuses its request's slot; idle hosts are forgotten
 
-Order: rate limiter → `RetryInterceptor` → exception handler. The pause core lives in `lib/src/engine/https/interceptors/retry_after_pause.dart` (not exported).
+Order: `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → exception handler. The pause core lives in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host key rule in `lib/src/engine/https/interceptors/host_key.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart` (none exported).
 
 When adding new interceptors, add the export to `interceptors/interceptors.dart` (alphabetically sorted per lint rules).
 
@@ -93,6 +94,7 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 - WebSocket uses RxDart's `PublishSubject` (not `ReplaySubject` despite the variable name `_replaySubject`)
 - Generated files go to `lib/{{path}}/generated/` subdirectories per `build.yaml` configuration
 - `dart_falconnect` compiles to the web, where `int` bitwise and shift operators (`<<`, `>>`, `>>>`, `&`, `|`, `^`, `~`) truncate operands to 32-bit unsigned values: never shift or mask a value that may exceed 32 bits; use `*`, `pow`, or a literal, and cover the path with a `dart test -p chrome` test (see `RetryInterceptor._backoff`)
+- Wait on a `CancelToken` through `watchCancel` (`lib/src/engine/https/cancel_watch.dart`), never `cancelToken.whenCancel.then(...)`: a `Future` listener cannot be removed, so a long-lived token would collect one per finished wait
 
 ## Web Support
 
