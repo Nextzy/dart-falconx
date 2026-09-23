@@ -218,27 +218,28 @@ Packages flow upward: `dart_faltool` re-exports many of these via `dart_faltool.
 
 ### Utilities (`dart_faltool`, re-exported)
 
-| Package          | Purpose                                                                           |
-|------------------|-----------------------------------------------------------------------------------|
-| `rxdart`         | Reactive streams (`PublishSubject`, operators) — used by `SocketClient`           |
-| `fpdart`         | Functional types (`Either`, `Option`, `Task`) for `Result` patterns               |
-| `equatable`      | Value equality without boilerplate                                                |
-| `dartx`          | Kotlin-style extensions; some members hidden to avoid clash with local extensions |
-| `meta`           | Dart annotations (`@immutable`, `@protected`, etc.)                               |
-| `logger`         | Structured/pretty log printer                                                     |
-| `intl`           | i18n plus locale-aware date/number formatting                                     |
-| `timeago`        | Human-readable relative time (`5 minutes ago`)                                    |
-| `numeral`        | Compact number formatting (`1.2k`, `3.4m`)                                        |
-| `big_decimal`    | Arbitrary-precision decimal arithmetic                                            |
-| `hashlib`        | Crypto / non-crypto hash digests (used by TypeID)                                 |
-| `retry`          | Generic retry-with-backoff helper                                                 |
-| `stack_trace`    | Stack-trace parsing / formatting                                                  |
-| `version`        | SemVer parsing (used by `AppInfo`)                                                |
-| `yaml`           | YAML parser (used by `AppInfo` to read `pubspec.yaml`)                            |
-| `universal_io`   | Cross-platform `dart:io` substitute (web-safe `File`, `Platform`, `HttpClient`)   |
-| `web`            | Modern `package:web` JS interop bindings                                          |
-| `enum_to_string` | Enum to/from string helpers                                                       |
-| `data`           | Data-structure / buffer helpers                                                   |
+| Package          | Purpose                                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------------------------|
+| `rxdart`         | Reactive streams (`PublishSubject`, operators) — used by `SocketClient`                                         |
+| `fpdart`         | Functional types (`Either`, `Option`, `Task`) for `Result` patterns                                             |
+| `equatable`      | Value equality without boilerplate                                                                              |
+| `dartx`          | Kotlin-style extensions; some members hidden to avoid clash with local extensions                               |
+| `meta`           | Dart annotations (`@immutable`, `@protected`, etc.)                                                             |
+| `logger`         | Structured/pretty log printer                                                                                   |
+| `intl`           | i18n plus locale-aware date/number formatting                                                                   |
+| `timeago`        | Human-readable relative time (`5 minutes ago`)                                                                  |
+| `numeral`        | Compact number formatting (`1.2k`, `3.4m`)                                                                      |
+| `big_decimal`    | Arbitrary-precision decimal arithmetic                                                                          |
+| `hashlib`        | Crypto / non-crypto hash digests (used by TypeID)                                                               |
+| `retry`          | Generic retry-with-backoff helper                                                                               |
+| `resilience`     | Token bucket `RateLimiter`, `Bulkhead`, `CircuitBreaker` (re-exported without `Retry`, `RetryEvent`, `Timeout`) |
+| `stack_trace`    | Stack-trace parsing / formatting                                                                                |
+| `version`        | SemVer parsing (used by `AppInfo`)                                                                              |
+| `yaml`           | YAML parser (used by `AppInfo` to read `pubspec.yaml`)                                                          |
+| `universal_io`   | Cross-platform `dart:io` substitute (web-safe `File`, `Platform`, `HttpClient`)                                 |
+| `web`            | Modern `package:web` JS interop bindings                                                                        |
+| `enum_to_string` | Enum to/from string helpers                                                                                     |
+| `data`           | Data-structure / buffer helpers                                                                                 |
 
 ### Dev / Tooling
 

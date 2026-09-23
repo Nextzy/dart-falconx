@@ -69,7 +69,7 @@ Seven interceptors available (barrel: `interceptors/interceptors.dart`):
 3. `NetworkExceptionHandlerInterceptor` — Abstract: routes errors to `onClientError()`/`onServerError()`/`onNonStandardError()` based on status code ranges
 4. `DefaultNetworkExceptionHandlerInterceptor` — Concrete: rejects all errors (no custom handling)
 5. `PerformanceInterceptor` — Request timing
-6. `RateLimitInterceptor` — Rate limiting
+6. `TokenBucketRateLimitInterceptor` — Token bucket rate limiting from `TokenBucketPolicy` lists; unlimited when no policy is set
 7. `LogInterceptor` — Request/response logging with ANSI colors
 
 When adding new interceptors, add the export to `interceptors/interceptors.dart` (alphabetically sorted per lint rules).
@@ -84,7 +84,7 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 
 ## Gotchas
 
-- `RateLimiter` in `utils/` is a placeholder (all code commented out) — do not use or reference it
+- `TokenBucketRateLimitInterceptor` refill timers outlive the last request: in `testWidgets` call `dispose()` in the test body (`addTearDown` is too late); on servers build one instance per process
 - `test/unit_test.dart` is a stub with an empty test; the real tests are the web verification gates under `test/web/`
 - `NetworkExceptionHandlerInterceptor` uses `err.toException()` extension method (from dart_falmodel) to convert `DioException` to `NetworkException`
 - WebSocket uses RxDart's `PublishSubject` (not `ReplaySubject` despite the variable name `_replaySubject`)
