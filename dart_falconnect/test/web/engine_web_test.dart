@@ -28,7 +28,7 @@ void main() {
       expect(CacheInterceptor(config: cfg), isNotNull);
       expect(RetryInterceptor(config: cfg, dio: dio), isNotNull);
       expect(PerformanceInterceptor(config: cfg), isNotNull);
-      expect(RateLimitInterceptor(config: cfg), isNotNull);
+      expect(TokenBucketRateLimitInterceptor(config: cfg), isNotNull);
       expect(HttpLogInterceptor(), isNotNull);
       expect(DefaultNetworkExceptionHandlerInterceptor(), isNotNull);
     });
