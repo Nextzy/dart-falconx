@@ -151,4 +151,72 @@ void main() {
       ),
     );
   });
+
+  group('onRequest wait loop', () {
+    RetryAfterPauseInterceptor pausedFor(String retryAfter) =>
+        RetryAfterPauseInterceptor(config: config)..onResponse(
+          _response(429, retryAfter: retryAfter),
+          _SilentResponseHandler(),
+        );
+
+    test('parks a held request on one timer without spinning', () {
+      fakeAsync((async) {
+        final interceptor = pausedFor('2');
+
+        // A loop that spun on microtasks would hang flushMicrotasks here.
+        send(interceptor);
+        async.flushMicrotasks();
+
+        expect(forwarded, isEmpty);
+        expect(async.microtaskCount, 0);
+        expect(async.nonPeriodicTimerCount, 1);
+
+        async.elapse(
+          const Duration(seconds: 2) - const Duration(microseconds: 1),
+        );
+        expect(forwarded, isEmpty);
+
+        async.elapse(const Duration(microseconds: 1));
+        expect(forwarded, hasLength(1));
+        expect(async.pendingTimers, isEmpty);
+      });
+    });
+
+    test('stays held when the pause grows within maxPauseWait', () {
+      fakeAsync((async) {
+        final interceptor = pausedFor('2');
+        send(interceptor);
+        async.elapse(const Duration(seconds: 1));
+
+        interceptor.onResponse(
+          _response(429, retryAfter: '5'),
+          _SilentResponseHandler(),
+        );
+        async.elapse(const Duration(seconds: 4));
+
+        expect(forwarded, isEmpty);
+        expect(async.nonPeriodicTimerCount, 1);
+
+        async.elapse(const Duration(seconds: 1));
+        expect(forwarded, hasLength(1));
+      });
+    });
+
+    test(
+      're-admits into a local 429 when the pause grows past maxPauseWait',
+      () {
+        fakeAsync((async) {
+          final interceptor = pausedFor('2');
+          send(interceptor);
+          async.flushMicrotasks();
+
+          // TODO(nonthawit): extend the pause past maxPauseWait (10s) while
+          // the request is held, elapse to the first timer, then assert the
+          // loop re-admitted the request into a local 429.
+          expect(interceptor, isNotNull);
+        });
+      },
+      skip: 'Act and Assert not written yet',
+    );
+  });
 }
