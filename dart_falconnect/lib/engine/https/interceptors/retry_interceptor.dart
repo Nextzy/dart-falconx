@@ -123,6 +123,10 @@ class RetryInterceptor extends Interceptor {
     'TRACE',
   };
 
+  /// Largest argument `Random.nextInt` accepts, 2^32. A literal, not
+  /// `1 << 32`: shifts are 32-bit on the web.
+  static const int _maxRandomRange = 4294967296;
+
   @override
   Future<void> onError(
     DioException err,
@@ -230,15 +234,15 @@ class RetryInterceptor extends Interceptor {
   }
 
   Duration _backoff(int attempt) {
-    // A shift cap keeps the exponent from overflowing int at attempt ~55;
-    // 2^30 ms of delay already exceeds any sane maxRetryDelay.
+    // Doubles never wrap, and 2^30 keeps the result exact on the web.
     final exponential =
-        config.retryDelay.inMilliseconds << min(attempt - 1, 30);
-    // Random.nextInt rejects anything above 2^32 - 1.
-    const nextIntMax = (1 << 32) - 1;
-    final cap = min(config.maxRetryDelay.inMilliseconds, exponential);
+        config.retryDelay.inMilliseconds * pow(2.0, min(attempt - 1, 30));
+    final cap = max(
+      0,
+      min(config.maxRetryDelay.inMilliseconds, exponential).toInt(),
+    );
     return Duration(
-      milliseconds: _random.nextInt(cap < nextIntMax ? cap + 1 : nextIntMax),
+      milliseconds: _random.nextInt(min(cap + 1, _maxRandomRange)),
     );
   }
 
