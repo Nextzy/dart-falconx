@@ -5,6 +5,11 @@ import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
 /// Performance metrics for a single request.
+///
+/// Store and read [startTime] and [endTime] in the same clock zone: the
+/// `totalDuration` fallback and `toJson` read `clock.now()` in the
+/// reader's zone, so reading outside the request's zone reports
+/// real-now minus zone-stamped start (a huge or negative duration).
 class RequestMetrics {
   /// Creates a [RequestMetrics] instance for tracking a request identified by
   /// [method], [url], and [startTime].

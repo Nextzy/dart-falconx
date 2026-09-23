@@ -96,6 +96,10 @@ abstract class BaseSocketResponse<T> extends BaseSocketModel {
 
   /// The age of this message in milliseconds.
   /// Returns null if timestamp is not set.
+  ///
+  /// Read the age in the same clock zone that stamped [timestamp]:
+  /// `clock.now()` runs in the reader's zone, so mixing zones yields a
+  /// negative age (the message looks eternally fresh) or an inflated one.
   int? get ageInMilliseconds {
     if (timestamp == null) return null;
     return clock.now().difference(timestamp!).inMilliseconds;
