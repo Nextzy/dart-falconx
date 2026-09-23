@@ -108,11 +108,11 @@ A host with no host `Bulkhead` does not appear in the host maps.
 
 ## 5. Permit
 
-A permit is a private `_Permit` object, one per logical request. It is stored in `RequestOptions.extra` under `dart_falconnect.concurrency.permit`.
+A permit is a private `_Permit` object, one per logical request. Each interceptor stores its permits in `RequestOptions.extra` under its own key, `dart_falconnect.concurrency.permit.<n>`, where `<n>` counts instances. With one shared key, a second `ConcurrencyLimitInterceptor` in the same chain would see the first one's held permit and skip its own limit (found while prototyping).
 
 - The interceptor writes `options.extra = {...options.extra, key: permit}`. `extra` may be a const map, so it is never mutated in place (the lesson of SP2 section 9).
 - `extra` survives `copyWith` and `dio.fetch(err.requestOptions)`, so a retry attempt and a re-send carry the permit of the request they repeat. An `Expando` keyed by the `RequestOptions` object would not survive `copyWith`. `PerformanceInterceptor` already keeps an object in `extra` (`performance_interceptor.dart:289`).
-- A permit records the interceptor that created it. An interceptor only uses, releases, or counts its own permits.
+- An interceptor only reads its own key, so it only uses, releases, or counts its own permits.
 - `HttpLogInterceptor` prints `extra` (`log_interceptor.dart:85`), so `toString()` returns a short form such as `ConcurrencyPermit(held)`.
 
 **States**
@@ -139,7 +139,7 @@ An abandoned permit that later receives its slot releases it at once, so the nex
 
 1. Resolve the host limit: `hosts[host]` when `hosts` contains the key, otherwise `perHost`. When the host limit and `global` are both null, count the request in `forwarded` and call `handler.next(options)` synchronously. No permit, no `Bulkhead`.
 2. When disposed, reject with `DioExceptionType.cancel` and `StateError('ConcurrencyLimitInterceptor disposed')` as `error`.
-3. When `extra` holds a permit of this interceptor in state `held`, reuse it: count the request in `forwarded` and call `handler.next(options)` without taking a slot. This is how a retry attempt or a re-send avoids waiting for the slot its own earlier attempt still holds (section 1, item 4).
+3. When this interceptor's key in `extra` holds a permit in state `held`, reuse it: count the request in `forwarded` and call `handler.next(options)` without taking a slot. This is how a retry attempt or a re-send avoids waiting for the slot its own earlier attempt still holds (section 1, item 4).
 4. When `options.cancelToken` is already cancelled, reject with `DioExceptionType.cancel` and the token's cancel error.
 5. Create a permit in state `waiting`, store it in `extra`, and register it with `watchCancel` (section 10) when the request has a `CancelToken`.
 6. Take a slot through the host's pipeline: a `ResiliencePipeline` of the host `Bulkhead` followed by the global `Bulkhead`, host first as in SP1. A pipeline leaves out a `Bulkhead` whose limit is null. Hosts without a host limit share one pipeline that holds only the global `Bulkhead`, so they store nothing per host. The action tells the permit it holds the slot and returns a future that completes when the permit is released.
@@ -178,7 +178,7 @@ A cancel error whose `err.requestOptions` names another request on the same toke
 
 Without pruning, every distinct host would keep a `Bulkhead` forever: tenant subdomains, content hosts, or a server that forwards to many hosts would grow memory without bound.
 
-**SP2 pauses.** `RetryAfterPause.observe` removes every `_until` entry that has ended before it records a new pause. `observe` only does work for a 429 or 503, so the sweep is rare. Before, a host paused once and never requested again kept its entry forever.
+**SP2 pauses.** `RetryAfterPause.observe` removes every `_until` entry that has ended before it records a new pause. `observe` only does work for a 429 or 503, so the sweep is rare. Before, a host paused once and never requested again kept its entry forever. A `@visibleForTesting int get trackedPauses` exposes the entry count to the test.
 
 **SP1 token buckets: known limitation.** `TokenBucketRateLimitInterceptor` also keeps one `RateLimiter` and pipeline per host forever. They cannot be pruned safely: `RateLimiter` does not expose its remaining tokens (`_tokens` is private, `rate_limiter.dart:96`), and replacing a bucket that is not full with a new, full one breaks the ceiling. The documentation advises `hosts` with named keys instead of `perHost` when the set of hosts is open-ended. An upstream request for an available-permits getter would remove the limitation.
 
@@ -234,7 +234,7 @@ Effects of reusing the local 429, as in SP2 section 8:
 - `NetworkExceptionHandlerInterceptor` maps it to `NetworkLimitExceededException`.
 - `RetryInterceptor` does not retry it.
 - The pause core ignores it.
-- `err.error is BulkheadRejectedException` tells it apart from a token or pause rejection.
+- Until the exception handler replaces the error with `NetworkLimitExceededException`, `err.error is BulkheadRejectedException` tells it apart from a token or pause rejection.
 - It carries no `Retry-After`, so `recommendedRetryDelay` falls back to 1 minute.
 
 ## 12. Interceptor order
@@ -301,7 +301,7 @@ These notes go into `http.md` (section 16). None needs code.
 
 TDD. Every timing test runs under `fakeAsync` with a real `Dio`, and ends with no pending timer.
 
-**Test helper.** `GatedAdapter` in `test/engine/https/interceptors/_scripted_adapter.dart` holds each request until the test releases it and honours dio's `cancelFuture`. The existing `ScriptedAdapter` answers at once, so it cannot show requests in flight together.
+**Test helper.** `GatedAdapter` in `test/engine/https/interceptors/_scripted_adapter.dart` holds each request until the test releases it, honours dio's `cancelFuture`, and records each request's `sentAt` from `clock`. The existing `ScriptedAdapter` answers at once, so it cannot show requests in flight together.
 
 **`concurrency_limit_interceptor_test.dart`**
 
@@ -320,10 +320,12 @@ TDD. Every timing test runs under `fakeAsync` with a real `Dio`, and ends with n
 - Validation: each limit below 1, each negative queue size, each invalid host key.
 - `ResponseType.stream` releases in `onResponse`.
 - Statistics counts; `toString()` of a permit.
+- Two `ConcurrencyLimitInterceptor`s in one chain both enforce their limits and give their slots back.
+- An interceptor after it that throws in `onRequest`; a request whose `extra` is a const map; a cancel after the response.
+- A cancelled waiter still counts toward the queue cap until it reaches the head.
 
 **`cancel_watch_test.dart`**
 
-- Many watches on one token add one listener.
 - Callbacks run once, in registration order; removed callbacks never run.
 - A watch on a cancelled token runs in a microtask unless removed first.
 - After 1,000 finished watches on one token, `activeCancelWatches` is 0.
