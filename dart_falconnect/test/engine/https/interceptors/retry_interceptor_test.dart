@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/engine/https/interceptors/retry_interceptor.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dio/dio.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:test/test.dart';
@@ -26,7 +28,10 @@ class _Client {
         config: config,
         dio: dio,
         random: Random(7),
-        onRetry: (error, attempt, delay) => retries.add((attempt, delay)),
+        onRetry: (error, attempt, delay) {
+          retries.add((attempt, delay));
+          retryErrors.add(error);
+        },
       ),
     );
   }
@@ -34,6 +39,7 @@ class _Client {
   final ScriptedAdapter adapter;
   late final Dio dio;
   final List<(int, Duration)> retries = [];
+  final List<DioException> retryErrors = [];
   Object? outcome;
 
   void send(Future<Response<dynamic>> Function(Dio dio) call) {
@@ -60,6 +66,10 @@ void main() {
       final error = client.outcome! as DioException;
       expect(error.response?.statusCode, 500);
       expect(error.requestOptions.retryAttempt, 3);
+      expect(
+        client.retryErrors.map((e) => e.response?.statusCode),
+        everyElement(500),
+      );
     });
   });
 
@@ -259,6 +269,45 @@ void main() {
 
       expect(disabled.sent, 1);
       expect(once.sent, 2);
+    });
+  });
+
+  test('a local 429 is not retried and calls no onRetry', () {
+    fakeAsync((async) {
+      // No retry-after, so only the isLocalRateLimit guard can stop the
+      // loop; a 429 alone would retry under the seeded jitter.
+      final local = localRateLimitRejection(
+        RequestOptions(path: 'https://a.test/x'),
+      );
+      final client = _Client([failLocal(local)])..send((d) => d.get('/x'));
+
+      async.elapse(const Duration(seconds: 30));
+
+      // Only the original request was sent; the local 429 stops the loop.
+      expect(client.sent, 1);
+      expect(client.retries, isEmpty);
+      final error = client.outcome! as DioException;
+      expect(error.response?.isLocalRateLimit, isTrue);
+      expect(error.response?.statusCode, 429);
+    });
+  });
+
+  test('survives 80 attempts without a backoff overflow', () {
+    fakeAsync((async) {
+      final client = _Client(
+        [reply(500)],
+        config: const HttpClientConfig(
+          maxRetryAttempts: 80,
+          retryDelay: Duration(seconds: 1),
+          maxRetryDelay: Duration(milliseconds: 1),
+          maxRetryDuration: Duration(days: 365),
+        ),
+      )..send((d) => d.get('/x'));
+
+      async.elapse(const Duration(seconds: 5));
+
+      expect(client.sent, 81);
+      expect(client.outcome, isA<DioException>());
     });
   });
 

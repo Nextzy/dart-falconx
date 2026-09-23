@@ -21,6 +21,11 @@ Reply reply(int status, {Map<String, String> headers = const {}}) =>
 Reply failWith(DioExceptionType type) =>
     (options) => throw DioException(requestOptions: options, type: type);
 
+/// Fails the request with the given [error], as an interceptor-produced
+/// rejection would.
+Reply failLocal(DioException error) =>
+    (_) => throw error;
+
 /// A fake transport that replays [script] in order and repeats its last
 /// entry, recording every request it receives.
 class ScriptedAdapter implements HttpClientAdapter {

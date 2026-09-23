@@ -112,11 +112,11 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
              maxQueueLength: queueRequests ? maxGlobalQueueSize : 0,
            ),
        ],
-       _pause = RetryAfterPause(
+       _pause = _buildPause(
          maxPauseWait: maxPauseWait,
          maxPause: maxPause,
          defaultPause: defaultPause,
-         maxHeld: maxQueueSize,
+         maxQueueSize: maxQueueSize,
          holdRequests: queueRequests,
        ) {
     for (final host in hosts.keys) {
@@ -286,6 +286,31 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
     ]) {
       limiter.dispose();
     }
+  }
+
+  /// Builds the pause core, reporting a negative queue size under its
+  /// public name before the core's own check can.
+  static RetryAfterPause _buildPause({
+    required Duration maxPauseWait,
+    required Duration maxPause,
+    required Duration? defaultPause,
+    required int maxQueueSize,
+    required bool holdRequests,
+  }) {
+    if (maxQueueSize < 0) {
+      throw ArgumentError.value(
+        maxQueueSize,
+        'maxQueueSize',
+        'must not be negative',
+      );
+    }
+    return RetryAfterPause(
+      maxPauseWait: maxPauseWait,
+      maxPause: maxPause,
+      defaultPause: defaultPause,
+      maxHeld: maxQueueSize,
+      holdRequests: holdRequests,
+    );
   }
 
   static bool _isHostKey(String key) {

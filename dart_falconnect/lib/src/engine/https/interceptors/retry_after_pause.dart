@@ -69,7 +69,9 @@ final class PauseReject extends PauseAdmission {
 ///
 /// A pause is stored as an end time read from `clock.now()`. A `Timer`
 /// exists only while a host has held requests, so a long pause with nobody
-/// waiting keeps no timer alive.
+/// waiting keeps no timer alive. A pause extension past [maxPauseWait]
+/// releases every held request instead of rescheduling, so a held request
+/// waits at most about [maxPauseWait] from admission.
 class RetryAfterPause {
   /// Creates the pause state shared by the rate-limit interceptors.
   new({
@@ -248,8 +250,10 @@ class RetryAfterPause {
       return;
     }
     held.timer = null;
-    if (isPaused(host)) {
-      // A later response extended the pause while requests were held.
+    final remaining = _remaining(host);
+    if (remaining != null && remaining <= maxPauseWait) {
+      // A later response extended the pause while requests were held, and
+      // the extension is still short enough to wait out.
       _schedule(host, held);
       return;
     }
