@@ -80,17 +80,48 @@ final user = res.data;
 
 ## Interceptor catalog
 
-| Class                                       | Constructor                                                                                                       | Behaviour                                                                                                                                                                      |
-|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `RetryInterceptor`                          | `(config:, dio:)`                                                                                                 | retries timeouts, connection errors, 5xx, 408/409/429; exponential backoff plus jitter; honours `Retry-After` on 429; bounded by `config.maxRetryAttempts` and `maxRetryDelay` |
-| `CacheInterceptor`                          | `(config:)`                                                                                                       | in-memory cache of 2xx GET responses; respects `Cache-Control` and `Expires`; `clearCache()`, `evictExpired()`                                                                 |
-| `RateLimitInterceptor`                      | `(config:, globalRateLimit: 100, perHostRateLimit: 10, windowSize: 1 min, queueRequests: true, maxQueueSize: 50)` | token bucket per host and global; `getStatistics()`, `clearQueues()`                                                                                                           |
-| `PerformanceInterceptor`                    | `(config:, maxMetricsHistory: 1000, collectDetailedTimings: true)`                                                | `getRecentMetrics()`, `getStatistics()` returning `PerformanceStatistics`                                                                                                      |
-| `HttpLogInterceptor`                        | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, logPrint)`                   | ANSI-coloured chunked printing; add last                                                                                                                                       |
-| `NetworkExceptionHandlerInterceptor`        | abstract `QueuedInterceptor`                                                                                      | implement `onClientError` (4xx) and `onServerError` (5xx), optionally `onNonStandardError`; connect/receive timeouts become `NetworkTimeoutException` first                    |
-| `DefaultNetworkExceptionHandlerInterceptor` | `()`                                                                                                              | rejects every error as-is                                                                                                                                                      |
+| Class                                       | Constructor                                                                                                     | Behaviour                                                                                                                                                                                                                  |
+|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `RetryInterceptor`                          | `(config:, dio:)`                                                                                               | retries timeouts, connection errors, 5xx, 408/409/429; exponential backoff plus jitter; honours `Retry-After` on 429; bounded by `config.maxRetryAttempts` and `maxRetryDelay`                                             |
+| `CacheInterceptor`                          | `(config:)`                                                                                                     | in-memory cache of 2xx GET responses; respects `Cache-Control` and `Expires`; `clearCache()`, `evictExpired()`                                                                                                             |
+| `TokenBucketRateLimitInterceptor`           | `(config:, global: [], perHost: [], hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500)` | token buckets from `TokenBucketPolicy` lists; no policy means unlimited; each request passes its host tiers (`hosts[host]`, else `perHost`) then `global`; full queue → 429 `DioException`; `getStatistics()`, `dispose()` |
+| `PerformanceInterceptor`                    | `(config:, maxMetricsHistory: 1000, collectDetailedTimings: true)`                                              | `getRecentMetrics()`, `getStatistics()` returning `PerformanceStatistics`                                                                                                                                                  |
+| `HttpLogInterceptor`                        | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, logPrint)`                 | ANSI-coloured chunked printing; add last                                                                                                                                                                                   |
+| `NetworkExceptionHandlerInterceptor`        | abstract `QueuedInterceptor`                                                                                    | implement `onClientError` (4xx) and `onServerError` (5xx), optionally `onNonStandardError`; connect/receive timeouts become `NetworkTimeoutException` first                                                                |
+| `DefaultNetworkExceptionHandlerInterceptor` | `()`                                                                                                            | rejects every error as-is                                                                                                                                                                                                  |
 
 `HttpClientConfig`: `const HttpClientConfig({...})`, presets `production()`, `development()`, `test()`, `copyWith(...)`, and `applyTo(dio)` which sets timeouts, redirects, default headers, user agent, and `validateStatus: status < 500`.
+
+## Rate limiting
+
+Every scope is unlimited until you give it a policy. A `TokenBucketPolicy` means "at most `permits` requests in any window of `per`"; `burst` (default 10% of `permits`, at least 1) is how many may leave back to back after idle time, and the steady rate is `permits - burst + 1` per `per`.
+
+```dart
+final rateLimit = TokenBucketRateLimitInterceptor(
+  config: config,
+  hosts: const {
+    'api.partner.com': [
+      TokenBucketPolicy(permits: 100, per: Duration(minutes: 1)),
+      TokenBucketPolicy(permits: 5000, per: Duration(hours: 1), burst: 50),
+    ],
+  },
+);
+```
+
+`hosts` keys must be lowercase. An empty list (`'api.my-backend.com': []`) opts a host out of `perHost`.
+
+Refill timers outlive the last request, so call `dispose()` where timers must stop:
+
+| Context                                      | Call `dispose()`                                                                                       |
+|----------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| Flutter app, client lives as long as the app | not needed                                                                                             |
+| Scoped client (DI scope, logout, env switch) | when the scope ends: get_it `dispose:`, injectable `@disposeMethod`, Riverpod `ref.onDispose`          |
+| `testWidgets` with a real client             | at the end of the test body or from a widget's `dispose`; `addTearDown` is too late and the test fails |
+| Unit test under `fakeAsync`                  | at the end of the `fakeAsync` body                                                                     |
+| CLI                                          | in a `finally` before `main` returns, or exit waits until every bucket refills                         |
+| Server (dart_frog)                           | not needed                                                                                             |
+
+On a server, build the client once per process (a top-level variable returned by `provider`). A client built inside a per-request `provider` starts with full buckets on every request and limits nothing.
 
 ## Helpers
 
