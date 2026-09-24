@@ -16,7 +16,8 @@ abstract class TokenBucketRateLimitStatistics
     /// queue or a paused host.
     required int rejected,
 
-    /// Requests waiting in each host's own tiers, keyed by host.
+    /// Requests waiting in each host's own tiers, keyed by host. An idle
+    /// host whose buckets have refilled drops out once a new host arrives.
     required Map<String, int> waitingByHost,
 
     /// Requests waiting in the global tiers.
