@@ -94,7 +94,8 @@ class HttpLogInterceptor extends Interceptor {
           'receiveDataWhenStatusError',
           options.receiveDataWhenStatusError,
         );
-        _printKV('extra', options.extra);
+        // The start stamp is this log's own bookkeeping, not the app's.
+        _printKV('extra', {...options.extra}..remove(logStartKey));
       }
       if (requestHeader) {
         logPrint('headers:');

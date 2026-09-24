@@ -157,6 +157,18 @@ void main() {
     });
   });
 
+  group('request block', () {
+    test('the printed extra hides the log start stamp and keeps app keys', () {
+      final lines = _run(
+        (print) => HttpLogInterceptor(logPrint: print),
+        options: Options(extra: {'id': 1}),
+      );
+
+      expect(lines, contains('extra: {id: 1}'));
+      expect(lines.join('\n'), isNot(contains('dart_falconnect.log.start')));
+    });
+  });
+
   group('status and duration', () {
     test('a response prints its status and duration with responseHeader '
         'off', () {
