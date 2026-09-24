@@ -16,7 +16,8 @@ const _retry = RetryConfig(
 
 Dio _dio(HttpClientAdapter adapter, List<Interceptor> Function(Dio) chain) {
   final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-    ..httpClientAdapter = adapter;
+    ..httpClientAdapter = adapter
+    ..transformer = FoldingTransformer();
   dio.interceptors.addAll(chain(dio));
   return dio;
 }

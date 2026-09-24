@@ -4,9 +4,9 @@ import 'package:test/test.dart';
 
 import '_scripted_adapter.dart';
 
-Dio _dio(List<Reply> script) =>
-    Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = ScriptedAdapter(script);
+Dio _dio(List<Reply> script) => Dio(BaseOptions(baseUrl: 'https://a.test'))
+  ..httpClientAdapter = ScriptedAdapter(script)
+  ..transformer = FoldingTransformer();
 
 void main() {
   test('RetryInterceptor prints through logPrint', () {
