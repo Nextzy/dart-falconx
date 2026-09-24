@@ -50,7 +50,7 @@ Semantics:
 - A server `error` object or `errors` list throws `JsonRpcErrorResponse(jsonrpc, id, errors: List<JsonRpcError>)`.
 - A missing `result` throws `StateError` (use `notify` for fire-and-forget); a non-map `result` throws `StateError('Invalid result type')`.
 - `mockId` is sent as `"mock"` when non-null.
-- Transport failures surface as `DioException`; `.catchWhenError((e, st) => fallback)` on the returned future recovers.
+- Transport failures surface as `DioException`; `.catchWhenError((e, st) => fallback)` resolves with a `JsonRpcResponse` carrying the request id, and returning `null` rethrows.
 
 ## Notification
 
