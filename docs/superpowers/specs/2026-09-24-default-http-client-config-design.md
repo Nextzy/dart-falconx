@@ -77,6 +77,9 @@ abstract class HttpClientConfig with _$HttpClientConfig {
     NetworkExceptionHandlerInterceptor? exceptionHandler,
   }) = _HttpClientConfig;
 
+  /// `headers` plus `User-Agent` when `userAgent` is set.
+  Map<String, String> get effectiveHeaders;
+
   void applyTo(Dio dio) { ... }
 }
 ```
@@ -169,6 +172,9 @@ Each interceptor takes its own box instead of `HttpClientConfig`, plus an option
 
 - `logPrint` has type `void Function(String message)?` and defaults to null, which prints nothing. Today's default `enableLogging` is false, so the default output does not change. Messages keep their `[ClassName]` prefix.
 - `CacheInterceptor` and `PerformanceInterceptor` lose their `enableCache` and `enablePerformanceMonitoring` checks: the interceptor exists only when its box is not null.
+- Every `config` parameter defaults to its box built with no arguments, so `RetryInterceptor(dio: dio)` and `CacheInterceptor()` keep working.
+- Public fields that mirrored constructor parameters, such as `TokenBucketRateLimitInterceptor.queueRequests` and `PerformanceInterceptor.maxMetricsHistory`, become getters that read the box.
+- The `RetryCallback` typedef moves from `retry_interceptor.dart` to `retry_config.dart`.
 - `HttpLogInterceptor` keeps its constructor. The client maps `LogConfig` onto its named parameters.
 - Validation stays where it is: lowercase `hosts` keys, `TokenBucketPolicy.validate()`, and the concurrency checks still throw from the constructors.
 
@@ -209,7 +215,6 @@ abstract class BaseHttpClient implements RequestApiService {
   Dio get dio;
   String get baseUrl;
   BaseOptions get options;
-  @Deprecated('Use options') BaseOptions get config;
   Interceptors get interceptors;
 
   /// The configuration new requests use.
@@ -261,7 +266,7 @@ class PaymentHttpClient extends BaseHttpClient {
 - `DefaultHttpClient` keeps only its singleton. Its default configuration reproduces today's options and chain.
 - `setupBaseUrl(url)` calls `configure(currentConfig.copyWith(baseUrl: url))`, so `currentConfig` always matches `dio.options`.
 - `addInterceptors` calls `configure(currentConfig.copyWith(interceptors: [...currentConfig.interceptors, ...interceptors]))`. The added interceptors survive later `configure` calls and move from the end of the chain to the custom slot, so they now see errors (gap 2). Its parameter widens from `Interceptors` to `Iterable<Interceptor>`.
-- `options` returns the dio `BaseOptions`. `config` returns the same object and is deprecated, because its name now suggests `HttpClientConfig`.
+- `options` returns the dio `BaseOptions`. The `config` getter is removed, because its name now suggests `HttpClientConfig`. A deprecation is not possible: `very_good_analysis` enables `remove_deprecations_in_breaking_versions`, which rejects any `@Deprecated` member while the package version is 2.0.0.
 - `BaseHttpClient` stays abstract: one client class per external system, as the consumer skill teaches.
 - `DefaultJsonRpcService` takes any `BaseHttpClient` and uses only its `dio`; it is unaffected.
 
@@ -347,13 +352,13 @@ Future<Response<T>> _request<T>(
   ProgressCallback? onSendProgress,
   ProgressCallback? onReceiveProgress,
   required bool isUseToken,
-  required FutureOr<T> Function(Map<String, dynamic> json) converter,
-  T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+  required JsonResponseConverter<T> converter,
+  RequestErrorCallback<T>? catchError,
 });
 ```
 
 - It calls `dio.request` with the method set on a copy of `options`, then `mapJson(converter)` and `catchWhenError(catchError)` (section 12).
-- Every method accepts an async converter, `FutureOr<T> Function(Map<String, dynamic> json)`. Today only `get` does.
+- Every method accepts an async converter. Two new typedefs keep the fourteen signatures short: `JsonResponseConverter<T>` for `FutureOr<T> Function(Map<String, dynamic> json)`, and `RequestErrorCallback<T>` for `T? Function(DioException exception, StackTrace? stackTrace)`. `JsonConverter` was not usable as a name, because `json_annotation` exports a class of that name. Today only `get` accepts an async converter.
 - `queryParameters` widens to `Map<String, Object?>?`, so optional values can be null.
 - `isUseToken` is written to `options.extra` under `dart_falconnect.auth.useToken`. `FalconAuthRequestOptionsExtensions` and `FalconAuthOptionsExtensions` add a `useToken` getter and setter, following the retry extensions of SP2. The getter returns true when the key is absent, so Retrofit requests read as using a token. An auth interceptor in the custom slot can read it today; the auth spec builds on it.
 - Request bodies are unchanged: `BaseRequestBody` for JSON and `FormData` for multipart.
@@ -455,7 +460,7 @@ CacheInterceptor(config: const CacheConfig());
 | 11 | A `configure` swap overwrites the options the config owns | Put `baseUrl`, timeouts, and headers in the config instead of setting them on `dio.options` |
 | 12 | A `catchError` fallback that returns null now rethrows | Return a value to recover |
 | 13 | A body that is not a JSON object, or a converter failure, arrives as a `DioException` holding `CommonException(type: InputErrorType.invalidFormat)` | Catch `DioException`; `catchError` now sees these failures |
-| 14 | `BaseHttpClient.config` deprecated | Read `options` |
+| 14 | `BaseHttpClient.config` removed | Read `options` |
 | 15 | `RequestApiService` signatures widened | Only implementers and overriders update their signatures |
 
 ## 14. Changes to the SP1, SP2, and SP3 contracts
@@ -573,3 +578,5 @@ The brainstorm settled the design; these finer points were chosen here and are o
 10. The `useToken` extra key is `dart_falconnect.auth.useToken`, and its getter defaults to true.
 11. `addInterceptors` widens its parameter to `Iterable<Interceptor>`, and `RequestApiService` declares the same parameters as `BaseHttpClient`.
 12. `BaseHttpClient` stays abstract.
+13. Two new typedefs, `JsonResponseConverter<T>` and `RequestErrorCallback<T>`, name the converter and fallback types (section 11).
+14. `HttpClientConfig.effectiveHeaders` is public, so `BaseHttpClient` can remove the header keys a previous config set.
