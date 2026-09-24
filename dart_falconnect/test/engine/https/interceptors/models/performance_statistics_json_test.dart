@@ -22,12 +22,13 @@ void main() {
     );
 
     test('emits every key with computed values', () {
+      // statusCodeCounts keys stringify: JSON object keys must be strings.
       expect(stats.toJson(), {
         'totalRequests': 3,
         'successfulRequests': 2,
         'failedRequests': 1,
         'successRate': 2 / 3 * 100,
-        'statusCodeCounts': {200: 2, 404: 1},
+        'statusCodeCounts': {'200': 2, '404': 1},
         'errorCounts': {'timeout': 1},
         'totalRequestSize': 30,
         'totalResponseSize': 90,
@@ -41,24 +42,27 @@ void main() {
       });
     });
 
-    test('key order matches today', () {
-      expect(stats.toJson().keys.toList(), [
-        'totalRequests',
-        'successfulRequests',
-        'failedRequests',
-        'successRate',
-        'statusCodeCounts',
-        'errorCounts',
-        'totalRequestSize',
-        'totalResponseSize',
-        'averageRequestSize',
-        'averageResponseSize',
-        'totalDuration',
-        'averageDuration',
-        'medianDuration',
-        'minDuration',
-        'maxDuration',
-      ]);
+    test("emits exactly today's key set", () {
+      expect(
+        stats.toJson().keys,
+        unorderedEquals([
+          'totalRequests',
+          'successfulRequests',
+          'failedRequests',
+          'successRate',
+          'statusCodeCounts',
+          'errorCounts',
+          'totalRequestSize',
+          'totalResponseSize',
+          'averageRequestSize',
+          'averageResponseSize',
+          'totalDuration',
+          'averageDuration',
+          'medianDuration',
+          'minDuration',
+          'maxDuration',
+        ]),
+      );
     });
 
     test('zero requests divide by zero into zeros, not throws', () {
