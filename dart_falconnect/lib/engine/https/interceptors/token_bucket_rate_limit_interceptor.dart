@@ -7,7 +7,8 @@ import 'package:dart_faltool/dart_faltool.dart'
         RateLimitExceededException,
         RateLimiter,
         ResiliencePipeline,
-        TokenBucketPolicy;
+        TokenBucketPolicy,
+        clock;
 import 'package:dio/dio.dart';
 
 /// Limits outgoing requests with token buckets built on `resilience`, and
@@ -45,6 +46,10 @@ import 'package:dio/dio.dart';
 /// already taken by earlier tiers stay spent. A request cancelled through
 /// its `CancelToken` while it waits for tokens keeps its queue place and
 /// still spends a token, but it is neither forwarded nor counted.
+///
+/// Each host gets its own buckets on its first request. When a new host
+/// arrives, the interceptor forgets every idle host whose buckets are full
+/// again, so the number of remembered hosts stays bounded by recent traffic.
 ///
 /// Refill timers keep running until every bucket is full again. Call
 /// [dispose] at the end of a `testWidgets` body (`addTearDown` runs after
@@ -115,8 +120,15 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
   final Map<String, List<TokenBucketPolicy>> _hosts;
   final List<RateLimiter> _globalLimiters;
   final RetryAfterPause _pause;
-  final Map<String, List<RateLimiter>> _hostLimiters = {};
-  final Map<String, ResiliencePipeline> _pipelines = {};
+  final Map<String, _HostBuckets> _buckets = {};
+
+  /// Idle hosts are swept at most this often: the longest time any host's
+  /// buckets need to refill, so a sweep can find something to forget.
+  late final Duration _sweepInterval = [
+    for (final policy in [..._perHost, ..._hosts.values.expand((p) => p)])
+      _refillTime(policy.toRateLimiter()),
+  ].fold(Duration.zero, _longer);
+  DateTime? _lastSweep;
   int _forwarded = 0;
   int _rejected = 0;
   bool _disposed = false;
@@ -164,12 +176,10 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
         );
         return;
       }
-      final pipeline = _pipelines.putIfAbsent(
-        host,
-        () => _buildPipeline(host, hostPolicies),
-      );
+      final buckets = _buckets[host] ?? _addHost(host, hostPolicies);
+      buckets.active++;
       try {
-        await pipeline.execute(() async {});
+        await buckets.pipeline.execute(() async {});
       } on RateLimitExceededException catch (error) {
         _rejected++;
         _log('Rate limit queue full for $host');
@@ -180,6 +190,10 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
         if (!_disposed) rethrow;
         handler.reject(_cancelled(options, error, 'Rate limiter disposed'));
         return;
+      } finally {
+        buckets
+          ..active -= 1
+          ..lastUsed = clock.now();
       }
       final cancelToken = options.cancelToken;
       if (cancelToken != null && cancelToken.isCancelled) {
@@ -225,8 +239,8 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
       forwarded: _forwarded,
       rejected: _rejected,
       waitingByHost: Map.unmodifiable({
-        for (final entry in _hostLimiters.entries)
-          entry.key: waiting(entry.value),
+        for (final MapEntry(:key, :value) in _buckets.entries)
+          key: waiting(value.limiters),
       }),
       globalWaiting: waiting(_globalLimiters),
       heldByHost: _pause.heldByHost,
@@ -247,7 +261,7 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
     _pause.dispose();
     for (final limiter in [
       ..._globalLimiters,
-      ..._hostLimiters.values.expand((limiters) => limiters),
+      ..._buckets.values.expand((buckets) => buckets.limiters),
     ]) {
       limiter.dispose();
     }
@@ -278,17 +292,45 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
     );
   }
 
-  ResiliencePipeline _buildPipeline(
-    String host,
-    List<TokenBucketPolicy> policies,
-  ) {
-    final hostLimiters = [
+  /// Builds the buckets of a host seen for the first time. Before the map
+  /// grows, it forgets every idle host whose buckets are full again, so a
+  /// client that calls many hosts does not keep one set of buckets per host
+  /// forever.
+  _HostBuckets _addHost(String host, List<TokenBucketPolicy> policies) {
+    final now = clock.now();
+    final lastSweep = _lastSweep;
+    if (lastSweep == null || now.difference(lastSweep) >= _sweepInterval) {
+      _lastSweep = now;
+      _buckets.removeWhere((_, buckets) {
+        if (!buckets.isForgettableAt(now)) return false;
+        for (final limiter in buckets.limiters) {
+          limiter.dispose();
+        }
+        return true;
+      });
+    }
+    final limiters = [
       for (final policy in policies)
         policy.toRateLimiter(maxQueueLength: queueRequests ? maxQueueSize : 0),
     ];
-    _hostLimiters[host] = hostLimiters;
-    return ResiliencePipeline([...hostLimiters, ..._globalLimiters]);
+    return _buckets[host] = _HostBuckets(
+      limiters,
+      ResiliencePipeline([...limiters, ..._globalLimiters]),
+      refillTime: limiters.map(_refillTime).fold(Duration.zero, _longer),
+      lastUsed: now,
+    );
   }
+
+  static Duration _longer(Duration a, Duration b) => a > b ? a : b;
+
+  /// The finest step of a `resilience` refill timer (its `_minTick`).
+  static const Duration _refillTickFloor = Duration(milliseconds: 4);
+
+  /// How long [limiter] needs after its last token to be full again: its
+  /// refill period, plus one timer tick, since tokens arrive per tick.
+  static Duration _refillTime(RateLimiter limiter) =>
+      limiter.per +
+      _longer(limiter.per ~/ limiter.maxPermits, _refillTickFloor);
 
   DioException _cancelled(
     RequestOptions options,
@@ -303,4 +345,35 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
 
   void _log(String message) =>
       logPrint?.call('[TokenBucketRateLimitInterceptor] $message');
+}
+
+/// The token buckets of one host, and what forgetting them needs to know.
+class _HostBuckets {
+  new(
+    this.limiters,
+    this.pipeline, {
+    required this.refillTime,
+    required this.lastUsed,
+  });
+
+  /// The host's own tiers; empty when only global tiers apply.
+  final List<RateLimiter> limiters;
+  final ResiliencePipeline pipeline;
+
+  /// How long [limiters] need after their last token to be full again.
+  final Duration refillTime;
+
+  /// Requests of this host still inside [pipeline].
+  int active = 0;
+
+  /// When the last of those requests left [pipeline].
+  DateTime lastUsed;
+
+  /// Whether dropping these buckets changes nothing: no request is inside
+  /// or waiting, and every bucket has refilled, so new buckets built for the
+  /// host's next request start in the same state.
+  bool isForgettableAt(DateTime now) =>
+      active == 0 &&
+      limiters.every((limiter) => limiter.queueLength == 0) &&
+      now.difference(lastUsed) >= refillTime;
 }
