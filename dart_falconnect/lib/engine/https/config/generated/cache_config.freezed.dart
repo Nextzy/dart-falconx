@@ -27,7 +27,11 @@ mixin _$CacheConfig {
  CacheStore? get store;/// Request headers that split one URL into separate entries, compared
 /// ignoring case. On a server that serves many users, keep
 /// `authorization` here, or one user reads another's cached responses.
- Set<String> get keyHeaders;
+ Set<String> get keyHeaders;/// Answers from the cache when a request fails without a response,
+/// after every retry.
+ bool get hitCacheOnNetworkFailure;/// Answers from the cache when a request fails with one of these
+/// statuses, after every retry.
+ Set<int> get hitCacheOnErrorCodes;
 /// Create a copy of CacheConfig
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -39,20 +43,20 @@ $CacheConfigCopyWith<CacheConfig> get copyWith => _$CacheConfigCopyWithImpl<Cach
 @override
 bool operator ==(Object other) {
   final _this = this as CacheConfig;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CacheConfig&&(identical(other.policy, _this.policy) || other.policy == _this.policy)&&(identical(other.maxStale, _this.maxStale) || other.maxStale == _this.maxStale)&&(identical(other.maxSize, _this.maxSize) || other.maxSize == _this.maxSize)&&(identical(other.store, _this.store) || other.store == _this.store)&&const DeepCollectionEquality().equals(other.keyHeaders, _this.keyHeaders));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CacheConfig&&(identical(other.policy, _this.policy) || other.policy == _this.policy)&&(identical(other.maxStale, _this.maxStale) || other.maxStale == _this.maxStale)&&(identical(other.maxSize, _this.maxSize) || other.maxSize == _this.maxSize)&&(identical(other.store, _this.store) || other.store == _this.store)&&const DeepCollectionEquality().equals(other.keyHeaders, _this.keyHeaders)&&(identical(other.hitCacheOnNetworkFailure, _this.hitCacheOnNetworkFailure) || other.hitCacheOnNetworkFailure == _this.hitCacheOnNetworkFailure)&&const DeepCollectionEquality().equals(other.hitCacheOnErrorCodes, _this.hitCacheOnErrorCodes));
 }
 
 
 @override
 int get hashCode {
   final _this = this as CacheConfig;
-  return Object.hash(runtimeType,_this.policy,_this.maxStale,_this.maxSize,_this.store,const DeepCollectionEquality().hash(_this.keyHeaders));
+  return Object.hash(runtimeType,_this.policy,_this.maxStale,_this.maxSize,_this.store,const DeepCollectionEquality().hash(_this.keyHeaders),_this.hitCacheOnNetworkFailure,const DeepCollectionEquality().hash(_this.hitCacheOnErrorCodes));
 }
 
 @override
 String toString() {
   final _this = this as CacheConfig;
-  return 'CacheConfig(policy: ${_this.policy}, maxStale: ${_this.maxStale}, maxSize: ${_this.maxSize}, store: ${_this.store}, keyHeaders: ${_this.keyHeaders})';
+  return 'CacheConfig(policy: ${_this.policy}, maxStale: ${_this.maxStale}, maxSize: ${_this.maxSize}, store: ${_this.store}, keyHeaders: ${_this.keyHeaders}, hitCacheOnNetworkFailure: ${_this.hitCacheOnNetworkFailure}, hitCacheOnErrorCodes: ${_this.hitCacheOnErrorCodes})';
 }
 
 
@@ -63,7 +67,7 @@ abstract mixin class $CacheConfigCopyWith<$Res>  {
   factory $CacheConfigCopyWith(CacheConfig value, $Res Function(CacheConfig) _then) = _$CacheConfigCopyWithImpl;
 @useResult
 $Res call({
- CachePolicy policy, Duration? maxStale, int maxSize, CacheStore? store, Set<String> keyHeaders
+ CachePolicy policy, Duration? maxStale, int maxSize, CacheStore? store, Set<String> keyHeaders, bool hitCacheOnNetworkFailure, Set<int> hitCacheOnErrorCodes
 });
 
 
@@ -80,14 +84,16 @@ class _$CacheConfigCopyWithImpl<$Res>
 
 /// Create a copy of CacheConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? policy = null,Object? maxStale = freezed,Object? maxSize = null,Object? store = freezed,Object? keyHeaders = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? policy = null,Object? maxStale = freezed,Object? maxSize = null,Object? store = freezed,Object? keyHeaders = null,Object? hitCacheOnNetworkFailure = null,Object? hitCacheOnErrorCodes = null,}) {
   return _then(CacheConfig(
 policy: null == policy ? _self.policy : policy // ignore: cast_nullable_to_non_nullable
 as CachePolicy,maxStale: freezed == maxStale ? _self.maxStale : maxStale // ignore: cast_nullable_to_non_nullable
 as Duration?,maxSize: null == maxSize ? _self.maxSize : maxSize // ignore: cast_nullable_to_non_nullable
 as int,store: freezed == store ? _self.store : store // ignore: cast_nullable_to_non_nullable
 as CacheStore?,keyHeaders: null == keyHeaders ? _self.keyHeaders : keyHeaders // ignore: cast_nullable_to_non_nullable
-as Set<String>,
+as Set<String>,hitCacheOnNetworkFailure: null == hitCacheOnNetworkFailure ? _self.hitCacheOnNetworkFailure : hitCacheOnNetworkFailure // ignore: cast_nullable_to_non_nullable
+as bool,hitCacheOnErrorCodes: null == hitCacheOnErrorCodes ? _self.hitCacheOnErrorCodes : hitCacheOnErrorCodes // ignore: cast_nullable_to_non_nullable
+as Set<int>,
   ));
 }
 
@@ -172,10 +178,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CachePolicy policy,  Duration? maxStale,  int maxSize,  CacheStore? store,  Set<String> keyHeaders)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CachePolicy policy,  Duration? maxStale,  int maxSize,  CacheStore? store,  Set<String> keyHeaders,  bool hitCacheOnNetworkFailure,  Set<int> hitCacheOnErrorCodes)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CacheConfig() when $default != null:
-return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyHeaders);case _:
+return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyHeaders,_that.hitCacheOnNetworkFailure,_that.hitCacheOnErrorCodes);case _:
   return orElse();
 
 }
@@ -193,10 +199,10 @@ return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyH
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CachePolicy policy,  Duration? maxStale,  int maxSize,  CacheStore? store,  Set<String> keyHeaders)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CachePolicy policy,  Duration? maxStale,  int maxSize,  CacheStore? store,  Set<String> keyHeaders,  bool hitCacheOnNetworkFailure,  Set<int> hitCacheOnErrorCodes)  $default,) {final _that = this;
 switch (_that) {
 case _CacheConfig():
-return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyHeaders);case _:
+return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyHeaders,_that.hitCacheOnNetworkFailure,_that.hitCacheOnErrorCodes);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -213,10 +219,10 @@ return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyH
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CachePolicy policy,  Duration? maxStale,  int maxSize,  CacheStore? store,  Set<String> keyHeaders)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CachePolicy policy,  Duration? maxStale,  int maxSize,  CacheStore? store,  Set<String> keyHeaders,  bool hitCacheOnNetworkFailure,  Set<int> hitCacheOnErrorCodes)?  $default,) {final _that = this;
 switch (_that) {
 case _CacheConfig() when $default != null:
-return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyHeaders);case _:
+return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyHeaders,_that.hitCacheOnNetworkFailure,_that.hitCacheOnErrorCodes);case _:
   return null;
 
 }
@@ -228,7 +234,7 @@ return $default(_that.policy,_that.maxStale,_that.maxSize,_that.store,_that.keyH
 
 
 class _CacheConfig implements CacheConfig {
-  const _CacheConfig({this.policy = CachePolicy.request, this.maxStale, this.maxSize = 50 * 1024 * 1024, this.store,  Set<String> keyHeaders = const {'authorization', 'accept', 'accept-language'}}): _keyHeaders = keyHeaders;
+  const _CacheConfig({this.policy = CachePolicy.request, this.maxStale, this.maxSize = 50 * 1024 * 1024, this.store,  Set<String> keyHeaders = const {'authorization', 'accept', 'accept-language'}, this.hitCacheOnNetworkFailure = false,  Set<int> hitCacheOnErrorCodes = const <int>{}}): _keyHeaders = keyHeaders,_hitCacheOnErrorCodes = hitCacheOnErrorCodes;
   
 
 /// Default policy; [CachePolicy.request] follows the server's cache
@@ -257,6 +263,20 @@ class _CacheConfig implements CacheConfig {
   return EqualUnmodifiableSetView(_keyHeaders);
 }
 
+/// Answers from the cache when a request fails without a response,
+/// after every retry.
+@override@JsonKey() final  bool hitCacheOnNetworkFailure;
+/// Answers from the cache when a request fails with one of these
+/// statuses, after every retry.
+ final  Set<int> _hitCacheOnErrorCodes;
+/// Answers from the cache when a request fails with one of these
+/// statuses, after every retry.
+@override@JsonKey() Set<int> get hitCacheOnErrorCodes {
+  if (_hitCacheOnErrorCodes is EqualUnmodifiableSetView) return _hitCacheOnErrorCodes;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableSetView(_hitCacheOnErrorCodes);
+}
+
 
 /// Create a copy of CacheConfig
 /// with the given fields replaced by the non-null parameter values.
@@ -268,18 +288,18 @@ _$CacheConfigCopyWith<_CacheConfig> get copyWith => __$CacheConfigCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CacheConfig&&(identical(other.policy, policy) || other.policy == policy)&&(identical(other.maxStale, maxStale) || other.maxStale == maxStale)&&(identical(other.maxSize, maxSize) || other.maxSize == maxSize)&&(identical(other.store, store) || other.store == store)&&const DeepCollectionEquality().equals(other.keyHeaders, _keyHeaders));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CacheConfig&&(identical(other.policy, policy) || other.policy == policy)&&(identical(other.maxStale, maxStale) || other.maxStale == maxStale)&&(identical(other.maxSize, maxSize) || other.maxSize == maxSize)&&(identical(other.store, store) || other.store == store)&&const DeepCollectionEquality().equals(other.keyHeaders, _keyHeaders)&&(identical(other.hitCacheOnNetworkFailure, hitCacheOnNetworkFailure) || other.hitCacheOnNetworkFailure == hitCacheOnNetworkFailure)&&const DeepCollectionEquality().equals(other.hitCacheOnErrorCodes, _hitCacheOnErrorCodes));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,policy,maxStale,maxSize,store,const DeepCollectionEquality().hash(_keyHeaders));
+    return Object.hash(runtimeType,policy,maxStale,maxSize,store,const DeepCollectionEquality().hash(_keyHeaders),hitCacheOnNetworkFailure,const DeepCollectionEquality().hash(_hitCacheOnErrorCodes));
 }
 
 @override
 String toString() {
-    return 'CacheConfig(policy: $policy, maxStale: $maxStale, maxSize: $maxSize, store: $store, keyHeaders: $keyHeaders)';
+    return 'CacheConfig(policy: $policy, maxStale: $maxStale, maxSize: $maxSize, store: $store, keyHeaders: $keyHeaders, hitCacheOnNetworkFailure: $hitCacheOnNetworkFailure, hitCacheOnErrorCodes: $hitCacheOnErrorCodes)';
 }
 
 
@@ -290,7 +310,7 @@ abstract mixin class _$CacheConfigCopyWith<$Res> implements $CacheConfigCopyWith
   factory _$CacheConfigCopyWith(_CacheConfig value, $Res Function(_CacheConfig) _then) = __$CacheConfigCopyWithImpl;
 @override @useResult
 $Res call({
- CachePolicy policy, Duration? maxStale, int maxSize, CacheStore? store, Set<String> keyHeaders
+ CachePolicy policy, Duration? maxStale, int maxSize, CacheStore? store, Set<String> keyHeaders, bool hitCacheOnNetworkFailure, Set<int> hitCacheOnErrorCodes
 });
 
 
@@ -307,14 +327,16 @@ class __$CacheConfigCopyWithImpl<$Res>
 
 /// Create a copy of CacheConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? policy = null,Object? maxStale = freezed,Object? maxSize = null,Object? store = freezed,Object? keyHeaders = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? policy = null,Object? maxStale = freezed,Object? maxSize = null,Object? store = freezed,Object? keyHeaders = null,Object? hitCacheOnNetworkFailure = null,Object? hitCacheOnErrorCodes = null,}) {
   return _then(_CacheConfig(
 policy: null == policy ? _self.policy : policy // ignore: cast_nullable_to_non_nullable
 as CachePolicy,maxStale: freezed == maxStale ? _self.maxStale : maxStale // ignore: cast_nullable_to_non_nullable
 as Duration?,maxSize: null == maxSize ? _self.maxSize : maxSize // ignore: cast_nullable_to_non_nullable
 as int,store: freezed == store ? _self.store : store // ignore: cast_nullable_to_non_nullable
 as CacheStore?,keyHeaders: null == keyHeaders ? _self._keyHeaders : keyHeaders // ignore: cast_nullable_to_non_nullable
-as Set<String>,
+as Set<String>,hitCacheOnNetworkFailure: null == hitCacheOnNetworkFailure ? _self.hitCacheOnNetworkFailure : hitCacheOnNetworkFailure // ignore: cast_nullable_to_non_nullable
+as bool,hitCacheOnErrorCodes: null == hitCacheOnErrorCodes ? _self._hitCacheOnErrorCodes : hitCacheOnErrorCodes // ignore: cast_nullable_to_non_nullable
+as Set<int>,
   ));
 }
 
