@@ -10,10 +10,18 @@ import '_stub_http_client.dart';
 
 void main() {
   group('dart_falconnect on web', () {
-    test('HttpClientConfig factories build without throwing', () {
-      expect(HttpClientConfig.production(), isNotNull);
-      expect(HttpClientConfig.development(), isNotNull);
-      expect(HttpClientConfig.test(), isNotNull);
+    test('HttpClientConfig builds with every box set', () {
+      expect(
+        const HttpClientConfig(
+          log: LogConfig(),
+          performance: PerformanceConfig(),
+          cache: CacheConfig(),
+          concurrency: ConcurrencyConfig(global: 16, perHost: 4),
+          rateLimit: RateLimitConfig.tokenBucket(),
+          retry: RetryConfig(),
+        ),
+        isNotNull,
+      );
     });
 
     test('BaseHttpClient subclass instantiates with default adapter', () {

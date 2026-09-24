@@ -16,10 +16,8 @@ void _sink(Object? o) {
 }
 
 void main() {
-  // HTTP config factories
-  _sink(HttpClientConfig.production());
-  _sink(HttpClientConfig.development());
-  _sink(HttpClientConfig.test());
+  // HTTP config
+  _sink(const HttpClientConfig(retry: RetryConfig()));
 
   // HTTP client
   final dio = Dio();

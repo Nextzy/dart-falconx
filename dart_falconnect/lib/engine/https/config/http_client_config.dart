@@ -1,236 +1,101 @@
+import 'package:dart_falconnect/engine/https/config/cache_config.dart';
+import 'package:dart_falconnect/engine/https/config/concurrency_config.dart';
+import 'package:dart_falconnect/engine/https/config/log_config.dart';
+import 'package:dart_falconnect/engine/https/config/performance_config.dart';
+import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
+import 'package:dart_falconnect/engine/https/config/retry_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/network_exception_handler_interceptor.dart';
 import 'package:dio/dio.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-/// Configuration class for HTTP client behavior.
-///
-/// This class provides a centralized way to configure HTTP client
-/// behavior including timeouts, retries, caching, and connection pooling.
-class HttpClientConfig {
-  /// Creates a new HTTP client configuration.
-  const new({
-    this.connectTimeout = const Duration(seconds: 30),
-    this.receiveTimeout = const Duration(seconds: 30),
-    this.sendTimeout = const Duration(seconds: 30),
-    this.maxRetryAttempts = 3,
-    this.retryDelay = const Duration(seconds: 1),
-    this.maxRetryDelay = const Duration(seconds: 30),
-    this.maxRetryDuration = const Duration(seconds: 60),
-    this.enableCache = true,
-    this.maxCacheSize = 50 * 1024 * 1024, // 50 MB
-    this.cacheDuration = const Duration(minutes: 15),
-    this.enableLogging = false,
-    this.logBodies = false,
-    this.enablePerformanceMonitoring = true,
-    this.maxConnectionsPerHost = 5,
-    this.idleConnectionTimeout = const Duration(seconds: 15),
-    this.validateCertificates = true,
-    this.followRedirects = true,
-    this.maxRedirects = 5,
-    this.userAgent,
-    this.defaultHeaders = const {},
-  });
+part 'generated/http_client_config.freezed.dart';
 
-  /// Creates a production-ready configuration with conservative settings.
-  factory production() {
-    return const HttpClientConfig(
-      connectTimeout: Duration(seconds: 30),
-      receiveTimeout: Duration(seconds: 60),
-      sendTimeout: Duration(seconds: 60),
-      maxRetryAttempts: 3,
-      retryDelay: Duration(seconds: 2),
-      maxRetryDelay: Duration(minutes: 1),
-      maxRetryDuration: Duration(minutes: 2),
-      enableCache: true,
-      // 100 MB
-      maxCacheSize: 100 * 1024 * 1024,
-      cacheDuration: Duration(minutes: 30),
-      enableLogging: false,
-      logBodies: false,
-      enablePerformanceMonitoring: true,
-      maxConnectionsPerHost: 10,
-      idleConnectionTimeout: Duration(seconds: 30),
-      validateCertificates: true,
-      followRedirects: true,
-      maxRedirects: 5,
-    );
-  }
+/// Configuration of a `BaseHttpClient`: the dio options it owns and one box
+/// per feature. A null box turns its feature off.
+@freezed
+abstract class HttpClientConfig with _$HttpClientConfig {
+  /// Creates a configuration. The defaults reproduce the options and chain
+  /// of `DefaultHttpClient` before configuration existed.
+  const factory({
+    /// Base URL of every request.
+    @Default('') String baseUrl,
 
-  /// Creates a development configuration with verbose logging.
-  factory development() {
-    return const HttpClientConfig(
-      connectTimeout: Duration(seconds: 10),
-      receiveTimeout: Duration(seconds: 30),
-      sendTimeout: Duration(seconds: 30),
-      maxRetryAttempts: 1,
-      retryDelay: Duration(seconds: 1),
-      maxRetryDelay: Duration(seconds: 5),
-      maxRetryDuration: Duration(seconds: 10),
-      enableCache: false,
-      maxCacheSize: 10 * 1024 * 1024,
-      // 10 MB
-      cacheDuration: Duration(minutes: 5),
-      enableLogging: true,
-      logBodies: true,
-      enablePerformanceMonitoring: true,
-      maxConnectionsPerHost: 3,
-      idleConnectionTimeout: Duration(seconds: 10),
-      validateCertificates: false,
-      followRedirects: true,
-      maxRedirects: 3,
-    );
-  }
+    /// Timeout for opening a connection.
+    @Default(Duration(seconds: 20)) Duration connectTimeout,
 
-  /// Creates a test configuration with minimal timeouts.
-  factory test() {
-    return const HttpClientConfig(
-      connectTimeout: Duration(seconds: 5),
-      receiveTimeout: Duration(seconds: 5),
-      sendTimeout: Duration(seconds: 5),
-      maxRetryAttempts: 0,
-      retryDelay: Duration(milliseconds: 100),
-      maxRetryDelay: Duration(seconds: 1),
-      maxRetryDuration: Duration(seconds: 5),
-      enableCache: false,
-      // 1 MB
-      maxCacheSize: 1 * 1024 * 1024,
-      cacheDuration: Duration(seconds: 30),
-      enableLogging: true,
-      logBodies: false,
-      enablePerformanceMonitoring: false,
-      maxConnectionsPerHost: 1,
-      idleConnectionTimeout: Duration(seconds: 1),
-      validateCertificates: false,
-      followRedirects: false,
-      maxRedirects: 0,
-    );
-  }
+    /// Timeout between two received chunks.
+    @Default(Duration(seconds: 20)) Duration receiveTimeout,
 
-  /// Connection timeout for establishing a connection.
-  final Duration connectTimeout;
+    /// Timeout for sending the body; null means no limit.
+    Duration? sendTimeout,
 
-  /// Timeout for receiving data from the server.
-  final Duration receiveTimeout;
+    /// Default `Content-Type`.
+    @Default(Headers.jsonContentType) String contentType,
 
-  /// Timeout for sending data to the server.
-  final Duration sendTimeout;
+    /// Default headers the configuration owns.
+    @Default(<String, String>{}) Map<String, String> headers,
 
-  /// Maximum number of retry attempts for failed requests.
-  final int maxRetryAttempts;
+    /// `User-Agent` header; null leaves it unset.
+    String? userAgent,
 
-  /// Base delay for exponential backoff retry strategy.
-  final Duration retryDelay;
+    /// Whether dio follows redirects.
+    @Default(true) bool followRedirects,
 
-  /// Maximum delay between retry attempts.
-  final Duration maxRetryDelay;
+    /// Most redirects followed.
+    @Default(5) int maxRedirects,
 
-  /// Most time spent retrying one request, measured from its first
-  /// failure. A retry whose delay would end past it is not sent.
-  final Duration maxRetryDuration;
+    /// Which statuses succeed; null keeps dio's default, 2xx only.
+    ValidateStatus? validateStatus,
 
-  /// Whether to enable response caching.
-  final bool enableCache;
+    /// HTTP logging; null turns it off.
+    LogConfig? log,
 
-  /// Maximum size of the response cache in bytes.
-  final int maxCacheSize;
+    /// Performance monitoring; null turns it off.
+    PerformanceConfig? performance,
 
-  /// Duration for which cached responses are considered valid.
-  final Duration cacheDuration;
+    /// Response cache; null turns it off.
+    CacheConfig? cache,
 
-  /// Whether to enable request/response logging.
-  final bool enableLogging;
+    /// Concurrency limit; null turns it off.
+    ConcurrencyConfig? concurrency,
 
-  /// Whether to log request/response bodies.
-  final bool logBodies;
+    /// Rate limit and `Retry-After` pause.
+    @Default(RateLimitConfig.none()) RateLimitConfig rateLimit,
 
-  /// Whether to enable performance monitoring.
-  final bool enablePerformanceMonitoring;
+    /// Retry; null turns it off.
+    RetryConfig? retry,
 
-  /// Maximum number of concurrent connections per host.
-  final int maxConnectionsPerHost;
+    /// The app's own interceptors, placed first in the chain.
+    @Default(<Interceptor>[]) List<Interceptor> interceptors,
 
-  /// Duration to keep idle connections alive.
-  final Duration idleConnectionTimeout;
+    /// Last interceptor of the chain; null means
+    /// `DefaultNetworkExceptionHandlerInterceptor`.
+    NetworkExceptionHandlerInterceptor? exceptionHandler,
+  }) = _HttpClientConfig;
 
-  /// Whether to validate SSL certificates.
-  final bool validateCertificates;
+  const new _();
 
-  /// Whether to follow redirects automatically.
-  final bool followRedirects;
+  /// [headers] plus `User-Agent` when [userAgent] is set.
+  Map<String, String> get effectiveHeaders => {
+    ...headers,
+    'User-Agent': ?userAgent,
+  };
 
-  /// Maximum number of redirects to follow.
-  final int maxRedirects;
-
-  /// User agent string for requests.
-  final String? userAgent;
-
-  /// Default headers to include in all requests.
-  final Map<String, String> defaultHeaders;
-
-  /// Applies this configuration to a Dio instance.
+  /// Writes the options this configuration owns onto `dio.options` and
+  /// merges [effectiveHeaders] into its header map. Other fields are left
+  /// alone; `validateStatus` is written only when it is not null.
   void applyTo(Dio dio) {
-    dio.options
+    final options = dio.options
+      ..baseUrl = baseUrl
       ..connectTimeout = connectTimeout
       ..receiveTimeout = receiveTimeout
       ..sendTimeout = sendTimeout
+      ..contentType = contentType
       ..followRedirects = followRedirects
-      ..maxRedirects = maxRedirects
-      ..validateStatus = (status) => status != null && status < 500;
-
-    // Apply default headers
-    dio.options.headers.addAll(defaultHeaders);
-
-    // Apply user agent if specified
-    if (userAgent != null) {
-      dio.options.headers['User-Agent'] = userAgent;
+      ..maxRedirects = maxRedirects;
+    if (validateStatus != null) {
+      options.validateStatus = validateStatus!;
     }
-  }
-
-  /// Creates a copy of this configuration with optional overrides.
-  HttpClientConfig copyWith({
-    Duration? connectTimeout,
-    Duration? receiveTimeout,
-    Duration? sendTimeout,
-    int? maxRetryAttempts,
-    Duration? retryDelay,
-    Duration? maxRetryDelay,
-    Duration? maxRetryDuration,
-    bool? enableCache,
-    int? maxCacheSize,
-    Duration? cacheDuration,
-    bool? enableLogging,
-    bool? logBodies,
-    bool? enablePerformanceMonitoring,
-    int? maxConnectionsPerHost,
-    Duration? idleConnectionTimeout,
-    bool? validateCertificates,
-    bool? followRedirects,
-    int? maxRedirects,
-    String? userAgent,
-    Map<String, String>? defaultHeaders,
-  }) {
-    return HttpClientConfig(
-      connectTimeout: connectTimeout ?? this.connectTimeout,
-      receiveTimeout: receiveTimeout ?? this.receiveTimeout,
-      sendTimeout: sendTimeout ?? this.sendTimeout,
-      maxRetryAttempts: maxRetryAttempts ?? this.maxRetryAttempts,
-      retryDelay: retryDelay ?? this.retryDelay,
-      maxRetryDelay: maxRetryDelay ?? this.maxRetryDelay,
-      maxRetryDuration: maxRetryDuration ?? this.maxRetryDuration,
-      enableCache: enableCache ?? this.enableCache,
-      maxCacheSize: maxCacheSize ?? this.maxCacheSize,
-      cacheDuration: cacheDuration ?? this.cacheDuration,
-      enableLogging: enableLogging ?? this.enableLogging,
-      logBodies: logBodies ?? this.logBodies,
-      enablePerformanceMonitoring:
-          enablePerformanceMonitoring ?? this.enablePerformanceMonitoring,
-      maxConnectionsPerHost:
-          maxConnectionsPerHost ?? this.maxConnectionsPerHost,
-      idleConnectionTimeout:
-          idleConnectionTimeout ?? this.idleConnectionTimeout,
-      validateCertificates: validateCertificates ?? this.validateCertificates,
-      followRedirects: followRedirects ?? this.followRedirects,
-      maxRedirects: maxRedirects ?? this.maxRedirects,
-      userAgent: userAgent ?? this.userAgent,
-      defaultHeaders: defaultHeaders ?? this.defaultHeaders,
-    );
+    options.headers.addAll(effectiveHeaders);
   }
 }
