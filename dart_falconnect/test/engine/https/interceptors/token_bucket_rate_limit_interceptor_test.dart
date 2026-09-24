@@ -809,4 +809,76 @@ void main() {
       interceptor.dispose();
     });
   });
+
+  group('idle hosts', () {
+    const oncePerMinute = TokenBucketRateLimitConfig(
+      perHost: [
+        TokenBucketPolicy(permits: 1, per: Duration(minutes: 1), burst: 1),
+      ],
+    );
+
+    test('forgets a host once its buckets are full again', () {
+      fakeAsync((async) {
+        final interceptor = TokenBucketRateLimitInterceptor(
+          config: oncePerMinute,
+        );
+        final log = _Log();
+
+        _send(interceptor, log);
+        async.elapse(const Duration(minutes: 3));
+        _send(interceptor, log, url: 'https://b.test/items');
+        async.elapse(Duration.zero);
+
+        expect(interceptor.getStatistics().waitingByHost.keys, ['b.test']);
+        interceptor.dispose();
+      });
+    });
+
+    test('keeps a host whose buckets are still refilling', () {
+      fakeAsync((async) {
+        final interceptor = TokenBucketRateLimitInterceptor(
+          config: oncePerMinute,
+        );
+        final log = _Log();
+
+        _send(interceptor, log, url: 'https://b.test/items');
+        async.elapse(const Duration(seconds: 100));
+        _send(interceptor, log);
+        async.elapse(const Duration(seconds: 30));
+        // A new host sweeps idle hosts: b.test is full again, a.test is not.
+        _send(interceptor, log, url: 'https://c.test/items');
+        _send(interceptor, log);
+        async.elapse(Duration.zero);
+
+        expect(
+          log.forwarded.where((o) => o.uri.host == 'a.test'),
+          hasLength(1),
+        );
+        expect(interceptor.getStatistics().waitingByHost, {
+          'a.test': 1,
+          'c.test': 0,
+        });
+        interceptor.dispose();
+      });
+    });
+
+    test('forgets an idle host under global tiers only', () {
+      fakeAsync((async) {
+        final interceptor = TokenBucketRateLimitInterceptor(
+          config: const TokenBucketRateLimitConfig(
+            global: [TokenBucketPolicy(permits: 10, per: Duration(minutes: 1))],
+          ),
+        );
+        final log = _Log();
+
+        _send(interceptor, log);
+        async.elapse(Duration.zero);
+        _send(interceptor, log, url: 'https://b.test/items');
+        async.elapse(Duration.zero);
+
+        expect(interceptor.getStatistics().waitingByHost.keys, ['b.test']);
+        interceptor.dispose();
+      });
+    });
+  });
 }
