@@ -43,7 +43,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 | `melos run test:compile`                 | compiles `dart_falconnect/test/web/compile_smoke.dart` to js, wasm, and exe |
 | `melos run test:web`                     | every package's tests in Chrome, under dart2js and then dart2wasm   |
 | `melos run build_runner`                 | `build`, one package at a time                                      |
-| `melos run build_runner:fast`            | `build`, up to four packages at once                                |
+| `melos run build_runner:check`           | `build --only-check`: fails on a stale or missing generated file    |
 | `melos run build_runner:watch`           | Watch mode                                                          |
 
 - Reset corrupted dependencies with `melos clean`, then `melos bootstrap`.
@@ -75,7 +75,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 ### Code generation
 
 - Generated files land in `lib/{{path}}/generated/{{file}}.g.dart` or `.freezed.dart`, per each package's `build.yaml`.
-- Run `melos run build_runner` after editing a `@freezed` or `@JsonSerializable` class.
+- Run `melos run build_runner` after editing a `@freezed` or `@JsonSerializable` class, and `melos run build_runner:check` before committing.
 
 ## Gotchas
 

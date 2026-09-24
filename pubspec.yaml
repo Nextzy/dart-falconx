@@ -103,11 +103,11 @@ melos:
       packageFilters:
         dependsOn: build_runner
 
-    build_runner:fast:
-      description: Run build_runner in up to four packages at once.
+    build_runner:check:
+      description: Fail when any committed generated file differs from what build_runner would write; writes nothing.
       exec:
-        command: dart run build_runner build
-        concurrency: 4
+        command: dart run build_runner build --only-check
+        concurrency: 1
         failFast: false
       packageFilters:
         dependsOn: build_runner
