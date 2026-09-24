@@ -1,19 +1,25 @@
 import 'dart:math';
 
 import 'package:dart_falconnect/engine/https/config/cache_config.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/retry_attempts.dart';
 import 'package:dart_faltool/dart_faltool.dart' show sha256;
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 
 const String _policyKey = 'dart_falconnect.cache.policy';
 const String _forKey = 'dart_falconnect.cache.for';
+const String _fallbackKey = 'dart_falconnect.cache.fallback';
 
 /// Tells a response answered by [CacheInterceptor] apart from one fetched
 /// from the network.
 extension FalconCacheHitResponseExtensions on Response<dynamic> {
   /// Whether [CacheInterceptor] answered this response from its store,
-  /// without a network round trip.
+  /// without a network round trip, or through [CacheInterceptor.fallback].
   bool get isCacheHit => extra[extraFromNetworkKey] == false;
+
+  /// Whether [CacheInterceptor.fallback] answered this response after the
+  /// request failed.
+  bool get isCacheFallback => extra[_fallbackKey] == true;
 }
 
 /// Per-request cache settings on [RequestOptions].
@@ -62,7 +68,8 @@ Duration? _checkCacheFor(Duration? value) {
 /// current request; it passes every response interceptor of the chain.
 /// Entries are keyed by the URL and the headers of `CacheConfig.keyHeaders`.
 ///
-/// Place it before `ConcurrencyLimitInterceptor`, so a hit takes no slot.
+/// Place it before `ConcurrencyLimitInterceptor`, so a hit takes no slot,
+/// and place [fallback] after `RetryInterceptor`.
 class CacheInterceptor extends Interceptor {
   /// Creates a cache on [config]; with no `config.store`, entries live in a
   /// new `MemCacheStore` of `config.maxSize` bytes.
@@ -79,6 +86,12 @@ class CacheInterceptor extends Interceptor {
 
   /// The store entries live in.
   final CacheStore store;
+
+  /// Answers failed `GET` requests from [store]; place it after
+  /// `RetryInterceptor`, so it answers only after the last retry. It passes
+  /// every error on unless `hitCacheOnNetworkFailure` or
+  /// `hitCacheOnErrorCodes` is set.
+  late final Interceptor fallback = _CacheFallback(this);
 
   late final DioCacheInterceptor _cache = DioCacheInterceptor(
     options: _options(policy: config.policy, maxStale: null),
@@ -117,7 +130,7 @@ class CacheInterceptor extends Interceptor {
   }
 
   // The library resolves inside onError, which skips every later error
-  // interceptor; 304 revalidation runs on the response path instead.
+  // interceptor; the fallback and 304 revalidation live elsewhere.
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) =>
       handler.next(err);
@@ -162,6 +175,42 @@ class CacheInterceptor extends Interceptor {
       if (value != null) input.write('\n$name: $value');
     }
     return sha256.string(input.toString()).hex();
+  }
+
+  /// Answers [err] from [store], or returns null to pass it on.
+  Future<Response<dynamic>?> _fallbackFor(DioException err) async {
+    final options = err.requestOptions;
+    if (err.type == DioExceptionType.cancel ||
+        options.method.toUpperCase() != 'GET') {
+      return null;
+    }
+    final status = err.response?.statusCode;
+    final allowed = status == null
+        ? config.hitCacheOnNetworkFailure
+        : config.hitCacheOnErrorCodes.contains(status);
+    if (!allowed) return null;
+    try {
+      final headers = Map<String, String>.of(options.getFlattenHeaders())
+        ..removeWhere((name, _) => conditionalRequestHeaders.contains(name));
+      final entry = await store.get(_key(url: options.uri, headers: headers));
+      if (entry == null || entry.isStaled()) return null;
+      final full = await entry.readContent(
+        _options(policy: config.policy, maxStale: null),
+        readHeaders: true,
+        readBody: true,
+      );
+      final response = full.toResponse(options);
+      response.extra[_fallbackKey] = true;
+      _log(
+        'Answered ${_describe(options)} from the cache after '
+        '${status ?? err.type.name}',
+      );
+      return response;
+      // A broken store must not replace the request's own error.
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      return null;
+    }
   }
 
   /// The library's default per-entry limit. The memory store also needs an
@@ -224,4 +273,24 @@ class _RevalidatingHandler extends RequestInterceptorHandler {
     DioException error, [
     bool callFollowingErrorInterceptor = false,
   ]) => _handler.reject(error, callFollowingErrorInterceptor);
+}
+
+/// The offline fallback of [CacheInterceptor.fallback].
+class _CacheFallback extends Interceptor {
+  new(this._cache);
+
+  final CacheInterceptor _cache;
+
+  @override
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    // A retry attempt's error passes here inside the retry loop; only the
+    // error the loop passes on after its last attempt may fall back.
+    if (isOpenRetryAttempt(err.requestOptions)) return handler.next(err);
+    final response = await _cache._fallbackFor(err);
+    if (response == null) return handler.next(err);
+    handler.resolve(response);
+  }
 }

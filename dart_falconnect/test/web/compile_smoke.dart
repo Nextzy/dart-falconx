@@ -25,6 +25,7 @@ void main() {
 
   // All interceptors
   _sink(CacheInterceptor());
+  _sink(CacheInterceptor().fallback);
   _sink(
     ConcurrencyLimitInterceptor(
       config: const ConcurrencyConfig(global: 16, perHost: 4),

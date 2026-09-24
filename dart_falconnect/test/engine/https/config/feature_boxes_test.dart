@@ -22,6 +22,8 @@ void main() {
     expect(cache.maxSize, 50 * 1024 * 1024);
     expect(cache.store, isNull);
     expect(cache.keyHeaders, {'authorization', 'accept', 'accept-language'});
+    expect(cache.hitCacheOnNetworkFailure, isFalse);
+    expect(cache.hitCacheOnErrorCodes, isEmpty);
 
     const pause = PauseConfig();
     expect(pause.maxPauseWait, const Duration(seconds: 10));

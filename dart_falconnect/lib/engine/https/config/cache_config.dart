@@ -32,5 +32,13 @@ abstract class CacheConfig with _$CacheConfig {
     /// `authorization` here, or one user reads another's cached responses.
     @Default({'authorization', 'accept', 'accept-language'})
     Set<String> keyHeaders,
+
+    /// Answers from the cache when a request fails without a response,
+    /// after every retry.
+    @Default(false) bool hitCacheOnNetworkFailure,
+
+    /// Answers from the cache when a request fails with one of these
+    /// statuses, after every retry.
+    @Default(<int>{}) Set<int> hitCacheOnErrorCodes,
   }) = _CacheConfig;
 }

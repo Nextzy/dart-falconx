@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dart_falconnect/engine/https/config/retry_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/retry_attempts.dart';
 import 'package:dart_falmodel/networks/https/retry_after.dart';
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
@@ -141,7 +142,7 @@ class RetryInterceptor extends Interceptor {
         clock.now().difference(started),
       );
       if (delay == null) {
-        handler.next(current);
+        handler.next(finalRetryError(current));
         return;
       }
       config.onRetry?.call(current, attempt, delay);
@@ -150,7 +151,7 @@ class RetryInterceptor extends Interceptor {
         '${original.method} ${original.uri}',
       );
       if (!await _wait(delay, original.cancelToken)) {
-        handler.next(current);
+        handler.next(finalRetryError(current));
         return;
       }
       final RequestOptions options;
@@ -158,7 +159,7 @@ class RetryInterceptor extends Interceptor {
         options = _attemptOptions(original, attempt);
       } on Object {
         // A FormData whose files cannot be read again.
-        handler.next(current);
+        handler.next(finalRetryError(current));
         return;
       }
       try {
