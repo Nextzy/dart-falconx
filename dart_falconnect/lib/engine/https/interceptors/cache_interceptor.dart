@@ -1,9 +1,14 @@
 import 'dart:convert';
 
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/cache_config.dart';
+import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
 /// Response cache entry.
+///
+/// Store and read the [timestamp] in the same clock zone: the age is
+/// computed from `clock.now()` at read time, so mixing zones yields a
+/// negative age (the entry never expires) or an inflated one.
 class CacheEntry {
   /// Creates a cache entry with the given [response], creation [timestamp],
   /// and cache [maxAge].
@@ -20,7 +25,7 @@ class CacheEntry {
 
   /// Returns `true` if the entry has exceeded its [maxAge].
   bool get isExpired {
-    final age = DateTime.now().difference(timestamp);
+    final age = clock.now().difference(timestamp);
     return age > maxAge;
   }
 }
@@ -29,12 +34,19 @@ class CacheEntry {
 ///
 /// This interceptor implements a simple in-memory cache for GET
 /// requests with configurable cache duration and size limits.
+///
+/// Time is read through `clock.now()`: store and read cache entries in
+/// the same clock zone, including eviction ordering, which sorts
+/// timestamps stamped by that zone.
 class CacheInterceptor extends Interceptor {
   /// Creates a new cache interceptor.
-  new({required this.config});
+  new({this.config = const CacheConfig(), this.logPrint});
 
-  /// Configuration driving cache behavior (enable flag, duration, size limit).
-  final HttpClientConfig config;
+  /// Cache lifetime and size limit.
+  final CacheConfig config;
+
+  /// Prints diagnostics; null prints nothing.
+  final void Function(String message)? logPrint;
   final Map<String, CacheEntry> _cache = {};
   int _currentCacheSize = 0;
 
@@ -44,7 +56,7 @@ class CacheInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     // Only cache GET requests
-    if (!config.enableCache || options.method != 'GET') {
+    if (options.method != 'GET') {
       return handler.next(options);
     }
 
@@ -60,14 +72,7 @@ class CacheInterceptor extends Interceptor {
     // Check if we have a valid cached response
     final cachedEntry = _cache[cacheKey];
     if (cachedEntry != null && !cachedEntry.isExpired) {
-      if (config.enableLogging) {
-        // Intentional logging for cache diagnostics.
-        // ignore: avoid_print
-        print(
-          '[CacheInterceptor] Cache hit for: '
-          '${options.method} ${options.uri}',
-        );
-      }
+      _log('Cache hit for: ${options.method} ${options.uri}');
 
       // Return cached response
       return handler.resolve(cachedEntry.response);
@@ -88,8 +93,7 @@ class CacheInterceptor extends Interceptor {
     ResponseInterceptorHandler handler,
   ) {
     // Only cache successful GET requests
-    if (!config.enableCache ||
-        response.requestOptions.method != 'GET' ||
+    if (response.requestOptions.method != 'GET' ||
         response.statusCode == null ||
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
@@ -171,7 +175,7 @@ class CacheInterceptor extends Interceptor {
       try {
         // Parse common HTTP date formats
         final expiresDate = DateTime.parse(expires);
-        final duration = expiresDate.difference(DateTime.now());
+        final duration = expiresDate.difference(clock.now());
         if (duration.isNegative) {
           return Duration.zero;
         }
@@ -184,7 +188,7 @@ class CacheInterceptor extends Interceptor {
     }
 
     // Use default from config
-    return config.cacheDuration;
+    return config.duration;
   }
 
   /// Adds a response to the cache.
@@ -198,29 +202,25 @@ class CacheInterceptor extends Interceptor {
     final responseSize = _estimateResponseSize(response);
 
     // Check if adding this would exceed cache size
-    if (_currentCacheSize + responseSize > config.maxCacheSize) {
+    if (_currentCacheSize + responseSize > config.maxSize) {
       _evictOldestEntries(responseSize);
     }
 
     // Add to cache
     _cache[key] = CacheEntry(
       response: response,
-      timestamp: DateTime.now(),
+      timestamp: clock.now(),
       maxAge: maxAge,
     );
     _currentCacheSize += responseSize;
 
-    if (config.enableLogging) {
-      // Intentional logging for cache diagnostics.
-      // ignore: avoid_print
-      print(
-        '[CacheInterceptor] Cached response for: '
-        '${response.requestOptions.method} '
-        '${response.requestOptions.uri} '
-        '(${responseSize ~/ 1024}KB, '
-        'expires in ${maxAge.inSeconds}s)',
-      );
-    }
+    _log(
+      'Cached response for: '
+      '${response.requestOptions.method} '
+      '${response.requestOptions.uri} '
+      '(${responseSize ~/ 1024}KB, '
+      'expires in ${maxAge.inSeconds}s)',
+    );
   }
 
   /// Removes an entry from the cache.
@@ -239,7 +239,7 @@ class CacheInterceptor extends Interceptor {
 
     // Remove entries until we have enough space
     for (final entry in sortedEntries) {
-      if (_currentCacheSize + requiredSize <= config.maxCacheSize) {
+      if (_currentCacheSize + requiredSize <= config.maxSize) {
         break;
       }
       _removeFromCache(entry.key);
@@ -279,6 +279,8 @@ class CacheInterceptor extends Interceptor {
 
     return size;
   }
+
+  void _log(String message) => logPrint?.call('[CacheInterceptor] $message');
 
   /// Clears the entire cache.
   void clearCache() {

@@ -7,7 +7,6 @@
 // Success = exit code 0. No runtime execution.
 // If dart2js fails, dart_falconnect has a VM-only code path.
 import 'package:dart_falconnect/dart_falconnect.dart';
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falconnect/lib.dart';
 
 import '_stub_http_client.dart';
@@ -17,21 +16,24 @@ void _sink(Object? o) {
 }
 
 void main() {
-  // HTTP config factories
-  _sink(HttpClientConfig.production());
-  _sink(HttpClientConfig.development());
-  _sink(HttpClientConfig.test());
+  // HTTP config
+  _sink(const HttpClientConfig(retry: RetryConfig()));
 
   // HTTP client
   final dio = Dio();
   _sink(StubHttpClient(dio: dio));
 
   // All interceptors
-  final cfg = HttpClientConfig.development();
-  _sink(CacheInterceptor(config: cfg));
-  _sink(RetryInterceptor(config: cfg, dio: dio));
-  _sink(PerformanceInterceptor(config: cfg));
-  _sink(RateLimitInterceptor(config: cfg));
+  _sink(CacheInterceptor());
+  _sink(
+    ConcurrencyLimitInterceptor(
+      config: const ConcurrencyConfig(global: 16, perHost: 4),
+    ),
+  );
+  _sink(RetryInterceptor(dio: dio));
+  _sink(PerformanceInterceptor());
+  _sink(TokenBucketRateLimitInterceptor());
+  _sink(RetryAfterPauseInterceptor());
   _sink(HttpLogInterceptor());
   _sink(DefaultNetworkExceptionHandlerInterceptor());
 

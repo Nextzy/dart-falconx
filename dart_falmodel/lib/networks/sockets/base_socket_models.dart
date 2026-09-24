@@ -72,7 +72,7 @@ abstract class BaseSocketRequestBody extends BaseSocketModel {
 ///     return ChatMessageResponse(
 ///       data: ChatMessage.fromJson(json),
 ///       requestOptions: options,
-///       timestamp: DateTime.now(),
+///       timestamp: clock.now(),
 ///     );
 ///   }
 /// }
@@ -96,9 +96,13 @@ abstract class BaseSocketResponse<T> extends BaseSocketModel {
 
   /// The age of this message in milliseconds.
   /// Returns null if timestamp is not set.
+  ///
+  /// Read the age in the same clock zone that stamped [timestamp]:
+  /// `clock.now()` runs in the reader's zone, so mixing zones yields a
+  /// negative age (the message looks eternally fresh) or an inflated one.
   int? get ageInMilliseconds {
     if (timestamp == null) return null;
-    return DateTime.now().difference(timestamp!).inMilliseconds;
+    return clock.now().difference(timestamp!).inMilliseconds;
   }
 
   @override
@@ -122,7 +126,7 @@ class SocketResponse extends BaseSocketResponse<String> {
     return SocketResponse(
       data: data,
       requestOptions: requestOptions,
-      timestamp: DateTime.now(),
+      timestamp: clock.now(),
     );
   }
 }
@@ -149,7 +153,7 @@ class JsonSocketResponse extends BaseSocketResponse<Map<String, dynamic>> {
     return JsonSocketResponse(
       data: json.decode(jsonString) as Map<String, dynamic>,
       requestOptions: requestOptions,
-      timestamp: DateTime.now(),
+      timestamp: clock.now(),
     );
   }
 
@@ -205,7 +209,7 @@ class BinarySocketResponse extends BaseSocketResponse<List<int>> {
     return BinarySocketResponse(
       data: base64.decode(base64String),
       requestOptions: requestOptions,
-      timestamp: DateTime.now(),
+      timestamp: clock.now(),
     );
   }
 

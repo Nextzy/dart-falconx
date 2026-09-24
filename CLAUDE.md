@@ -104,8 +104,8 @@ dart format .
 
 **dart_falconnect/lib/engine/**
 - **https/**: HTTP client with comprehensive interceptor system
-  - `BaseHttpClient`: Abstract class with typed HTTP methods and automatic JSON conversion
-  - Interceptors: cache, retry, rate limiting, logging, error handling
+  - `BaseHttpClient`: Abstract class with typed HTTP methods and automatic JSON conversion; configures itself from `HttpClientConfig` through `configure()`
+  - Interceptors: cache, concurrency limiting, rate limiting, retry, logging, error handling
   - All methods require converter functions for type-safe responses
   
 - **sockets/**: WebSocket implementation with reactive streams
@@ -146,7 +146,7 @@ Three exception systems in dart_falmodel:
 1. **Interceptor Chain Pattern**
    - Both HTTP and WebSocket use middleware-style interceptors
    - Enables cross-cutting concerns without modifying core logic
-   - Order matters: auth → retry → cache → logging
+   - Order matters: your interceptors → log → performance → cache → concurrency limit → rate limiter → retry → exception handler (see `skills/dart-falconx-package/references/http.md`)
 
 2. **Result Pattern** (dart_falmodel)
    - Type-safe error handling without exceptions
@@ -206,39 +206,41 @@ Packages flow upward: `dart_faltool` re-exports many of these via `dart_faltool.
 
 ### Networking (`dart_falconnect`, `dart_falmodel`)
 
-| Package                                 | Purpose                                                             |
-|-----------------------------------------|---------------------------------------------------------------------|
-| `dio`                                   | HTTP client — base of `BaseHttpClient`, JSON-RPC, interceptor chain |
-| `dio_cache_interceptor`                 | Response caching strategy for `CacheInterceptor`                    |
-| `retrofit` + `retrofit_generator`       | Annotation-driven REST client codegen                               |
-| `web_socket_channel`                    | Cross-platform WebSocket — auto-resolves to `IO`/`Html` channel     |
-| `freezed_annotation` + `freezed`        | Sealed unions / immutable models (request/response, errors)         |
-| `json_annotation` + `json_serializable` | JSON serialization codegen                                          |
-| `ansicolor`                             | ANSI-colored log output for `LogInterceptor`                        |
+| Package                                   | Purpose                                                               |
+|-------------------------------------------|-----------------------------------------------------------------------|
+| `dio`                                     | HTTP client — base of `BaseHttpClient`, JSON-RPC, interceptor chain   |
+| `dio_cache_interceptor`                   | Response caching strategy for `CacheInterceptor`                      |
+| `retrofit` + `retrofit_generator`         | Annotation-driven REST client codegen                                 |
+| `web_socket_channel`                      | Cross-platform WebSocket — auto-resolves to `IO`/`Html` channel       |
+| `freezed_annotation` + `freezed`          | Sealed unions / immutable models (request/response, errors)           |
+| `json_annotation` + `json_serializable`   | JSON serialization codegen                                            |
+| `http_parser`                             | `parseHttpDate` for HTTP-date `Retry-After` values (`dart_falmodel`)  |
+| `ansicolor`                               | ANSI-colored log output for `LogInterceptor`                          |
 
 ### Utilities (`dart_faltool`, re-exported)
 
-| Package          | Purpose                                                                           |
-|------------------|-----------------------------------------------------------------------------------|
-| `rxdart`         | Reactive streams (`PublishSubject`, operators) — used by `SocketClient`           |
-| `fpdart`         | Functional types (`Either`, `Option`, `Task`) for `Result` patterns               |
-| `equatable`      | Value equality without boilerplate                                                |
-| `dartx`          | Kotlin-style extensions; some members hidden to avoid clash with local extensions |
-| `meta`           | Dart annotations (`@immutable`, `@protected`, etc.)                               |
-| `logger`         | Structured/pretty log printer                                                     |
-| `intl`           | i18n plus locale-aware date/number formatting                                     |
-| `timeago`        | Human-readable relative time (`5 minutes ago`)                                    |
-| `numeral`        | Compact number formatting (`1.2k`, `3.4m`)                                        |
-| `big_decimal`    | Arbitrary-precision decimal arithmetic                                            |
-| `hashlib`        | Crypto / non-crypto hash digests (used by TypeID)                                 |
-| `retry`          | Generic retry-with-backoff helper                                                 |
-| `stack_trace`    | Stack-trace parsing / formatting                                                  |
-| `version`        | SemVer parsing (used by `AppInfo`)                                                |
-| `yaml`           | YAML parser (used by `AppInfo` to read `pubspec.yaml`)                            |
-| `universal_io`   | Cross-platform `dart:io` substitute (web-safe `File`, `Platform`, `HttpClient`)   |
-| `web`            | Modern `package:web` JS interop bindings                                          |
-| `enum_to_string` | Enum to/from string helpers                                                       |
-| `data`           | Data-structure / buffer helpers                                                   |
+| Package          | Purpose                                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------------------------|
+| `rxdart`         | Reactive streams (`PublishSubject`, operators) — used by `SocketClient`                                         |
+| `fpdart`         | Functional types (`Either`, `Option`, `Task`) for `Result` patterns                                             |
+| `equatable`      | Value equality without boilerplate                                                                              |
+| `dartx`          | Kotlin-style extensions; some members hidden to avoid clash with local extensions                               |
+| `meta`           | Dart annotations (`@immutable`, `@protected`, etc.)                                                             |
+| `logger`         | Structured/pretty log printer                                                                                   |
+| `intl`           | i18n plus locale-aware date/number formatting                                                                   |
+| `timeago`        | Human-readable relative time (`5 minutes ago`)                                                                  |
+| `numeral`        | Compact number formatting (`1.2k`, `3.4m`)                                                                      |
+| `big_decimal`    | Arbitrary-precision decimal arithmetic                                                                          |
+| `hashlib`        | Crypto / non-crypto hash digests (used by TypeID)                                                               |
+| `retry`          | Generic retry-with-backoff helper                                                                               |
+| `resilience`     | Token bucket `RateLimiter`, `Bulkhead`, `CircuitBreaker` (re-exported without `Retry`, `RetryEvent`, `Timeout`) |
+| `stack_trace`    | Stack-trace parsing / formatting                                                                                |
+| `version`        | SemVer parsing (used by `AppInfo`)                                                                              |
+| `yaml`           | YAML parser (used by `AppInfo` to read `pubspec.yaml`)                                                          |
+| `universal_io`   | Cross-platform `dart:io` substitute (web-safe `File`, `Platform`, `HttpClient`)                                 |
+| `web`            | Modern `package:web` JS interop bindings                                                                        |
+| `enum_to_string` | Enum to/from string helpers                                                                                     |
+| `data`           | Data-structure / buffer helpers                                                                                 |
 
 ### Dev / Tooling
 

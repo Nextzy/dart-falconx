@@ -35,9 +35,9 @@ dart fix --apply
 ### Three Network Engines
 
 **HTTP (`engine/https/`)**
-- `BaseHttpClient` — Abstract class wrapping Dio. Subclasses override `setupOptions()` and `setupInterceptors()`. All HTTP methods (GET/POST/PUT/PATCH/DELETE) require a `converter` function for type-safe JSON→T conversion. Uses `_performRequest()` internally which chains `.mapJson(converter).catchWhenError(catchError)`
+- `BaseHttpClient` — Abstract class wrapping Dio. It takes an `HttpClientConfig` (super constructor `config:`) and applies it with `configure()`, which rebuilds only the interceptors whose box changed; there are no hooks. All HTTP methods (GET/POST/PUT/PATCH/DELETE) require a `converter` function for type-safe JSON→T conversion. One private `_request()` path chains `.mapJson(converter).catchWhenError(catchError)`
 - `RequestApiService` — Interface that `BaseHttpClient` implements
-- `HttpClientConfig` — Configuration with factory constructors: `.production()`, `.development()`, `.test()`
+- `HttpClientConfig` — Freezed configuration: the dio options it owns plus one freezed box per feature (`LogConfig`, `PerformanceConfig`, `CacheConfig`, `ConcurrencyConfig`, `RateLimitConfig`, `RetryConfig`); a null box turns its feature off. No presets
 - Response extensions (`extensions/response_extensions.dart`) provide `mapJson()`, `unwrapResponse()`, `catchWhenError()`, and `copyWith()`/`transformData()` on `Response<dynamic>?`
 
 **WebSocket (`engine/sockets/`)**
@@ -63,14 +63,18 @@ All return `Result<DataType>` (success/failure union from dart_falmodel). When `
 
 ### HTTP Interceptor Chain
 
-Seven interceptors available (barrel: `interceptors/interceptors.dart`):
+Nine interceptors available (barrel: `interceptors/interceptors.dart`):
 1. `CacheInterceptor` — Response caching via dio_cache_interceptor
-2. `RetryInterceptor` — Exponential backoff with jitter, respects `Retry-After` header, retries on 5xx/408/429/409/timeouts
+2. `RetryInterceptor` — Loop up to `RetryConfig.maxAttempts`; idempotent-only for 5xx/408/409/timeouts (429 and `connectionTimeout` for every method); `Retry-After` capped by `maxDelay`; total `maxDuration`; per-request `disableRetry`, `retryAttempts`, `retryNonIdempotent`
 3. `NetworkExceptionHandlerInterceptor` — Abstract: routes errors to `onClientError()`/`onServerError()`/`onNonStandardError()` based on status code ranges
 4. `DefaultNetworkExceptionHandlerInterceptor` — Concrete: rejects all errors (no custom handling)
 5. `PerformanceInterceptor` — Request timing
-6. `RateLimitInterceptor` — Rate limiting
-7. `LogInterceptor` — Request/response logging with ANSI colors
+6. `TokenBucketRateLimitInterceptor` — Token buckets from `TokenBucketPolicy` lists plus a per-host pause on 429/503 `Retry-After`; unlimited when no policy is set
+7. `RetryAfterPauseInterceptor` — The pause alone; never add it next to `TokenBucketRateLimitInterceptor`
+8. `HttpLogInterceptor` — Request/response logging with ANSI colors
+9. `ConcurrencyLimitInterceptor` — Most requests in flight per host and in total on `resilience` `Bulkhead`; takes a slot in `onRequest` and gives it back on response, error, `CancelToken` cancel, or `dispose()`; a retry or re-send reuses its request's slot; idle hosts are forgotten
+
+Order, assembled by `BaseHttpClient.configure`: the config's `interceptors` → `HttpLogInterceptor` → `PerformanceInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → exception handler. Each interceptor takes its own config box and an optional `logPrint`. The pause core lives in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host key rule in `lib/src/engine/https/interceptors/host_key.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart` (none exported).
 
 When adding new interceptors, add the export to `interceptors/interceptors.dart` (alphabetically sorted per lint rules).
 
@@ -80,15 +84,17 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 - **No `dart:io` dependency**: `lib.dart` does not re-export `dart:io`; the package is portable to web. If you need `File`/`Platform`/`HttpClient`, import from `package:universal_io/io.dart` (via `dart_faltool`)
 - **Converter-required API**: Every HTTP method requires a `converter: (Map<String, dynamic>) → T` parameter — there is no raw response API
 - **`BaseRequestBody`**: POST/PUT/PATCH/DELETE data parameter type (from dart_falmodel), requires `.toJson()`
-- **Error propagation**: `catchWhenError` resolves with the error handler's return value; if no handler, errors are rethrown as-is
+- **Error propagation**: `catchWhenError` recovers a `DioException` with the fallback's value; no fallback, a null result, or an error that is not a `DioException` rethrows the original error. A body that is not a JSON object, or a converter that throws, fails with a `DioException` holding `CommonException(type: InputErrorType.invalidFormat)`
 
 ## Gotchas
 
-- `RateLimiter` in `utils/` is a placeholder (all code commented out) — do not use or reference it
-- `test/unit_test.dart` is a stub with an empty test; the real tests are the web verification gates under `test/web/`
+- `TokenBucketRateLimitInterceptor` refill timers outlive the last request: in `testWidgets` call `dispose()` in the test body (`addTearDown` is too late); on servers build one instance per process
+- Interceptor tests live in `test/engine/https/interceptors/` (run under `fakeAsync`); `test/unit_test.dart` is an empty stub; the web gates are under `test/web/`
 - `NetworkExceptionHandlerInterceptor` uses `err.toException()` extension method (from dart_falmodel) to convert `DioException` to `NetworkException`
 - WebSocket uses RxDart's `PublishSubject` (not `ReplaySubject` despite the variable name `_replaySubject`)
 - Generated files go to `lib/{{path}}/generated/` subdirectories per `build.yaml` configuration
+- `dart_falconnect` compiles to the web, where `int` bitwise and shift operators (`<<`, `>>`, `>>>`, `&`, `|`, `^`, `~`) truncate operands to 32-bit unsigned values: never shift or mask a value that may exceed 32 bits; use `*`, `pow`, or a literal, and cover the path with a `dart test -p chrome` test (see `RetryInterceptor._backoff`)
+- Wait on a `CancelToken` through `watchCancel` (`lib/src/engine/https/cancel_watch.dart`), never `cancelToken.whenCancel.then(...)`: a `Future` listener cannot be removed, so a long-lived token would collect one per finished wait
 
 ## Web Support
 

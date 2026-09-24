@@ -1,0 +1,223 @@
+import 'dart:async';
+
+import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
+import 'package:dart_falconnect/engine/https/interceptors/retry_after_pause_interceptor.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
+import 'package:dio/dio.dart';
+import 'package:fake_async/fake_async.dart';
+import 'package:test/test.dart';
+
+class _Handler extends RequestInterceptorHandler {
+  new(this.forwarded, this.rejected);
+
+  final List<RequestOptions> forwarded;
+  final List<DioException> rejected;
+
+  @override
+  void next(RequestOptions requestOptions) => forwarded.add(requestOptions);
+
+  @override
+  void reject(
+    DioException error, [
+    bool callFollowingErrorInterceptor = false,
+  ]) => rejected.add(error);
+}
+
+class _SilentResponseHandler extends ResponseInterceptorHandler {
+  @override
+  void next(Response<dynamic> response) {}
+}
+
+class _SilentErrorHandler extends ErrorInterceptorHandler {
+  @override
+  void next(DioException error) {}
+}
+
+Response<dynamic> _response(int status, {String? retryAfter}) =>
+    Response<dynamic>(
+      requestOptions: RequestOptions(path: 'https://a.test/items'),
+      statusCode: status,
+      headers: Headers.fromMap({
+        if (retryAfter != null) 'retry-after': [retryAfter],
+      }),
+    );
+
+void main() {
+  late List<RequestOptions> forwarded;
+  late List<DioException> rejected;
+
+  void send(RetryAfterPauseInterceptor interceptor, {String host = 'a.test'}) {
+    unawaited(
+      interceptor.onRequest(
+        RequestOptions(path: 'https://$host/items'),
+        _Handler(forwarded, rejected),
+      ),
+    );
+  }
+
+  setUp(() {
+    forwarded = [];
+    rejected = [];
+  });
+
+  test('forwards synchronously while no host is paused', () {
+    fakeAsync((async) {
+      final interceptor = RetryAfterPauseInterceptor();
+
+      send(interceptor);
+
+      expect(forwarded, hasLength(1));
+      expect(async.pendingTimers, isEmpty);
+    });
+  });
+
+  test('holds a request until a short pause ends', () {
+    fakeAsync((async) {
+      final interceptor = RetryAfterPauseInterceptor()
+        ..onResponse(_response(429, retryAfter: '2'), _SilentResponseHandler());
+
+      send(interceptor);
+      send(interceptor, host: 'b.test');
+      async.flushMicrotasks();
+      expect(forwarded.map((o) => o.uri.host), ['b.test']);
+
+      async.elapse(const Duration(seconds: 2));
+      expect(forwarded, hasLength(2));
+    });
+  });
+
+  test('rejects with a local 429 when the pause is long', () {
+    fakeAsync((async) {
+      final interceptor = RetryAfterPauseInterceptor()
+        ..onError(
+          DioException.badResponse(
+            statusCode: 503,
+            requestOptions: RequestOptions(path: 'https://a.test/items'),
+            response: _response(503, retryAfter: '30'),
+          ),
+          _SilentErrorHandler(),
+        );
+
+      send(interceptor);
+      async.flushMicrotasks();
+
+      expect(rejected.single.response?.isLocalRateLimit, isTrue);
+      expect(rejected.single.response?.headers.value('retry-after'), '30');
+    });
+  });
+
+  test('a local 429 fed back through onError starts no pause', () {
+    fakeAsync((async) {
+      final interceptor = RetryAfterPauseInterceptor();
+      final local = localRateLimitRejection(
+        RequestOptions(path: 'https://a.test/items'),
+        retryAfter: const Duration(seconds: 30),
+      );
+
+      interceptor.onError(local, _SilentErrorHandler());
+      async.flushMicrotasks();
+      send(interceptor);
+
+      expect(forwarded, hasLength(1));
+      expect(rejected, isEmpty);
+      expect(async.pendingTimers, isEmpty);
+    });
+  });
+
+  test('dispose cancels held requests and lifts every pause', () {
+    fakeAsync((async) {
+      final interceptor = RetryAfterPauseInterceptor()
+        ..onResponse(_response(429, retryAfter: '2'), _SilentResponseHandler());
+      send(interceptor);
+      async.flushMicrotasks();
+
+      interceptor.dispose();
+      async.flushMicrotasks();
+      send(interceptor);
+
+      expect(rejected.single.type, DioExceptionType.cancel);
+      expect(forwarded, hasLength(1));
+      expect(async.pendingTimers, isEmpty);
+    });
+  });
+
+  test('rejects invalid settings', () {
+    expect(
+      () => RetryAfterPauseInterceptor(
+        config: const PauseOnlyRateLimitConfig(maxQueueSize: -1),
+      ),
+      throwsA(
+        isA<ArgumentError>().having((e) => e.name, 'name', 'maxQueueSize'),
+      ),
+    );
+  });
+
+  group('onRequest wait loop', () {
+    RetryAfterPauseInterceptor pausedFor(String retryAfter) =>
+        RetryAfterPauseInterceptor()..onResponse(
+          _response(429, retryAfter: retryAfter),
+          _SilentResponseHandler(),
+        );
+
+    test('parks a held request on one timer without spinning', () {
+      fakeAsync((async) {
+        final interceptor = pausedFor('2');
+
+        // A loop that spun on microtasks would hang flushMicrotasks here.
+        send(interceptor);
+        async.flushMicrotasks();
+
+        expect(forwarded, isEmpty);
+        expect(async.microtaskCount, 0);
+        expect(async.nonPeriodicTimerCount, 1);
+
+        async.elapse(
+          const Duration(seconds: 2) - const Duration(microseconds: 1),
+        );
+        expect(forwarded, isEmpty);
+
+        async.elapse(const Duration(microseconds: 1));
+        expect(forwarded, hasLength(1));
+        expect(async.pendingTimers, isEmpty);
+      });
+    });
+
+    test('stays held when the pause grows within maxPauseWait', () {
+      fakeAsync((async) {
+        final interceptor = pausedFor('2');
+        send(interceptor);
+        async.elapse(const Duration(seconds: 1));
+
+        interceptor.onResponse(
+          _response(429, retryAfter: '5'),
+          _SilentResponseHandler(),
+        );
+        async.elapse(const Duration(seconds: 4));
+
+        expect(forwarded, isEmpty);
+        expect(async.nonPeriodicTimerCount, 1);
+
+        async.elapse(const Duration(seconds: 1));
+        expect(forwarded, hasLength(1));
+      });
+    });
+
+    test(
+      're-admits into a local 429 when the pause grows past maxPauseWait',
+      () {
+        fakeAsync((async) {
+          final interceptor = pausedFor('2');
+          send(interceptor);
+          async.flushMicrotasks();
+
+          // TODO(nonthawit): extend the pause past maxPauseWait (10s) while
+          // the request is held, elapse to the first timer, then assert the
+          // loop re-admitted the request into a local 429.
+          expect(interceptor, isNotNull);
+        });
+      },
+      skip: 'Act and Assert not written yet',
+    );
+  });
+}

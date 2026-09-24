@@ -2,17 +2,26 @@
 library;
 
 import 'package:dart_falconnect/dart_falconnect.dart';
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falmodel/dart_falmodel.dart' show parseRetryAfter;
 import 'package:test/test.dart';
 
+import '../engine/https/interceptors/_scripted_adapter.dart';
 import '_stub_http_client.dart';
 
 void main() {
   group('dart_falconnect on web', () {
-    test('HttpClientConfig factories build without throwing', () {
-      expect(HttpClientConfig.production(), isNotNull);
-      expect(HttpClientConfig.development(), isNotNull);
-      expect(HttpClientConfig.test(), isNotNull);
+    test('HttpClientConfig builds with every box set', () {
+      expect(
+        const HttpClientConfig(
+          log: LogConfig(),
+          performance: PerformanceConfig(),
+          cache: CacheConfig(),
+          concurrency: ConcurrencyConfig(global: 16, perHost: 4),
+          rateLimit: RateLimitConfig.tokenBucket(),
+          retry: RetryConfig(),
+        ),
+        isNotNull,
+      );
     });
 
     test('BaseHttpClient subclass instantiates with default adapter', () {
@@ -23,14 +32,25 @@ void main() {
     });
 
     test('All HTTP interceptors instantiate on web', () {
-      final cfg = HttpClientConfig.development();
       final dio = Dio();
-      expect(CacheInterceptor(config: cfg), isNotNull);
-      expect(RetryInterceptor(config: cfg, dio: dio), isNotNull);
-      expect(PerformanceInterceptor(config: cfg), isNotNull);
-      expect(RateLimitInterceptor(config: cfg), isNotNull);
+      expect(CacheInterceptor(), isNotNull);
+      expect(ConcurrencyLimitInterceptor(), isNotNull);
+      expect(RetryInterceptor(dio: dio), isNotNull);
+      expect(PerformanceInterceptor(), isNotNull);
+      expect(TokenBucketRateLimitInterceptor(), isNotNull);
+      expect(RetryAfterPauseInterceptor(), isNotNull);
       expect(HttpLogInterceptor(), isNotNull);
       expect(DefaultNetworkExceptionHandlerInterceptor(), isNotNull);
+    });
+
+    test('parseRetryAfter reads an HTTP-date on web', () {
+      expect(
+        parseRetryAfter(
+          'Wed, 21 Oct 2026 07:28:30 GMT',
+          serverDate: DateTime.utc(2026, 10, 21, 7, 28),
+        ),
+        const Duration(seconds: 30),
+      );
     });
 
     test('DefaultJsonRpcService builds on web', () {
@@ -42,5 +62,47 @@ void main() {
       );
       expect(rpc, isNotNull);
     });
+
+    test('RetryInterceptor backs off and retries on web', () async {
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = ScriptedAdapter([reply(500), reply(200)]);
+      dio.interceptors.add(
+        RetryInterceptor(
+          config: const RetryConfig(
+            maxAttempts: 2,
+            delay: Duration(milliseconds: 1),
+            maxDelay: Duration(milliseconds: 5),
+          ),
+          dio: dio,
+        ),
+      );
+
+      final response = await dio.get<dynamic>('/x');
+
+      expect(response.statusCode, 200);
+      expect((dio.httpClientAdapter as ScriptedAdapter).requests, hasLength(2));
+    });
+
+    test(
+      'ConcurrencyLimitInterceptor passes requests through a limit of 1 on web',
+      () async {
+        final adapter = ScriptedAdapter([reply(200)]);
+        final concurrency = ConcurrencyLimitInterceptor(
+          config: const ConcurrencyConfig(perHost: 1),
+        );
+        final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+          ..httpClientAdapter = adapter;
+        dio.interceptors.add(concurrency);
+
+        final responses = await Future.wait([
+          dio.get<dynamic>('/1'),
+          dio.get<dynamic>('/2'),
+        ]);
+
+        expect(responses.map((r) => r.statusCode), [200, 200]);
+        expect(concurrency.getStatistics().forwarded, 2);
+        expect(concurrency.getStatistics().activeByHost, isEmpty);
+      },
+    );
   });
 }
