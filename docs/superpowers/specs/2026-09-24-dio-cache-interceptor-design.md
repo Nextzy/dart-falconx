@@ -14,12 +14,15 @@
 
 `dio_cache_interceptor` 4.0.7 is already a dependency of `dart_falconnect` and is re-exported by `dart_falconnect.dart` (`hide BaseRequest, BaseResponse, HttpDate`). It stores each body as bytes and decodes it again on every hit, parses HTTP-dates, keys entries by a UUID v5, revalidates with `ETag` and `Last-Modified`, and offers memory, file, Hive, Isar, Drift, Sembast, and ObjectBox stores. It is pure Dart with no `dart:io`, published by a verified publisher, with 442 likes and 160 pub points, and its last release was two months before this spec.
 
-Reading its source (4.0.7, `http_cache_core` 1.1.4) found four behaviours that do not fit this package as is:
+Reading its source (4.0.7, `http_cache_core` 1.1.4) found five behaviours that do not fit this package as is; the fifth and two store limits surfaced in the prototype behind the plan:
 
 1. `CacheOptions.defaultCacheKeyBuilder` keys by URL alone. On a server where one client serves many users, user B would get user A's cached response.
 2. The offline fallback in `onError` calls `handler.resolve(cacheResponse)`. dio's `ErrorInterceptorHandler.resolve` has no call-following flag, so every error interceptor after the cache is skipped, `ConcurrencyLimitInterceptor.onError` among them, and the request's slot is never returned. The fallback also runs before `RetryInterceptor`, so it answers on the first failure and skips every retry.
 3. A stale entry with an `ETag`, a `Last-Modified`, or a `Date` makes the next request conditional. The server's `304` fails dio's default `validateStatus`, reaches `onError`, and the library resolves there too, so every successful revalidation leaks a slot, even with the offline fallback off.
 4. Freshness reads `DateTime.now()`, not `clock.now()`, so `fakeAsync` cannot move a cache entry through time.
+5. A hit whose request options carry `maxStale` pushes the entry's `maxStale` back (`_updateCacheResponse`), so an entry read often would never expire.
+
+`MemCacheStore` also asserts `maxEntrySize < maxSize` and `maxEntrySize * 5 <= maxSize`.
 
 ## 2. Goals and non-goals
 
@@ -85,7 +88,7 @@ abstract class CacheConfig with _$CacheConfig {
 ```
 
 - `duration` is removed. Its role splits between `policy`, `maxStale`, and the per-request `cacheFor` of section 5.
-- The default store is `MemCacheStore(maxSize: maxSize)`. It keeps the library's per-entry limit of 512,000 bytes: a larger response is not cached, and the docs say so.
+- The default store is `MemCacheStore(maxSize: maxSize, maxEntrySize: min(512000, maxSize ~/ 5))`: a response over 512,000 bytes, or over a fifth of `maxSize`, is not cached, and the docs say so. A `maxSize` that is not positive throws `ArgumentError`.
 - A `store` passed in belongs to the app: the client never closes it.
 
 ## 5. Per-request settings
@@ -106,7 +109,7 @@ dio.get('/balance', options: Options()..cachePolicy = CachePolicy.noCache);
 - `cacheFor: d` means `CachePolicy.forceCache` with `maxStale: d`. `forceCache` returns a stored entry whatever its freshness and stores a response whatever its headers, `no-store` included, so it always comes with a lifetime.
 - An explicit `cachePolicy` wins over the policy `cacheFor` implies; `cacheFor` still sets `maxStale`.
 - A negative or zero `cacheFor` throws `ArgumentError`.
-- `CacheInterceptor.onRequest` turns these keys into the library's per-request `CacheOptions` (`base.copyWith(policy:, maxStale:).toExtra()`), so the library's `onResponse` stores the entry with the same settings.
+- Both hooks of `CacheInterceptor` write the request's library `CacheOptions` into `extra[extraKey]`. The lookup in `onRequest` carries no `maxStale`, so a hit never pushes an entry's expiry back (section 1, item 5); the save in `onResponse` carries `cacheFor ?? config.maxStale`, which the library stamps on the stored entry.
 
 ## 6. `CacheInterceptor`
 
@@ -129,13 +132,13 @@ class CacheInterceptor extends Interceptor {
 }
 ```
 
-- It holds one private `DioCacheInterceptor` built from `CacheOptions(store: store, policy: config.policy, maxStale: config.maxStale, keyBuilder: _key, hitCacheOnNetworkFailure: false, hitCacheOnErrorCodes: const [])`. The library never sees the offline settings.
+- It holds one private `DioCacheInterceptor` built from `CacheOptions(store: store, policy: config.policy, keyBuilder: _key)`. The library never sees the offline settings, and per-request options follow section 5.
 - `onRequest` copies `options.extra` into a new map, because the library writes into it and `extra` may be unmodifiable. It applies section 5, then delegates. It wraps the handler so that, when the library forwards the request with `If-None-Match` or `If-Modified-Since`, that request also accepts `304` in its `validateStatus`. The `304` then reaches the library's `onResponse`, which answers with the stored body, and every response interceptor, `ConcurrencyLimitInterceptor` included, sees a response.
 - `onResponse` delegates.
 - `onError` does not delegate; it passes the error on. The library's `onError` only serves the offline fallback and the `304` path, and both now live elsewhere.
 - The key is `sha256` (hashlib, re-exported by `dart_faltool`) over the URL and, for each name of `keyHeaders` in sorted lower-case order that the request carries, a `name: value` line. The digest keeps header values, such as a bearer token, out of the store's keys.
 - Diagnostics through `logPrint`: a hit and an offline answer print the method, host, and path, never the query, which may hold a listed secret.
-- A hit is a new `Response` built from stored bytes, bound to the current request's options, and resolved with `callFollowingResponseInterceptor: true`.
+- A hit is a new `Response` built from stored bytes, bound to the current request's options, and resolved with `callFollowingResponseInterceptor: true`. After a `304` revalidation the response reads `isCacheHit` false, as the library marks a validated response as from the network.
 - `response.isCacheHit` stays on `FalconCacheHitResponseExtensions` and reads the library's marker, `extra[extraFromNetworkKey] == false`.
 - `clearCache()` calls `store.clean()`. `evictExpired()` is removed: the memory store evicts by size, and `maxStale` drops old entries.
 - The `CacheEntry` model is removed.
@@ -144,10 +147,10 @@ class CacheInterceptor extends Interceptor {
 
 `fallback` returns an internal interceptor bound to the same store and key builder.
 
-- It acts only when `hitCacheOnNetworkFailure` or `hitCacheOnErrorCodes` is set. It skips cancels, and it uses the library's `isCacheCheckAllowed(statusCode, options)` with the box's offline settings.
+- It acts only when `hitCacheOnNetworkFailure` or `hitCacheOnErrorCodes` is set, only on a `GET`, and never on a cancel. Its predicate is its own: an error without a status needs `hitCacheOnNetworkFailure`, and one with a status needs that status in `hitCacheOnErrorCodes`. The library's `isCacheCheckAllowed` also accepts `304`, which belongs to section 6. A store that throws leaves the original error.
 - It loads the entry with the request's key, skips an entry past its `maxStale`, and resolves with `toResponse(err.requestOptions)`, marked `extra['dart_falconnect.cache.fallback'] = true`.
 - `response.isCacheFallback` reads that marker; `isCacheHit` is also true for such a response.
-- Placed after `RetryInterceptor`, it runs after the last retry and after `ConcurrencyLimitInterceptor.onError` has returned the slot.
+- Placed after `RetryInterceptor`, it runs after `ConcurrencyLimitInterceptor.onError` has returned the slot. A retry attempt is a nested `dio.fetch` whose error runs the rest of the chain, the fallback included, before the retry loop decides. So `RetryInterceptor` marks the error it passes on after its last attempt (`extra['dart_falconnect.retry.final']`, through `lib/src/engine/https/interceptors/retry_attempts.dart`), and the fallback passes on the error of an attempt whose loop may still retry.
 - The log saw the last attempt's error before the fallback answered; the fallback prints a diagnostic, which is a `DEBUG` JSON line in JSON mode.
 
 ## 7. `BaseHttpClient`
@@ -268,4 +271,7 @@ The skill describes the current surface only, with no migration section.
 8. The client never closes a store, since it may be the app's.
 9. `store` and `fallback` are public getters, so a hand-built chain can place the fallback and an app can inspect the store.
 10. Diagnostics never print a query string.
-11. The per-entry limit stays at the library default of 512,000 bytes.
+11. The per-entry limit is `min(512000, maxSize ~/ 5)`, the most the memory store accepts.
+12. A lookup carries no `maxStale`; only a save stamps it.
+13. `RetryInterceptor` marks its final error so the fallback answers only after the last retry.
+14. The fallback's predicate is its own, not the library's `isCacheCheckAllowed`.
