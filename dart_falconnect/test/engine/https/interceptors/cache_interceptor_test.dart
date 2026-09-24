@@ -240,8 +240,12 @@ void main() {
     test('an app that edits a hit leaves the next hit unchanged', () async {
       final dio = _dio(ScriptedAdapter([_cacheable()]), [CacheInterceptor()]);
 
-      await dio.get<dynamic>('/x');
+      final network = await dio.get<dynamic>('/x');
+      (network.data as Map<String, dynamic>)['status'] = 'edited';
+      network.headers.set('x-edited', '1');
       final hit = await dio.get<dynamic>('/x');
+      expect(hit.data, {'status': 200});
+      expect(hit.headers.value('x-edited'), isNull);
       (hit.data as Map<String, dynamic>)['status'] = 'edited';
       hit.headers.set('x-edited', '1');
       final next = await dio.get<dynamic>('/x');
@@ -256,11 +260,11 @@ void main() {
         'after the duration', () async {
       final adapter = ScriptedAdapter([reply(200)]);
       final dio = _dio(adapter, [CacheInterceptor()]);
-      final options = Options()..cacheFor = const Duration(milliseconds: 300);
+      final options = Options()..cacheFor = const Duration(milliseconds: 600);
 
       await dio.get<dynamic>('/x', options: options);
       final hit = await dio.get<dynamic>('/x', options: options);
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await Future<void>.delayed(const Duration(milliseconds: 700));
       await dio.get<dynamic>('/x', options: options);
 
       expect(hit.isCacheHit, isTrue);
@@ -270,12 +274,13 @@ void main() {
     test("a hit does not push back its entry's expiry", () async {
       final adapter = ScriptedAdapter([reply(200)]);
       final dio = _dio(adapter, [CacheInterceptor()]);
-      final options = Options()..cacheFor = const Duration(milliseconds: 400);
+      final options = Options()..cacheFor = const Duration(seconds: 1);
 
       await dio.get<dynamic>('/x', options: options);
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+      // Past half the lifetime, where the library would push expiry back.
+      await Future<void>.delayed(const Duration(milliseconds: 600));
       final hit = await dio.get<dynamic>('/x', options: options);
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+      await Future<void>.delayed(const Duration(milliseconds: 600));
       await dio.get<dynamic>('/x', options: options);
 
       expect(hit.isCacheHit, isTrue);
@@ -288,10 +293,10 @@ void main() {
       final dio = _dio(adapter, [CacheInterceptor()]);
 
       await dio.get<dynamic>('/x');
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await Future<void>.delayed(const Duration(milliseconds: 700));
       final refetched = await dio.get<dynamic>(
         '/x',
-        options: Options()..cacheFor = const Duration(milliseconds: 250),
+        options: Options()..cacheFor = const Duration(milliseconds: 500),
       );
       final hit = await dio.get<dynamic>(
         '/x',
