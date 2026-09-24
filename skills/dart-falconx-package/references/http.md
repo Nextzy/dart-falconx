@@ -215,7 +215,7 @@ dio.get('/balance', options: Options()..cachePolicy = CachePolicy.noCache);
 
 The client never closes a store passed in. A store that throws never fails a request: the request goes to the network, its response reaches the app unstored, and a diagnostic names the error type. Changing `policy`, `maxStale`, `keyHeaders`, or the offline settings through `configure` keeps the entries; changing `store` or `maxSize` starts an empty cache.
 
-**Offline fallback.** `CacheConfig(hitCacheOnNetworkFailure: true)` answers a `GET` that failed without a response from the stored entry, and `hitCacheOnErrorCodes: {503}` does the same for the listed statuses. Both are off by default. The answer comes only after the last retry, reads `response.isCacheFallback` and `response.isCacheHit`, skips an entry past its `maxStale`, and never answers a cancel. The log shows the last attempt's error; the fallback prints a diagnostic. For offline-first screens, prefer `DatasourceBoundState`, which keeps models in the app's own store.
+**Offline fallback.** `CacheConfig(hitCacheOnNetworkFailure: true)` answers a `GET` that failed without a response from the stored entry, and `hitCacheOnErrorCodes: {503}` does the same for the listed statuses. Both are off by default. The answer comes only after the last retry, reads `response.isCacheFallback` and `response.isCacheHit`, skips an entry past its `maxStale`, and never answers a cancelled request. The log shows the last attempt's error; the fallback prints a diagnostic. For offline-first screens, prefer `DatasourceBoundState`, which keeps models in the app's own store.
 
 ## Rate limiting
 

@@ -10,6 +10,17 @@ Reply _cacheable() => reply(200, headers: {'cache-control': 'max-age=60'});
 /// Skips the cached answer, so the request reaches the network.
 Options _refresh() => Options()..cachePolicy = CachePolicy.refresh;
 
+/// Records what an error interceptor did with an error.
+class _RecordingHandler extends ErrorInterceptorHandler {
+  Object? outcome;
+
+  @override
+  void next(DioException error) => outcome = error;
+
+  @override
+  void resolve(Response<dynamic> response) => outcome = response;
+}
+
 /// A chain with the cache first and its fallback after [RetryInterceptor],
 /// as `BaseHttpClient` builds it.
 Dio _dio(
@@ -158,6 +169,26 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('an error of a cancelled request never falls back', () async {
+    final cache = _offline();
+    final dio = _dio(ScriptedAdapter([_cacheable()]), cache);
+    await dio.get<dynamic>('/x');
+    final error = DioException(
+      requestOptions: RequestOptions(
+        baseUrl: 'https://a.test',
+        path: '/x',
+        cancelToken: CancelToken()..cancel(),
+      ),
+      type: DioExceptionType.connectionError,
+    );
+    final handler = _RecordingHandler();
+
+    cache.fallback.onError(error, handler);
+    await pumpEventQueue();
+
+    expect(handler.outcome, same(error));
   });
 
   test('an entry past its maxStale is not used', () async {
