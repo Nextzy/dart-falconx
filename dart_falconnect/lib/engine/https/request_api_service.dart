@@ -1,139 +1,115 @@
 import 'package:dart_falconnect/lib.dart';
 
+/// Converts a decoded JSON object into `T`.
+typedef JsonResponseConverter<T> = FutureOr<T> Function(
+  Map<String, dynamic> json,
+);
+
+/// Returns a fallback value for a failed request, or null to rethrow.
+typedef RequestErrorCallback<T> = T? Function(
+  DioException exception,
+  StackTrace? stackTrace,
+);
+
 /// Abstract interface for type-safe HTTP operations.
 ///
-/// Every method requires a `converter` function that transforms the decoded
-/// JSON map into the target type `T`, ensuring all responses are strongly
-/// typed. An optional `catchError` callback allows callers to supply a
-/// fallback value instead of propagating a [DioException].
+/// Every method requires a `converter` that turns the decoded JSON object
+/// into `T`. A body that is not a JSON object, or a converter that throws,
+/// fails with a [DioException] holding a `CommonException` of
+/// `InputErrorType.invalidFormat`. An optional `catchError` returns a
+/// fallback value; returning null rethrows the error.
 abstract class RequestApiService {
-  /// Performs an HTTP GET request to [endPoint] and converts the response
-  /// with [converter].
-  ///
-  /// - [queryParameters]: Optional URL query parameters.
-  /// - [options]: Additional Dio request options.
-  /// - [isUseToken]: Whether to attach the auth token (handled by
-  ///   interceptors).
-  /// - [converter]: Required function mapping the JSON response to [T].
-  /// - [catchError]: Optional fallback invoked on [DioException].
+  /// Sends a `GET` request.
   Future<Response<T>> get<T>(
-    String endPoint, {
-    Map<String, Object>? queryParameters,
+    String path, {
+    Map<String, Object?>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(Map<String, dynamic> json) converter,
-    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+    required JsonResponseConverter<T> converter,
+    RequestErrorCallback<T>? catchError,
   });
 
-  /// Performs an HTTP POST request to [endPoint] with an optional JSON [data]
-  /// body and converts the response with [converter].
-  ///
-  /// - [data]: Optional request body implementing [BaseRequestBody].
-  /// - [options]: Additional Dio request options.
-  /// - [isUseToken]: Whether to attach the auth token.
-  /// - [queryParameters]: Optional URL query parameters.
-  /// - [converter]: Required function mapping the JSON response to [T].
-  /// - [catchError]: Optional fallback invoked on [DioException].
+  /// Sends a `POST` request with a JSON body.
   Future<Response<T>> post<T>(
-    String endPoint, {
+    String path, {
     BaseRequestBody? data,
+    Map<String, Object?>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    Map<String, Object>? queryParameters,
-    required T Function(Map<String, dynamic> json) converter,
-    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+    required JsonResponseConverter<T> converter,
+    RequestErrorCallback<T>? catchError,
   });
 
-  /// Performs an HTTP POST request to [endPoint] with a multipart [data] body
-  /// and converts the response with [converter].
-  ///
-  /// Use this variant when uploading files or sending form-encoded fields.
-  ///
-  /// - [data]: Multipart form data.
-  /// - [options]: Additional Dio request options.
-  /// - [isUseToken]: Whether to attach the auth token.
-  /// - [converter]: Required function mapping the JSON response to [T].
-  /// - [catchError]: Optional fallback invoked on [DioException].
+  /// Sends a `POST` request with a multipart body.
   Future<Response<T>> postFormData<T>(
-    String endPoint, {
+    String path, {
     FormData? data,
+    Map<String, Object?>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(Map<String, dynamic> json) converter,
-    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+    required JsonResponseConverter<T> converter,
+    RequestErrorCallback<T>? catchError,
   });
 
-  /// Performs an HTTP PATCH request to [endPoint] with an optional JSON [data]
-  /// body and converts the response with [converter].
-  ///
-  /// - [data]: Optional partial-update request body.
-  /// - [options]: Additional Dio request options.
-  /// - [isUseToken]: Whether to attach the auth token.
-  /// - [queryParameters]: Optional URL query parameters.
-  /// - [converter]: Required function mapping the JSON response to [T].
-  /// - [catchError]: Optional fallback invoked on [DioException].
+  /// Sends a `PATCH` request with a JSON body.
   Future<Response<T>> patch<T>(
-    String endPoint, {
+    String path, {
     BaseRequestBody? data,
+    Map<String, Object?>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    Map<String, Object>? queryParameters,
-    required T Function(Map<String, dynamic> json) converter,
-    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+    required JsonResponseConverter<T> converter,
+    RequestErrorCallback<T>? catchError,
   });
 
-  /// Performs an HTTP PUT request to [endPoint] with an optional JSON [data]
-  /// body and converts the response with [converter].
-  ///
-  /// - [data]: Optional full-update request body.
-  /// - [options]: Additional Dio request options.
-  /// - [isUseToken]: Whether to attach the auth token.
-  /// - [converter]: Required function mapping the JSON response to [T].
-  /// - [catchError]: Optional fallback invoked on [DioException].
+  /// Sends a `PUT` request with a JSON body.
   Future<Response<T>> put<T>(
-    String endPoint, {
+    String path, {
     BaseRequestBody? data,
+    Map<String, Object?>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(Map<String, dynamic> json) converter,
-    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+    required JsonResponseConverter<T> converter,
+    RequestErrorCallback<T>? catchError,
   });
 
-  /// Performs an HTTP PUT request to [endPoint] with a multipart [data] body
-  /// and converts the response with [converter].
-  ///
-  /// Use this variant when replacing a resource that includes file uploads.
-  ///
-  /// - [data]: Multipart form data.
-  /// - [options]: Additional Dio request options.
-  /// - [isUseToken]: Whether to attach the auth token.
-  /// - [converter]: Required function mapping the JSON response to [T].
-  /// - [catchError]: Optional fallback invoked on [DioException].
+  /// Sends a `PUT` request with a multipart body.
   Future<Response<T>> putFormData<T>(
-    String endPoint, {
+    String path, {
     FormData? data,
+    Map<String, Object?>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
     bool isUseToken = true,
-    required T Function(Map<String, dynamic> json) converter,
-    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+    required JsonResponseConverter<T> converter,
+    RequestErrorCallback<T>? catchError,
   });
 
-  /// Performs an HTTP DELETE request to [endPoint] and converts the response
-  /// with [converter].
-  ///
-  /// - [data]: Optional request body (some APIs require a body on DELETE).
-  /// - [queryParameters]: Optional URL query parameters.
-  /// - [options]: Additional Dio request options.
-  /// - [isUseToken]: Whether to attach the auth token.
-  /// - [converter]: Required function mapping the JSON response to [T].
-  /// - [catchError]: Optional fallback invoked on [DioException].
+  /// Sends a `DELETE` request with an optional JSON body.
   Future<Response<T>> delete<T>(
-    String endPoint, {
+    String path, {
     BaseRequestBody? data,
-    Map<String, Object>? queryParameters,
+    Map<String, Object?>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
     bool isUseToken = true,
-    required T Function(Map<String, dynamic> json) converter,
-    T? Function(DioException exception, StackTrace? stackTrace)? catchError,
+    required JsonResponseConverter<T> converter,
+    RequestErrorCallback<T>? catchError,
   });
 }
