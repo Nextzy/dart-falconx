@@ -67,6 +67,8 @@ Duration? _checkCacheFor(Duration? value) {
 /// A hit is a new [Response] decoded from stored bytes and bound to the
 /// current request; it passes every response interceptor of the chain.
 /// Entries are keyed by the URL and the headers of `CacheConfig.keyHeaders`.
+/// A streamed request ([ResponseType.stream], as `Dio.download` sends) is
+/// never stored or answered from the cache.
 ///
 /// Place it before `ConcurrencyLimitInterceptor`, so a hit takes no slot,
 /// and place [fallback] after `RetryInterceptor`.
@@ -99,6 +101,10 @@ class CacheInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (_isStream(options)) {
+      handler.next(options);
+      return;
+    }
     // A lookup carries no maxStale: the library would push an entry's
     // deletion back on every hit, and an entry must expire on time.
     // A new map: the library writes into extra, which may be unmodifiable.
@@ -122,6 +128,10 @@ class CacheInterceptor extends Interceptor {
     ResponseInterceptorHandler handler,
   ) {
     final options = response.requestOptions;
+    if (_isStream(options)) {
+      handler.next(response);
+      return;
+    }
     options.extra = {
       ...options.extra,
       extraKey: _requestOptions(options, save: true),
@@ -230,6 +240,11 @@ class CacheInterceptor extends Interceptor {
   // The query may hold a secret, so diagnostics never print it.
   static String _describe(RequestOptions options) =>
       '${options.method} ${options.uri.host}${options.uri.path}';
+
+  // The library can neither store nor serve a stream, and fails the request
+  // when it tries, so a streamed request passes untouched.
+  static bool _isStream(RequestOptions options) =>
+      options.responseType == ResponseType.stream;
 
   static bool _hasConditions(RequestOptions options) =>
       conditionalRequestHeaders.any(options.headers.containsKey);
