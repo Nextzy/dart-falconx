@@ -744,19 +744,36 @@ void main() {
       ]);
     });
 
-    test('a request ID or a header provider alone builds only the stamp', () {
-      final client = _Client(ScriptedAdapter([reply(200)]))
-        ..configure(const HttpClientConfig(requestId: RequestIdConfig()));
-      final withId = client.interceptors.map((i) => '${i.runtimeType}');
-      expect(withId, [
-        'ImplyContentTypeInterceptor',
-        'RequestStampInterceptor',
-        'DefaultNetworkExceptionHandlerInterceptor',
-      ]);
+    test('every combination of request ID, header provider, and auth builds '
+        'the stamp, and auth alone adds the refresh', () {
+      for (final withId in [false, true]) {
+        for (final withProvider in [false, true]) {
+          for (final withAuth in [false, true]) {
+            final client = _Client(ScriptedAdapter([reply(200)]))
+              ..configure(
+                HttpClientConfig(
+                  requestId: withId ? const RequestIdConfig() : null,
+                  headerProvider: withProvider ? (_) => const {} : null,
+                  auth: withAuth ? auth() : null,
+                ),
+              );
 
-      client.configure(HttpClientConfig(headerProvider: (_) => const {}));
-
-      expect(client.interceptors.map((i) => '${i.runtimeType}'), withId);
+            expect(
+              client.interceptors.map((i) => '${i.runtimeType}'),
+              [
+                'ImplyContentTypeInterceptor',
+                if (withId || withProvider || withAuth)
+                  'RequestStampInterceptor',
+                if (withAuth) 'TokenRefreshInterceptor',
+                'DefaultNetworkExceptionHandlerInterceptor',
+              ],
+              reason:
+                  'requestId: $withId, headerProvider: $withProvider, '
+                  'auth: $withAuth',
+            );
+          }
+        }
+      }
     });
 
     test('an unchanged auth box keeps its session; new closures build a new '

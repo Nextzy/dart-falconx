@@ -363,6 +363,29 @@ void main() {
       expect(limiter.getStatistics().globalActive, 0);
     });
 
+    test('a throwing generate names its callback', () async {
+      final adapter = ScriptedAdapter([reply(200)]);
+      final client = _Client(
+        adapter,
+        HttpClientConfig(
+          requestId: RequestIdConfig(
+            generate: () => throw StateError('no entropy'),
+          ),
+        ),
+      );
+
+      final error = await client.dio
+          .get<dynamic>('/x')
+          .then<DioException?>(
+            (_) => null,
+            onError: (Object e) => e as DioException,
+          );
+
+      expect(error!.error, isA<StateError>());
+      expect(error.message, contains('RequestIdConfig.generate'));
+      expect(adapter.requests, isEmpty);
+    });
+
     test('a throwing accessToken names its callback', () async {
       final adapter = ScriptedAdapter([reply(200)]);
       final client = _Client(
