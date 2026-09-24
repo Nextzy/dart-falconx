@@ -104,7 +104,7 @@ dart format .
 
 **dart_falconnect/lib/engine/**
 - **https/**: HTTP client with comprehensive interceptor system
-  - `BaseHttpClient`: Abstract class with typed HTTP methods and automatic JSON conversion
+  - `BaseHttpClient`: Abstract class with typed HTTP methods and automatic JSON conversion; configures itself from `HttpClientConfig` through `configure()`
   - Interceptors: cache, concurrency limiting, rate limiting, retry, logging, error handling
   - All methods require converter functions for type-safe responses
   
@@ -146,7 +146,7 @@ Three exception systems in dart_falmodel:
 1. **Interceptor Chain Pattern**
    - Both HTTP and WebSocket use middleware-style interceptors
    - Enables cross-cutting concerns without modifying core logic
-   - Order matters: cache → concurrency limit → rate limiter → retry → exception handler (see `skills/dart-falconx-package/references/http.md`)
+   - Order matters: your interceptors → log → performance → cache → concurrency limit → rate limiter → retry → exception handler (see `skills/dart-falconx-package/references/http.md`)
 
 2. **Result Pattern** (dart_falmodel)
    - Type-safe error handling without exceptions

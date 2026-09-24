@@ -97,7 +97,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Resolved via Dart workspace resolution — NOT a layering violation
 
 #### HTTP Client (Dio + Retrofit)
-- All HTTP methods in `BaseHttpClient` require a `converter: (Map<String, dynamic>) → T` parameter — no raw response API
+- All HTTP methods in `BaseHttpClient` require a `converter: (Map<String, dynamic>) → FutureOr<T>` parameter, which may be async on every method — no raw response API; a body that is not a JSON object fails with `InputErrorType.invalidFormat`
 - POST/PUT/PATCH/DELETE data must be `BaseRequestBody` (requires `.toJson()`)
 - Interceptor order matters: cache → concurrency limit → rate limiter → retry → exception handler
 - New interceptors must be exported in `interceptors/interceptors.dart` (alphabetically)

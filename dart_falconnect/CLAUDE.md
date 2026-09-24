@@ -35,9 +35,9 @@ dart fix --apply
 ### Three Network Engines
 
 **HTTP (`engine/https/`)**
-- `BaseHttpClient` — Abstract class wrapping Dio. Subclasses override `setupOptions()` and `setupInterceptors()`. All HTTP methods (GET/POST/PUT/PATCH/DELETE) require a `converter` function for type-safe JSON→T conversion. Uses `_performRequest()` internally which chains `.mapJson(converter).catchWhenError(catchError)`
+- `BaseHttpClient` — Abstract class wrapping Dio. It takes an `HttpClientConfig` (super constructor `config:`) and applies it with `configure()`, which rebuilds only the interceptors whose box changed; there are no hooks. All HTTP methods (GET/POST/PUT/PATCH/DELETE) require a `converter` function for type-safe JSON→T conversion. One private `_request()` path chains `.mapJson(converter).catchWhenError(catchError)`
 - `RequestApiService` — Interface that `BaseHttpClient` implements
-- `HttpClientConfig` — Configuration with factory constructors: `.production()`, `.development()`, `.test()`
+- `HttpClientConfig` — Freezed configuration: the dio options it owns plus one freezed box per feature (`LogConfig`, `PerformanceConfig`, `CacheConfig`, `ConcurrencyConfig`, `RateLimitConfig`, `RetryConfig`); a null box turns its feature off. No presets
 - Response extensions (`extensions/response_extensions.dart`) provide `mapJson()`, `unwrapResponse()`, `catchWhenError()`, and `copyWith()`/`transformData()` on `Response<dynamic>?`
 
 **WebSocket (`engine/sockets/`)**
@@ -65,7 +65,7 @@ All return `Result<DataType>` (success/failure union from dart_falmodel). When `
 
 Nine interceptors available (barrel: `interceptors/interceptors.dart`):
 1. `CacheInterceptor` — Response caching via dio_cache_interceptor
-2. `RetryInterceptor` — Loop up to `maxRetryAttempts`; idempotent-only for 5xx/408/409/timeouts (429 and `connectionTimeout` for every method); `Retry-After` capped by `maxRetryDelay`; total `maxRetryDuration`; per-request `disableRetry`, `retryAttempts`, `retryNonIdempotent`
+2. `RetryInterceptor` — Loop up to `RetryConfig.maxAttempts`; idempotent-only for 5xx/408/409/timeouts (429 and `connectionTimeout` for every method); `Retry-After` capped by `maxDelay`; total `maxDuration`; per-request `disableRetry`, `retryAttempts`, `retryNonIdempotent`
 3. `NetworkExceptionHandlerInterceptor` — Abstract: routes errors to `onClientError()`/`onServerError()`/`onNonStandardError()` based on status code ranges
 4. `DefaultNetworkExceptionHandlerInterceptor` — Concrete: rejects all errors (no custom handling)
 5. `PerformanceInterceptor` — Request timing
@@ -74,7 +74,7 @@ Nine interceptors available (barrel: `interceptors/interceptors.dart`):
 8. `HttpLogInterceptor` — Request/response logging with ANSI colors
 9. `ConcurrencyLimitInterceptor` — Most requests in flight per host and in total on `resilience` `Bulkhead`; takes a slot in `onRequest` and gives it back on response, error, `CancelToken` cancel, or `dispose()`; a retry or re-send reuses its request's slot; idle hosts are forgotten
 
-Order: `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → exception handler. The pause core lives in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host key rule in `lib/src/engine/https/interceptors/host_key.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart` (none exported).
+Order, assembled by `BaseHttpClient.configure`: the config's `interceptors` → `HttpLogInterceptor` → `PerformanceInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → exception handler. Each interceptor takes its own config box and an optional `logPrint`. The pause core lives in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host key rule in `lib/src/engine/https/interceptors/host_key.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart` (none exported).
 
 When adding new interceptors, add the export to `interceptors/interceptors.dart` (alphabetically sorted per lint rules).
 

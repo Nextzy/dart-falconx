@@ -20,45 +20,101 @@ abstract class UserApi {
   Future<UserDto> create(@Body() CreateUserBody body);
 }
 
-final api = UserApi(DefaultHttpClient.instance.dio, baseUrl: 'https://api.example.com');
+final api = UserApi(DefaultHttpClient.instance.dio); // base URL from the client config
 ```
 
 Generate `_UserApi` with `dart run build_runner build --delete-conflicting-outputs`.
 Retrofit's `Future<HttpResponse<T>>` gains `.unwrapResponse()` and `.catchWhenError(f)`.
 
-## `DefaultHttpClient`
+## Configure a client
 
-Singleton `DefaultHttpClient.instance`: JSON content type, 20 s connect and receive timeouts, one `DefaultNetworkExceptionHandlerInterceptor` (rejects every error unchanged). Reach Dio with `.dio`; base URL with `.baseUrl` / `setupBaseUrl(url)`.
+Every `BaseHttpClient`, `DefaultHttpClient.instance` included, runs on one `HttpClientConfig`: the dio options it owns, plus one box per feature. A null box turns its feature off. With no `configure` call, a client has JSON content type, 20 s connect and receive timeouts, no send timeout, and `DefaultNetworkExceptionHandlerInterceptor`.
+
+```dart
+final dev = HttpClientConfig(
+  baseUrl: 'https://dev.api.example.com',
+  log: const LogConfig(),
+  retry: const RetryConfig(maxAttempts: 1),
+  rateLimit: const RateLimitConfig.pauseOnly(),
+);
+
+final prod = HttpClientConfig(
+  baseUrl: 'https://api.example.com',
+  cache: const CacheConfig(),
+  concurrency: const ConcurrencyConfig(global: 16, perHost: 4),
+  rateLimit: RateLimitConfig.tokenBucket(
+    perHost: [TokenBucketPolicy(permits: 100, per: const Duration(minutes: 1))],
+  ),
+  retry: const RetryConfig(),
+  interceptors: [AuthInterceptor(tokenStore)],
+);
+
+void main() {
+  DefaultHttpClient.instance.configure(kReleaseMode ? prod : dev);
+  runApp(const App());
+}
+```
+
+`configure` applies to requests that start after it returns. Requests already running finish on the configuration they started with. Only the interceptors whose box changed are rebuilt, so token buckets, 429 pauses, concurrency slots, the cache, and performance statistics survive an unrelated change:
+
+```dart
+final client = DefaultHttpClient.instance;
+client.configure(client.currentConfig.copyWith(log: const LogConfig())); // limiter kept
+client.configure(client.currentConfig.copyWith(log: null));              // log off
+client.setupBaseUrl('https://staging.api.example.com');
+```
+
+| Box | Adds | Defaults |
+|---|---|---|
+| `LogConfig` | `HttpLogInterceptor`; `diagnostics` also prints interceptor diagnostics | request, headers, and bodies on; response headers off |
+| `PerformanceConfig` | `PerformanceInterceptor` | `maxMetricsHistory` 1000 |
+| `CacheConfig` | `CacheInterceptor` | 15 min, 50 MB |
+| `ConcurrencyConfig` | `ConcurrencyLimitInterceptor` | every scope unlimited |
+| `RateLimitConfig.none()`, `.pauseOnly(...)`, `.tokenBucket(...)` | nothing, `RetryAfterPauseInterceptor`, or `TokenBucketRateLimitInterceptor`; never both limiters | `none()` |
+| `RetryConfig` | `RetryInterceptor` | 3 attempts, 1 s base delay, 30 s cap, 60 s deadline |
+
+- The client orders the chain: your `interceptors`, log, performance, cache, concurrency limit, rate limit, retry, then `exceptionHandler` (null means `DefaultNetworkExceptionHandlerInterceptor`).
+- `configure` owns `baseUrl`, the three timeouts, `contentType`, redirects, `validateStatus` (null means dio's default, 2xx only), and the header keys of `headers` and `userAgent`. Other `dio.options` fields, and headers you set by hand, survive it.
+- Add interceptors with `addInterceptors` or the config, never with `dio.interceptors.add(...)`: `configure` rebuilds the list.
+- When the client switches base URLs, give Retrofit APIs no absolute `baseUrl`, neither as the factory argument nor in `@RestApi(baseUrl:)`. An absolute one wins over `dio.options.baseUrl`.
+- A box holding an inline lambda (`logPrint`, `onRetry`, `validateStatus`) is unequal on every `configure`, so its interceptor is rebuilt. Pass top-level functions.
+- The next attempt of a request that was retrying across a `configure` passes the new chain, with its old retry settings.
+- Call `dispose()` at the end of a test or a CLI. A Flutter app never needs it.
 
 ## Custom client: subclass `BaseHttpClient`
 
+Write one client class per external system, and pass its configuration to the super constructor:
+
 ```dart
-class ApiClient extends BaseHttpClient {
-  ApiClient() : super(dio: Dio());
+class PaymentHttpClient extends BaseHttpClient {
+  PaymentHttpClient()
+    : super(
+        dio: Dio(),
+        config: HttpClientConfig(
+          baseUrl: 'https://pay.example.com',
+          retry: const RetryConfig(),
+          interceptors: [PaymentAuthInterceptor()],
+        ),
+      );
+}
+```
 
-  static final _config = HttpClientConfig.production();
+An interceptor that needs the client's `dio`, such as a token refresh that re-sends, is built in the constructor body, where `dio` is ready:
 
-  @override
-  void setupOptions(Dio dio, BaseOptions options) {
-    _config.applyTo(dio);
-    options.baseUrl = 'https://api.example.com';
-  }
-
-  @override
-  void setupInterceptors(Dio dio, Interceptors interceptors) {
-    interceptors.addAll([
-      AuthInterceptor(),                              // yours
-      RetryInterceptor(config: _config, dio: dio),
-      CacheInterceptor(config: _config),
-      HttpLogInterceptor(),
-    ]);
+```dart
+class PaymentHttpClient extends BaseHttpClient {
+  PaymentHttpClient(TokenStore store) : super(dio: Dio()) {
+    configure(HttpClientConfig(
+      baseUrl: 'https://pay.example.com',
+      interceptors: [TokenRefreshInterceptor(dio, store)],
+    ));
   }
 }
 ```
 
-Both hooks run inside the `BaseHttpClient` constructor, so fields assigned in your constructor body are not yet set; use `static` or initializer fields.
+Your interceptors run before `ConcurrencyLimitInterceptor`, so they follow its slot-safety rule (see "Interceptor order"): end `onResponse` and `onError` with `handler.next(...)` or `handler.reject(err, true)`.
 
-Members: `dio`, `baseUrl`, `setupBaseUrl(String)`, `config` (`BaseOptions`), `interceptors`, `addInterceptors(Interceptors)` to append at runtime.
+Members: `dio`, `baseUrl`, `options` (the dio `BaseOptions`), `interceptors`, `currentConfig`, `configure(config)`, `setupBaseUrl(url)`, `addInterceptors(interceptors)`, `dispose()`.
 
 ## Converter-based calls
 
@@ -66,12 +122,12 @@ Every method takes `converter: (Map<String, dynamic> json) => T` and returns `Fu
 
 | Method                                | Body                                                    | Extras                                                                                       |
 |---------------------------------------|---------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| `get<T>`                              | none                                                    | `queryParameters`, `options`, `cancelToken`, `onReceiveProgress`; `converter` may be async   |
+| `get<T>`                              | none                                                    | `queryParameters`, `options`, `cancelToken`, `onReceiveProgress`                             |
 | `post<T>`, `patch<T>`, `put<T>`       | `data: BaseRequestBody?` (serialised with `toJson()`)   | plus `onSendProgress`                                                                        |
 | `postFormData<T>`, `putFormData<T>`   | `data: FormData?`                                       | same                                                                                         |
 | `delete<T>`                           | `data: BaseRequestBody?`                                | `queryParameters`, `cancelToken`                                                             |
 
-`catchError: (DioException e, StackTrace? st) => T?` returns a fallback to resolve the future, or `null` to rethrow. `isUseToken` is accepted but only your own interceptors read it.
+Every method accepts a converter that may be async. `catchError: (DioException e, StackTrace? st) => T?` returns a fallback value, and returning `null` rethrows the original error; a failure with no response, such as a timeout or a lost connection, recovers too. A body that is not a JSON object, or a converter that throws, fails with a `DioException` whose `error` is `CommonException(type: InputErrorType.invalidFormat)`, and `catchError` sees it. `isUseToken: false` sets `requestOptions.useToken` to false for your auth interceptor; `useToken` reads true when unset, Retrofit requests included.
 
 ```dart
 final res = await client.get<UserDto>('/users/$id', converter: UserDto.fromJson);
@@ -80,28 +136,34 @@ final user = res.data;
 
 ## Interceptor catalog
 
-| Class                                         | Constructor                                                                                                                                                              | Behaviour                                                                                                                                                                                                                                                                                                                                                                                        |
-|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `RetryInterceptor`                            | `(config:, dio:, onRetry:, random:)`                                                                                                                                     | loops up to `retryAttempts ?? config.maxRetryAttempts`; 429 and `connectionTimeout` for every method; timeouts, connection errors, 408/409/5xx only for idempotent methods unless `retryNonIdempotent`; `Retry-After` on 429/503 (not retried above `maxRetryDelay`), else full jitter; stops at `config.maxRetryDuration`; never retries cancels, local 429s, `Stream` bodies, bad certificates |
-| `CacheInterceptor`                            | `(config:)`                                                                                                                                                              | in-memory cache of 2xx GET responses; respects `Cache-Control` and `Expires`; `clearCache()`, `evictExpired()`                                                                                                                                                                                                                                                                                   |
-| `ConcurrencyLimitInterceptor`                 | `(config:, global:, perHost:, hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500)`                                                                | most requests in flight per host and in total, on `resilience` `Bulkhead`; a null limit means none; full queue → local 429 with `BulkheadRejectedException` and no `Retry-After`; a retry or re-send reuses its request's slot; `getStatistics()`, `dispose()` |
-| `TokenBucketRateLimitInterceptor`             | `(config:, global: [], perHost: [], hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500, maxPauseWait: 10 s, maxPause: 10 min, defaultPause: 5 s)` | token buckets from `TokenBucketPolicy` lists; no policy means no token limit; pauses a host on 429, or 503 with `Retry-After`; full queue or long pause → local 429 through the error chain; `getStatistics()`, `dispose()`; do not add `RetryAfterPauseInterceptor` next to it                                                                                                                  |
-| `RetryAfterPauseInterceptor`                  | `(config:, maxPauseWait: 10 s, maxPause: 10 min, defaultPause: 5 s, maxQueueSize: 50)`                                                                                   | the pause of `TokenBucketRateLimitInterceptor` without token limits; `dispose()`                                                                                                                                                                                                                                                                                                                 |
-| `PerformanceInterceptor`                      | `(config:, maxMetricsHistory: 1000, collectDetailedTimings: true)`                                                                                                       | `getRecentMetrics()`, `getStatistics()` returning `PerformanceStatistics`                                                                                                                                                                                                                                                                                                                        |
-| `HttpLogInterceptor`                          | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, logPrint)`                                                                          | ANSI-coloured chunked printing; logs requests and responses from anywhere in the chain, errors only when placed before `RetryInterceptor` and the exception handler |
-| `NetworkExceptionHandlerInterceptor`          | abstract `QueuedInterceptor`                                                                                                                                             | implement `onClientError` (4xx) and `onServerError` (5xx), optionally `onNonStandardError`; connect/receive timeouts become `NetworkTimeoutException` first                                                                                                                                                                                                                                      |
-| `DefaultNetworkExceptionHandlerInterceptor`   | `()`                                                                                                                                                                     | rejects every error as-is                                                                                                                                                                                                                                                                                                                                                                        |
+| Class                                       | Constructor                                                                                                                                                                 | Behaviour                                                                                                                                                                                                                                                                                                                                                                         |
+|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `RetryInterceptor`                          | `(config: RetryConfig(maxAttempts: 3, delay: 1 s, maxDelay: 30 s, maxDuration: 60 s, onRetry:), dio:, logPrint:, random:)`                                                  | loops up to `retryAttempts ?? config.maxAttempts`; 429 and `connectionTimeout` for every method; timeouts, connection errors, 408/409/5xx only for idempotent methods unless `retryNonIdempotent`; `Retry-After` on 429/503 (not retried above `maxDelay`), else full jitter; stops at `config.maxDuration`; never retries cancels, local 429s, `Stream` bodies, bad certificates |
+| `CacheInterceptor`                          | `(config: CacheConfig(duration: 15 min, maxSize: 50 MB), logPrint:)`                                                                                                        | in-memory cache of 2xx GET responses; respects `Cache-Control` and `Expires`; `clearCache()`, `evictExpired()`                                                                                                                                                                                                                                                                    |
+| `ConcurrencyLimitInterceptor`               | `(config: ConcurrencyConfig(global:, perHost:, hosts:, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500), logPrint:)`                                         | most requests in flight per host and in total, on `resilience` `Bulkhead`; a null limit means none; full queue → local 429 with `BulkheadRejectedException` and no `Retry-After`; a retry or re-send reuses its request's slot; `getStatistics()`, `dispose()`                                                                                                                    |
+| `TokenBucketRateLimitInterceptor`           | `(config: TokenBucketRateLimitConfig(global: [], perHost: [], hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500, pause: PauseConfig()), logPrint:)` | token buckets from `TokenBucketPolicy` lists; no policy means no token limit; pauses a host on 429, or 503 with `Retry-After`; full queue or long pause → local 429 through the error chain; `getStatistics()`, `dispose()`; do not add `RetryAfterPauseInterceptor` next to it                                                                                                   |
+| `RetryAfterPauseInterceptor`                | `(config: PauseOnlyRateLimitConfig(pause: PauseConfig(maxPauseWait: 10 s, maxPause: 10 min, defaultPause: 5 s), maxQueueSize: 50), logPrint:)`                              | the pause of `TokenBucketRateLimitInterceptor` without token limits; `dispose()`                                                                                                                                                                                                                                                                                                  |
+| `PerformanceInterceptor`                    | `(config: PerformanceConfig(maxMetricsHistory: 1000, collectDetailedTimings: true), logPrint:)`                                                                             | `getRecentMetrics()`, `getStatistics()` returning `PerformanceStatistics`                                                                                                                                                                                                                                                                                                         |
+| `HttpLogInterceptor`                        | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, logPrint)`                                                                             | ANSI-coloured chunked printing; logs requests and responses from anywhere in the chain, errors only when placed before `RetryInterceptor` and the exception handler                                                                                                                                                                                                               |
+| `NetworkExceptionHandlerInterceptor`        | abstract `QueuedInterceptor`                                                                                                                                                | implement `onClientError` (4xx) and `onServerError` (5xx), optionally `onNonStandardError`; connect/receive timeouts become `NetworkTimeoutException` first                                                                                                                                                                                                                       |
+| `DefaultNetworkExceptionHandlerInterceptor` | `()`                                                                                                                                                                        | rejects every error as-is                                                                                                                                                                                                                                                                                                                                                         |
 
-`HttpClientConfig`: `const HttpClientConfig({...})`, presets `production()`, `development()`, `test()`, `copyWith(...)`, and `applyTo(dio)` which sets timeouts, redirects, default headers, user agent, and `validateStatus: status < 500`. Retry fields: `maxRetryAttempts`, `retryDelay`, `maxRetryDelay`, `maxRetryDuration`. Because `applyTo` accepts every status below 500, a 429 reaches the caller as a normal response and `RetryInterceptor` never sees it; the rate limiter still pauses the host.
+Every `config` defaults to its box built with no arguments. `logPrint` receives diagnostics; null prints nothing. Inside a `BaseHttpClient`, the client passes a printer that follows `LogConfig.diagnostics`.
+
+`HttpClientConfig` is freezed: `==`, `copyWith` (which can set a box to `null`), `effectiveHeaders`, and `applyTo(dio)`, which writes the owned options onto a bare `Dio`, merges `headers`, and sets `validateStatus` only when given. It has no presets.
 
 ## Interceptor order
 
+`BaseHttpClient` assembles this order itself, with your `interceptors`, `HttpLogInterceptor`, and `PerformanceInterceptor` in front. A chain you build by hand on a bare `Dio` must follow it:
+
 ```dart
-interceptors.addAll([
-  CacheInterceptor(config: config),
-  ConcurrencyLimitInterceptor(config: config, global: 16, perHost: 4),
-  TokenBucketRateLimitInterceptor(config: config), // or RetryAfterPauseInterceptor, never both
-  RetryInterceptor(config: config, dio: dio),
+dio.interceptors.addAll([
+  CacheInterceptor(),
+  ConcurrencyLimitInterceptor(
+    config: const ConcurrencyConfig(global: 16, perHost: 4),
+  ),
+  TokenBucketRateLimitInterceptor(), // or RetryAfterPauseInterceptor, never both
+  RetryInterceptor(dio: dio),
   DefaultNetworkExceptionHandlerInterceptor(),
 ]);
 ```
@@ -119,18 +181,19 @@ interceptors.addAll([
 
 ## Rate limiting
 
-Every scope is unlimited until you give it a policy. A `TokenBucketPolicy` means "at most `permits` requests in any window of `per`"; `burst` (default 10% of `permits`, at least 1) is how many may leave back to back after idle time, and the steady rate is `permits - burst + 1` per `per`.
+Every scope is unlimited until you give it a policy. A `TokenBucketPolicy` means "at most `permits` requests in any window of `per`"; `burst` (null means 10% of `permits`, at least 1; `effectiveBurst` returns the computed value) is how many may leave back to back after idle time, and the steady rate is `permits - effectiveBurst + 1` per `per`.
 
 ```dart
-final rateLimit = TokenBucketRateLimitInterceptor(
-  config: config,
-  hosts: const {
+const rateLimit = RateLimitConfig.tokenBucket(
+  hosts: {
     'api.partner.com': [
       TokenBucketPolicy(permits: 100, per: Duration(minutes: 1)),
       TokenBucketPolicy(permits: 5000, per: Duration(hours: 1), burst: 50),
     ],
   },
 );
+// In a client: HttpClientConfig(rateLimit: rateLimit).
+// On a bare Dio: TokenBucketRateLimitInterceptor(config: rateLimit).
 ```
 
 `hosts` keys must be bare hosts exactly as `Uri.host` returns them: lowercase, with no port, brackets, or spaces (`::1` is valid). An empty list (`'api.my-backend.com': []`) opts a host out of `perHost`.
@@ -147,13 +210,12 @@ Use `RetryAfterPauseInterceptor` for the pause alone. `TokenBucketRateLimitInter
 
 ### Migrating from 1.x `RateLimitInterceptor`
 
-Renaming the class is not enough. `RateLimitInterceptor(config: config)` limited every request by default (100 req/s global, 10 req/s per host); `TokenBucketRateLimitInterceptor(config: config)` limits nothing. The closest equivalent of the 1.x defaults:
+Renaming the class is not enough. The 1.x `RateLimitInterceptor` limited every request by default (100 req/s global, 10 req/s per host); `TokenBucketRateLimitInterceptor()` limits nothing. The closest equivalent of the 1.x defaults:
 
 ```dart
-final rateLimit = TokenBucketRateLimitInterceptor(
-  config: config,
-  global: const [TokenBucketPolicy(permits: 100, per: Duration(seconds: 1))],
-  perHost: const [TokenBucketPolicy(permits: 10, per: Duration(seconds: 1))],
+const rateLimit = RateLimitConfig.tokenBucket(
+  global: [TokenBucketPolicy(permits: 100, per: Duration(seconds: 1))],
+  perHost: [TokenBucketPolicy(permits: 10, per: Duration(seconds: 1))],
 );
 ```
 
@@ -177,11 +239,10 @@ On a server, build the client once per process (a top-level variable returned by
 `ConcurrencyLimitInterceptor` limits how many requests are in flight at once. Every scope is unlimited until you set it.
 
 ```dart
-final concurrency = ConcurrencyLimitInterceptor(
-  config: config,
+const concurrency = ConcurrencyConfig(
   global: 16,
   perHost: 4,
-  hosts: const {'pay.partner.com': 2, 'cdn.example.com': null},
+  hosts: {'pay.partner.com': 2, 'cdn.example.com': null},
 );
 ```
 
@@ -225,18 +286,18 @@ await dio.post<dynamic>(
   '/payments',
   options: Options()
     ..retryNonIdempotent = true // allow retries of this POST after 5xx and timeouts
-    ..retryAttempts = 5,        // overrides config.maxRetryAttempts
+    ..retryAttempts = 5,        // overrides RetryConfig.maxAttempts
 );
 await dio.get<dynamic>('/live', options: Options()..disableRetry = true);
 ```
 
-`onRetry: (error, attempt, delay) {...}` runs before each wait; `error.stackTrace` holds the failure's stack trace.
+`RetryConfig(onRetry: (error, attempt, delay) {...})` runs before each wait; `error.stackTrace` holds the failure's stack trace.
 
 ### Migrating `RetryInterceptor` from 1.x
 
 - `POST` and `PATCH` are no longer retried after a 5xx, a timeout other than `connectionTimeout`, or a connection error, unless `retryNonIdempotent` is set.
-- A `Retry-After` longer than `maxRetryDelay` ends retrying instead of waiting.
-- Retries reach `maxRetryAttempts`; 1.x ran at most one retry.
+- A `Retry-After` longer than `RetryConfig.maxDelay` ends retrying instead of waiting.
+- Retries reach `RetryConfig.maxAttempts`; 1.x ran at most one retry.
 - `extra['retryCount']` and `extra['isRetry']` are gone; read `requestOptions.retryAttempt`.
 - The delay is full jitter, a random time up to the exponential cap, instead of the cap plus up to one second.
 
@@ -248,3 +309,58 @@ await dio.get<dynamic>('/live', options: Options()..disableRetry = true);
 - `Future<Response<T>>.unwrapResponse()`, `.catchWhenError(f)`; `Future<Response<dynamic>>.mapJson(f)`.
 - `DioException.toException()` maps to the `NetworkException` subtype for its status code; see `errors.md`.
 - `headers.retryAfter` and `parseRetryAfter(value, serverDate:)` (from `dart_falmodel`) read `Retry-After` as seconds or HTTP-date; `response.isLocalRateLimit` marks a client-side 429.
+
+## Migrating to the 2.0.0 client config
+
+An app that only uses `DefaultHttpClient.instance` needs no change, except where it relied on the old `catchError` behaviour below. A `BaseHttpClient` subclass drops its hooks:
+
+```dart
+// 1.x
+class PaymentHttpClient extends BaseHttpClient {
+  PaymentHttpClient() : super(dio: Dio());
+  static final _config = HttpClientConfig.production();
+
+  @override
+  void setupOptions(Dio dio, BaseOptions options) {
+    _config.applyTo(dio);
+    options.baseUrl = 'https://pay.example.com';
+  }
+
+  @override
+  void setupInterceptors(Dio dio, Interceptors interceptors) {
+    interceptors.addAll([
+      PaymentAuthInterceptor(),
+      RetryInterceptor(config: _config, dio: dio),
+      DefaultNetworkExceptionHandlerInterceptor(),
+    ]);
+  }
+}
+
+// 2.0.0
+class PaymentHttpClient extends BaseHttpClient {
+  PaymentHttpClient()
+    : super(
+        dio: Dio(),
+        config: HttpClientConfig(
+          baseUrl: 'https://pay.example.com',
+          retry: const RetryConfig(),
+          interceptors: [PaymentAuthInterceptor()],
+        ),
+      );
+}
+```
+
+- `setupOptions` and `setupInterceptors` are gone. Pass `config:` to the super constructor, or call `configure` in the constructor body.
+- Each interceptor takes its own box: `RetryInterceptor(config: const RetryConfig(), dio: dio)`, `CacheInterceptor()`, and so on (see the catalog).
+- `HttpClientConfig` fields moved into boxes: `maxRetryAttempts` is `retry?.maxAttempts`, `retryDelay` is `retry?.delay`, `maxRetryDelay` is `retry?.maxDelay`, `maxRetryDuration` is `retry?.maxDuration`, `cacheDuration` is `cache?.duration`, `maxCacheSize` is `cache?.maxSize`, and `defaultHeaders` is `headers`. `enableCache` and `enablePerformanceMonitoring` become a null or non-null box; `enableLogging` becomes `LogConfig.diagnostics` inside a client, or `logPrint:` on a bare interceptor.
+- `production()`, `development()`, and `test()` are removed; build your own values.
+- Default timeouts are 20 s; they were 30 s in `HttpClientConfig`.
+- `applyTo` no longer sets `validateStatus` to `status < 500`, so a 4xx fails in `onError` and reaches `RetryInterceptor`. Set `validateStatus` to keep the old behaviour.
+- `maxConnectionsPerHost`, `idleConnectionTimeout`, `validateCertificates`, and `logBodies` are removed.
+- `TokenBucketPolicy.burst` is the value you passed, possibly null; `effectiveBurst` returns the computed one.
+- `addInterceptors` adds to the front of the chain, where interceptors see errors; it used to append after the exception handler.
+- `configure` overwrites the options it owns; put `baseUrl`, timeouts, and headers in the config.
+- A `catchError` fallback that returns `null` now rethrows; it used to resolve with null data.
+- A non-object body or a throwing converter now fails with a `DioException` holding `InputErrorType.invalidFormat`, which `catchError` sees.
+- `BaseHttpClient.config` is removed; read `options`.
+- `RequestApiService` names its first parameter `path` and declares the same parameters as `BaseHttpClient`; only implementers update.
