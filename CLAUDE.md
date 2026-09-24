@@ -91,7 +91,7 @@ Before bumping a version, confirm the skill still matches the source.
 ## Configuration
 
 - One root `analysis_options.yaml`, based on `very_good_analysis`, covers every package.
-- Local analysis runs with `strict-casts` and `strict-inference` off; `analysis_options.ci.yaml` turns both on, but no script or command selects it.
+- `strict-casts` and `strict-inference` are on: declare every type the analyzer cannot infer, including function-typed locals.
 - The `build.yaml` in `dart_falconnect`, `dart_falmodel`, and `dart_faltool` runs `json_serializable` in checked mode with `explicit_to_json: true`: generated `fromJson` validates types, and nested models serialize through their own `toJson()`.
 
 ## Third-party packages
