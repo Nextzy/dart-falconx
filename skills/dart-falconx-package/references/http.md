@@ -188,7 +188,7 @@ dio.interceptors.addAll([
 
 ## Caching
 
-`CacheConfig()` follows the server: a `GET` response is stored only when its headers allow it (`Cache-Control: max-age`, `Expires`, `ETag`, or `Last-Modified`), a fresh entry answers without the network, and a stale one is revalidated with `If-None-Match` or `If-Modified-Since`. A `304` answers with the stored body. A response without cache headers is never stored.
+`CacheConfig()` follows the server: a `GET` response is stored only when its headers allow it (`Cache-Control: max-age`, `Expires`, `ETag`, or `Last-Modified`), a fresh entry answers without the network, and a stale one is revalidated with `If-None-Match` or `If-Modified-Since`. A `304` answers with the stored body; when the entry vanished in flight, for example through `clearCache()`, the request fails with a `badResponse` 304, as it would without the cache. A response without cache headers is never stored.
 
 ```dart
 // Cache this endpoint for 5 minutes, whatever the server's headers say.

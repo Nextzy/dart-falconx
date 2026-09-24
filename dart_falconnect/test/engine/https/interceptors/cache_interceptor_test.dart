@@ -435,6 +435,40 @@ void main() {
   });
 
   group('the chain', () {
+    test('a 304 whose entry vanished in flight fails as a bad response', () {
+      fakeAsync((async) {
+        final adapter = GatedAdapter();
+        final cache = CacheInterceptor();
+        final dio = _dio(adapter, [cache]);
+        final outcomes = <Object>[];
+
+        dio.get<dynamic>('/x').ignore();
+        async.elapse(Duration.zero);
+        adapter.requests.last.respond(
+          200,
+          headers: {'cache-control': 'max-age=0', 'etag': '"v1"'},
+        );
+        async.elapse(Duration.zero);
+        dio
+            .get<dynamic>('/x')
+            .then(outcomes.add, onError: outcomes.add)
+            .ignore();
+        async.elapse(Duration.zero);
+        cache.clearCache().ignore();
+        async.elapse(Duration.zero);
+        adapter.requests.last.respond(304);
+        async.elapse(Duration.zero);
+
+        expect(adapter.requests, hasLength(2));
+        expect(
+          outcomes.single,
+          isA<DioException>()
+              .having((e) => e.type, 'type', DioExceptionType.badResponse)
+              .having((e) => e.response?.statusCode, 'status', 304),
+        );
+      });
+    });
+
     test('a 304 revalidation returns its concurrency slot', () {
       fakeAsync((async) {
         final adapter = GatedAdapter();
