@@ -10,8 +10,5 @@ abstract class PerformanceConfig with _$PerformanceConfig {
   const factory({
     /// Most request metrics kept in memory.
     @Default(1000) int maxMetricsHistory,
-
-    /// Whether to collect detailed timing information.
-    @Default(true) bool collectDetailedTimings,
   }) = _PerformanceConfig;
 }

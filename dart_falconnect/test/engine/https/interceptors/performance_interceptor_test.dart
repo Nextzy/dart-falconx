@@ -1,4 +1,5 @@
 import 'package:dart_falconnect/dart_falconnect.dart';
+import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:fake_async/fake_async.dart';
 import 'package:test/test.dart';
 
@@ -127,12 +128,6 @@ void main() {
           'statusCode',
           'error',
           'totalDuration',
-          'dnsLookupTime',
-          'connectionTime',
-          'tlsHandshakeTime',
-          'requestTime',
-          'timeToFirstByte',
-          'downloadTime',
           'requestSize',
           'responseSize',
         ]),
@@ -144,10 +139,36 @@ void main() {
       expect(json['statusCode'], 200);
       expect(json['error'], isNull);
       expect(json['totalDuration'], greaterThanOrEqualTo(250));
-      expect(json['dnsLookupTime'], isNull);
-      expect(json['requestTime'], isNull);
       expect(json['requestSize'], greaterThan(0));
       expect(json['responseSize'], greaterThan(0));
+    });
+  });
+
+  test('RequestMetrics is immutable and copyWith keeps the start', () {
+    fakeAsync((async) {
+      final start = clock.now();
+      final inFlight = RequestMetrics(
+        method: 'GET',
+        url: 'https://a.test/x',
+        startTime: start,
+        requestSize: 12,
+      );
+      async.elapse(const Duration(milliseconds: 40));
+
+      final completed = inFlight.copyWith(
+        endTime: clock.now(),
+        statusCode: 200,
+        responseSize: 34,
+      );
+
+      expect(inFlight.endTime, isNull);
+      expect(inFlight.statusCode, isNull);
+      expect(inFlight.totalDuration, const Duration(milliseconds: 40));
+      expect(completed.startTime, start);
+      expect(completed.method, 'GET');
+      expect(completed.requestSize, 12);
+      expect(completed.statusCode, 200);
+      expect(completed.responseSize, 34);
     });
   });
 

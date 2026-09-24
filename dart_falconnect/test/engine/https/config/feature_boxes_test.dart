@@ -35,7 +35,6 @@ void main() {
 
     const performance = PerformanceConfig();
     expect(performance.maxMetricsHistory, 1000);
-    expect(performance.collectDetailedTimings, isTrue);
 
     const log = LogConfig();
     expect(log.responseHeader, isFalse);
