@@ -74,6 +74,7 @@ client.setupBaseUrl('https://staging.api.example.com');
 | `RateLimitConfig.none()`, `.pauseOnly(...)`, `.tokenBucket(...)` | nothing, `RetryAfterPauseInterceptor`, or `TokenBucketRateLimitInterceptor`; never both limiters | `none()` |
 | `RetryConfig` | `RetryInterceptor` | 3 attempts, 1 s base delay, 30 s cap, 60 s deadline |
 
+- `LogConfig` is a sealed union of `PrettyLogConfig` (`LogConfig(...)`) and `JsonLogConfig` (`LogConfig.json(...)`). `request`, `requestHeader`, `responseHeader`, and `error` exist only on the pretty variant, so match it before reading or copying them: `if (config.log case final PrettyLogConfig log) client.configure(config.copyWith(log: log.copyWith(responseHeader: true)));`.
 - The client orders the chain: your `interceptors`, log, performance, cache, concurrency limit, rate limit, retry, then `exceptionHandler` (null means `DefaultNetworkExceptionHandlerInterceptor`).
 - `configure` owns `baseUrl`, the three timeouts, `contentType`, redirects, `validateStatus` (null means dio's default, 2xx only), and the header keys of `headers` and `userAgent`. Other `dio.options` fields, and headers you set by hand, survive it.
 - Add interceptors with `addInterceptors` or the config, never with `dio.interceptors.add(...)`: `configure` rebuilds the list.
@@ -147,7 +148,7 @@ final user = res.data;
 | `TokenBucketRateLimitInterceptor`           | `(config: TokenBucketRateLimitConfig(global: [], perHost: [], hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500, pause: PauseConfig()), logPrint:)`              | token buckets from `TokenBucketPolicy` lists; no policy means no token limit; pauses a host on 429, or 503 with `Retry-After`; full queue or long pause → local 429 through the error chain; `getStatistics()`, `dispose()`; do not add `RetryAfterPauseInterceptor` next to it                                                                                                   |
 | `RetryAfterPauseInterceptor`                | `(config: PauseOnlyRateLimitConfig(pause: PauseConfig(maxPauseWait: 10 s, maxPause: 10 min, defaultPause: 5 s), maxQueueSize: 50), logPrint:)`                                           | the pause of `TokenBucketRateLimitInterceptor` without token limits; `dispose()`                                                                                                                                                                                                                                                                                                  |
 | `PerformanceInterceptor`                    | `(config: PerformanceConfig(maxMetricsHistory: 1000), logPrint:)`                                                                                                                        | `getRecentMetrics()`, `getStatistics()` and `getUrlStatistics()` returning immutable `PerformanceStatistics` snapshots                                                                                                                                                                                                                                                            |
-| `HttpLogInterceptor`                        | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, redactHeaders, redactQueryParameters, logPrint)`                                                    | ANSI-coloured chunked printing; prints the status and duration of every response and error; redacts listed headers and query values; logs requests and responses from anywhere in the chain, errors only when placed before `RetryInterceptor` and the exception handler                                                                                                          |
+| `HttpLogInterceptor`                        | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, redactHeaders, redactQueryParameters, logPrint)`                                                    | ANSI-coloured chunked printing, following the global `ansiColorDisabled`, which it never writes; prints the status and duration of every response and error; redacts listed headers and query values; logs requests and responses from anywhere in the chain, errors only when placed before `RetryInterceptor` and the exception handler                                         |
 | `HttpJsonLogInterceptor`                    | `(config: JsonLogConfig(requestHeaders: false, responseHeaders: false, requestBody: false, responseBody: false, maxBodyBytes: 4096, redactHeaders:, redactQueryParameters:, logPrint:))` | one JSON line per attempt with OpenTelemetry field names (see "Server logging"); never resolves or rejects; a throwing `logPrint` is ignored                                                                                                                                                                                                                                      |
 | `NetworkExceptionHandlerInterceptor`        | abstract `QueuedInterceptor`                                                                                                                                                             | implement `onClientError` (4xx) and `onServerError` (5xx), optionally `onNonStandardError`; connect/receive timeouts become `NetworkTimeoutException` first                                                                                                                                                                                                                       |
 | `DefaultNetworkExceptionHandlerInterceptor` | `()`                                                                                                                                                                                     | rejects every error as-is                                                                                                                                                                                                                                                                                                                                                         |
@@ -214,18 +215,7 @@ A local 429 (full queue or long pause) has type `DioExceptionType.badResponse` a
 
 Use `RetryAfterPauseInterceptor` for the pause alone. `TokenBucketRateLimitInterceptor` already contains it; a chain with the token bucket must not add `RetryAfterPauseInterceptor`.
 
-### Migrating from 1.x `RateLimitInterceptor`
-
-Renaming the class is not enough. The 1.x `RateLimitInterceptor` limited every request by default (100 req/s global, 10 req/s per host); `TokenBucketRateLimitInterceptor()` limits nothing. The closest equivalent of the 1.x defaults:
-
-```dart
-const rateLimit = RateLimitConfig.tokenBucket(
-  global: [TokenBucketPolicy(permits: 100, per: Duration(seconds: 1))],
-  perHost: [TokenBucketPolicy(permits: 10, per: Duration(seconds: 1))],
-);
-```
-
-1.x let a full bucket release ten seconds of quota at once (1,000 global, 100 per host); 2.0.0 never releases more than `permits` in any window of `per`. `globalRateLimit`, `perHostRateLimit`, and `windowSize` become policy lists; `clearQueues()` has no replacement (`dispose()` cancels waiting requests); `getStatistics()` returns `TokenBucketRateLimitStatistics` instead of a `Map`.
+### Refill timers and `dispose()`
 
 Refill timers outlive the last request, so call `dispose()` where timers must stop:
 
@@ -297,7 +287,7 @@ DefaultHttpClient.instance.configure(
 | `falconx.cache.hit`, `falconx.rate_limit.local` | `true` on a cache hit, and on a 429 built by a limiter |
 
 - Opt in to more with `LogConfig.json(requestHeaders: true, responseHeaders: true, requestBody: true, responseBody: true, maxBodyBytes: 4096)`. Headers appear as `http.request.header.<name>` lists; bodies as `falconx.request.body` and `falconx.response.body`, cut at `maxBodyBytes` UTF-8 bytes with a `.truncated` flag. Bodies are never redacted: turn them on only where they carry no personal data.
-- `redactHeaders` (default `defaultRedactedHeaders`) and `redactQueryParameters` (default `defaultRedactedQueryParameters`) apply to both log formats and compare names ignoring case. Extend them: `redactHeaders: {...defaultRedactedHeaders, 'x-tenant-secret'}`.
+- `redactHeaders` (default `defaultRedactedHeaders`) and `redactQueryParameters` (default `defaultRedactedQueryParameters`) apply to both log formats and compare names ignoring case. Extend them: `redactHeaders: {...defaultRedactedHeaders, 'x-tenant-secret'}`. Pass `const {}` to turn one off, for example in development.
 - A retried request prints one line per attempt. Limiter diagnostics print as JSON lines with `severity_text` `DEBUG` while `diagnostics` is on.
 - A `logPrint` that throws is ignored, and a header or body value whose `toString()` throws leaves a minimal `WARN` line whose `body` ends in `(log failed)`; logging never fails a request.
 - An OpenTelemetry Collector's `filelog` receiver with a `json_parser` operator turns each line into a log record; the Datadog agent and Cloud Logging read JSON on stdout too. Cloud Logging without a Collector does not map `severity_text` to its own `severity`.
@@ -319,7 +309,7 @@ DefaultHttpClient.instance.configure(
 - Limits count per process, isolate, or container instance. Divide a partner's limit by the instance count; with autoscaling, rely on the 429 pause as the last line.
 - Limits are keyed by host. When a partner limits per API key and you use one key per tenant, build one client per key; otherwise one tenant's 429 pauses every tenant.
 - Queued requests outlive the incoming request that started them. Give each incoming request a `CancelToken` that cancels at its deadline; it bounds the concurrency queue, the token wait, the pause hold, retry backoff, and the request in flight together.
-- Build the client once per process (see the `dispose()` table above).
+- Build the client once per process (see "Refill timers and `dispose()`").
 - For an open-ended set of hosts, prefer named `hosts` keys over `perHost` in `TokenBucketRateLimitInterceptor`: its per-host buckets are never freed. `ConcurrencyLimitInterceptor` forgets idle hosts itself.
 
 ## Retry
@@ -336,14 +326,6 @@ await dio.get<dynamic>('/live', options: Options()..disableRetry = true);
 
 `RetryConfig(onRetry: (error, attempt, delay) {...})` runs before each wait; `error.stackTrace` holds the failure's stack trace.
 
-### Migrating `RetryInterceptor` from 1.x
-
-- `POST` and `PATCH` are no longer retried after a 5xx, a timeout other than `connectionTimeout`, or a connection error, unless `retryNonIdempotent` is set.
-- A `Retry-After` longer than `RetryConfig.maxDelay` ends retrying instead of waiting.
-- Retries reach `RetryConfig.maxAttempts`; 1.x ran at most one retry.
-- `extra['retryCount']` and `extra['isRetry']` are gone; read `requestOptions.retryAttempt`.
-- The delay is full jitter, a random time up to the exponential cap, instead of the cap plus up to one second.
-
 ## Helpers
 
 - `RequestOptions.setHeaderTokenBearer(token)` / `removeHeaderToken()`.
@@ -352,74 +334,4 @@ await dio.get<dynamic>('/live', options: Options()..disableRetry = true);
 - `Future<Response<T>>.unwrapResponse()`, `.catchWhenError(f)`; `Future<Response<dynamic>>.mapJson(f)`.
 - `DioException.toException()` maps to the `NetworkException` subtype for its status code; see `errors.md`.
 - `headers.retryAfter` and `parseRetryAfter(value, serverDate:)` (from `dart_falmodel`) read `Retry-After` as seconds or HTTP-date; `response.isLocalRateLimit` marks a client-side 429.
-- `response.isCacheHit` marks a response answered by `CacheInterceptor`.
-
-## Migrating to the 2.0.0 client config
-
-An app that only uses `DefaultHttpClient.instance` needs no change, except where it relied on the old `catchError` behaviour below. A `BaseHttpClient` subclass drops its hooks:
-
-```dart
-// 1.x
-class PaymentHttpClient extends BaseHttpClient {
-  PaymentHttpClient() : super(dio: Dio());
-  static final _config = HttpClientConfig.production();
-
-  @override
-  void setupOptions(Dio dio, BaseOptions options) {
-    _config.applyTo(dio);
-    options.baseUrl = 'https://pay.example.com';
-  }
-
-  @override
-  void setupInterceptors(Dio dio, Interceptors interceptors) {
-    interceptors.addAll([
-      PaymentAuthInterceptor(),
-      RetryInterceptor(config: _config, dio: dio),
-      DefaultNetworkExceptionHandlerInterceptor(),
-    ]);
-  }
-}
-
-// 2.0.0
-class PaymentHttpClient extends BaseHttpClient {
-  PaymentHttpClient()
-    : super(
-        dio: Dio(),
-        config: HttpClientConfig(
-          baseUrl: 'https://pay.example.com',
-          retry: const RetryConfig(),
-          interceptors: [PaymentAuthInterceptor()],
-        ),
-      );
-}
-```
-
-- `setupOptions` and `setupInterceptors` are gone. Pass `config:` to the super constructor, or call `configure` in the constructor body.
-- Each interceptor takes its own box: `RetryInterceptor(config: const RetryConfig(), dio: dio)`, `CacheInterceptor()`, and so on (see the catalog).
-- `HttpClientConfig` fields moved into boxes: `maxRetryAttempts` is `retry?.maxAttempts`, `retryDelay` is `retry?.delay`, `maxRetryDelay` is `retry?.maxDelay`, `maxRetryDuration` is `retry?.maxDuration`, `cacheDuration` is `cache?.duration`, `maxCacheSize` is `cache?.maxSize`, and `defaultHeaders` is `headers`. `enableCache` and `enablePerformanceMonitoring` become a null or non-null box; `enableLogging` becomes `LogConfig.diagnostics` inside a client, or `logPrint:` on a bare interceptor.
-- `production()`, `development()`, and `test()` are removed; build your own values.
-- Default timeouts are 20 s; they were 30 s in `HttpClientConfig`.
-- `applyTo` no longer sets `validateStatus` to `status < 500`, so a 4xx fails in `onError` and reaches `RetryInterceptor`. Set `validateStatus` to keep the old behaviour.
-- `maxConnectionsPerHost`, `idleConnectionTimeout`, `validateCertificates`, and `logBodies` are removed.
-- `TokenBucketPolicy.burst` is the value you passed, possibly null; `effectiveBurst` returns the computed one.
-- `addInterceptors` adds to the front of the chain, where interceptors see errors; it used to append after the exception handler.
-- `configure` overwrites the options it owns; put `baseUrl`, timeouts, and headers in the config.
-- A `catchError` fallback that returns `null` now rethrows; it used to resolve with null data.
-- A non-object body or a throwing converter now fails with a `DioException` holding `InputErrorType.invalidFormat`, which `catchError` sees.
-- `BaseHttpClient.config` is removed; read `options`.
-- `RequestApiService` names its first parameter `path` and declares the same parameters as `BaseHttpClient`; only implementers update.
-
-## Migrating to 2.1.0
-
-- `LogConfig` is a sealed union: `LogConfig(...)` is `PrettyLogConfig`, and `LogConfig.json(...)` is `JsonLogConfig`. Code that reads or copies `request`, `requestHeader`, `requestBody`, `responseHeader`, `responseBody`, or `error` through the `LogConfig` type must match `PrettyLogConfig` first. This is the one source break of 2.1.0:
-
-  ```dart
-  if (config.log case final PrettyLogConfig log) {
-    client.configure(config.copyWith(log: log.copyWith(responseBody: false)));
-  }
-  ```
-
-- A cache hit now passes every response interceptor, and its `requestOptions` are the current request's. A custom interceptor that counts responses counts hits too; tell them apart with `response.isCacheHit`.
-- Both logs redact sensitive headers and query values by default. Pass `redactHeaders: const {}` and `redactQueryParameters: const {}` to see them in development.
-- `HttpLogInterceptor` no longer writes the global `ansiColorDisabled`. Set it yourself if other code relied on that side effect.
-- `HttpLogInterceptor` prints the status and duration of every response and error.
+- `response.isCacheHit` marks a response answered by `CacheInterceptor`; a response interceptor that counts responses sees hits too, so check it there.
