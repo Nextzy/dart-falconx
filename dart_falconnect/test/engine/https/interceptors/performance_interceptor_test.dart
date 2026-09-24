@@ -232,6 +232,65 @@ void main() {
     });
   });
 
+  test('a statistics snapshot stays unchanged by later requests', () {
+    fakeAsync((async) {
+      final interceptor = PerformanceInterceptor();
+      final adapter = GatedAdapter();
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = adapter
+        ..transformer = FoldingTransformer()
+        ..interceptors.add(interceptor);
+
+      dio.get<dynamic>('/x').ignore();
+      async.elapse(const Duration(milliseconds: 100));
+      adapter.requests[0].respond(200);
+      async.elapse(Duration.zero);
+
+      final early = interceptor.getStatistics();
+      expect(early.totalRequests, 1);
+      expect(early.recentDurations, hasLength(1));
+
+      dio.get<dynamic>('/y').ignore();
+      async.elapse(const Duration(milliseconds: 50));
+      adapter.requests[1].respond(500);
+      async.elapse(Duration.zero);
+
+      final late = interceptor.getStatistics();
+      expect(late.totalRequests, 2);
+      expect(late.successfulRequests, 1);
+      expect(early.totalRequests, 1);
+      expect(early.successfulRequests, 1);
+      expect(early.failedRequests, 0);
+      expect(early.recentDurations, hasLength(1));
+    });
+  });
+
+  test('statistics snapshots expose unmodifiable collections', () {
+    fakeAsync((async) {
+      final interceptor = PerformanceInterceptor();
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = ScriptedAdapter([reply(200)])
+        ..transformer = FoldingTransformer()
+        ..interceptors.add(interceptor);
+
+      dio.get<dynamic>('/x').ignore();
+      async.elapse(Duration.zero);
+
+      final stats = interceptor.getStatistics();
+      expect(() => stats.statusCodeCounts[500] = 1, throwsUnsupportedError);
+      expect(() => stats.errorCounts['boom'] = 1, throwsUnsupportedError);
+      expect(
+        () => stats.recentDurations.add(Duration.zero),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => interceptor.getUrlStatistics()['https://a.test/x'] = interceptor
+            .getStatistics(),
+        throwsUnsupportedError,
+      );
+    });
+  });
+
   test('getRecentMetrics keeps only the newest maxMetricsHistory entries', () {
     fakeAsync((async) {
       final interceptor = PerformanceInterceptor(

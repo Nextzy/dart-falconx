@@ -1,43 +1,24 @@
 import 'dart:collection';
 
 import 'package:dart_falconnect/engine/https/config/performance_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/models/performance_statistics.dart';
 import 'package:dart_falconnect/engine/https/interceptors/models/request_metrics.dart';
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
-/// Aggregated performance statistics across multiple requests.
-class PerformanceStatistics {
-  /// Total number of requests recorded.
+/// Mutable accumulator behind [PerformanceInterceptor]'s immutable
+/// [PerformanceStatistics] snapshots.
+class _PerformanceAccumulator {
   int totalRequests = 0;
-
-  /// Number of requests that completed with a 2xx status code.
   int successfulRequests = 0;
-
-  /// Number of requests that did not complete with a 2xx status code.
   int failedRequests = 0;
-
-  /// Counts of responses grouped by HTTP status code.
   final Map<int, int> statusCodeCounts = {};
-
-  /// Counts of errors grouped by error description string.
   final Map<String, int> errorCounts = {};
-
-  /// Cumulative size of all request bodies in bytes.
   int totalRequestSize = 0;
-
-  /// Cumulative size of all response bodies in bytes.
   int totalResponseSize = 0;
-
-  /// Sum of all request durations.
   Duration totalDuration = Duration.zero;
-
-  /// Shortest recorded request duration.
   Duration minDuration = const Duration(days: 365);
-
-  /// Longest recorded request duration.
   Duration maxDuration = Duration.zero;
-
-  /// Rolling window of the most recent request durations, capped at 100.
   final List<Duration> recentDurations = [];
   static const int _maxRecentDurations = 100;
 
@@ -88,61 +69,35 @@ class PerformanceStatistics {
     }
   }
 
-  /// Returns the mean request duration, or [Duration.zero] if no requests have
-  /// been recorded.
-  Duration get averageDuration => totalRequests > 0
-      ? Duration(milliseconds: totalDuration.inMilliseconds ~/ totalRequests)
-      : Duration.zero;
-
-  /// Returns the median request duration from the recent-durations window, or
-  /// [Duration.zero] if the window is empty.
-  Duration get medianDuration {
-    if (recentDurations.isEmpty) return Duration.zero;
-
-    final sorted = List<Duration>.from(recentDurations)..sort();
-    final middle = sorted.length ~/ 2;
-
-    if (sorted.length.isOdd) {
-      return sorted[middle];
-    } else {
-      return Duration(
-        milliseconds:
-            (sorted[middle - 1].inMilliseconds +
-                sorted[middle].inMilliseconds) ~/
-            2,
-      );
-    }
+  /// Zeroes every counter, as an empty snapshot would read.
+  void reset() {
+    totalRequests = 0;
+    successfulRequests = 0;
+    failedRequests = 0;
+    statusCodeCounts.clear();
+    errorCounts.clear();
+    totalRequestSize = 0;
+    totalResponseSize = 0;
+    totalDuration = Duration.zero;
+    minDuration = const Duration(days: 365);
+    maxDuration = Duration.zero;
+    recentDurations.clear();
   }
 
-  /// Returns the percentage of successful requests (0–100), or `0.0` if no
-  /// requests have been recorded.
-  double get successRate =>
-      totalRequests > 0 ? successfulRequests / totalRequests * 100 : 0.0;
-
-  /// Serializes the aggregated statistics to a JSON-compatible map.
-  Map<String, dynamic> toJson() {
-    return {
-      'totalRequests': totalRequests,
-      'successfulRequests': successfulRequests,
-      'failedRequests': failedRequests,
-      'successRate': successRate,
-      'statusCodeCounts': statusCodeCounts,
-      'errorCounts': errorCounts,
-      'totalRequestSize': totalRequestSize,
-      'totalResponseSize': totalResponseSize,
-      'averageRequestSize': totalRequests > 0
-          ? totalRequestSize ~/ totalRequests
-          : 0,
-      'averageResponseSize': totalRequests > 0
-          ? totalResponseSize ~/ totalRequests
-          : 0,
-      'totalDuration': totalDuration.inMilliseconds,
-      'averageDuration': averageDuration.inMilliseconds,
-      'medianDuration': medianDuration.inMilliseconds,
-      'minDuration': minDuration.inMilliseconds,
-      'maxDuration': maxDuration.inMilliseconds,
-    };
-  }
+  /// Builds the immutable snapshot of the current counters.
+  PerformanceStatistics snapshot() => PerformanceStatistics(
+    totalRequests: totalRequests,
+    successfulRequests: successfulRequests,
+    failedRequests: failedRequests,
+    statusCodeCounts: Map.unmodifiable(statusCodeCounts),
+    errorCounts: Map.unmodifiable(errorCounts),
+    totalRequestSize: totalRequestSize,
+    totalResponseSize: totalResponseSize,
+    totalDuration: totalDuration,
+    minDuration: minDuration,
+    maxDuration: maxDuration,
+    recentDurations: List.unmodifiable(recentDurations),
+  );
 }
 
 /// Interceptor that monitors HTTP request performance.
@@ -166,10 +121,10 @@ class PerformanceInterceptor extends Interceptor {
   final Queue<RequestMetrics> _metricsHistory = Queue<RequestMetrics>();
 
   /// Aggregated statistics.
-  final PerformanceStatistics _statistics = PerformanceStatistics();
+  final _PerformanceAccumulator _statistics = _PerformanceAccumulator();
 
   /// Metrics by URL pattern.
-  final Map<String, PerformanceStatistics> _urlStatistics = {};
+  final Map<String, _PerformanceAccumulator> _urlStatistics = {};
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -263,7 +218,7 @@ class PerformanceInterceptor extends Interceptor {
     // Update URL pattern statistics
     final urlPattern = _getUrlPattern(metrics.url);
     _urlStatistics
-        .putIfAbsent(urlPattern, PerformanceStatistics.new)
+        .putIfAbsent(urlPattern, _PerformanceAccumulator.new)
         .addMetrics(metrics);
   }
 
@@ -356,29 +311,20 @@ class PerformanceInterceptor extends Interceptor {
     return metrics;
   }
 
-  /// Gets aggregated performance statistics.
-  PerformanceStatistics getStatistics() => _statistics;
+  /// Gets an immutable snapshot of the aggregated performance statistics.
+  PerformanceStatistics getStatistics() => _statistics.snapshot();
 
-  /// Gets performance statistics grouped by URL
+  /// Gets immutable performance statistics snapshots grouped by URL
   /// pattern.
-  Map<String, PerformanceStatistics> getUrlStatistics() =>
-      Map.from(_urlStatistics);
+  Map<String, PerformanceStatistics> getUrlStatistics() => Map.unmodifiable({
+    for (final entry in _urlStatistics.entries)
+      entry.key: entry.value.snapshot(),
+  });
 
   /// Clears all collected metrics and statistics.
   void clear() {
     _metricsHistory.clear();
-    _statistics
-      ..totalRequests = 0
-      ..successfulRequests = 0
-      ..failedRequests = 0
-      ..statusCodeCounts.clear()
-      ..errorCounts.clear()
-      ..totalRequestSize = 0
-      ..totalResponseSize = 0
-      ..totalDuration = Duration.zero
-      ..minDuration = const Duration(days: 365)
-      ..maxDuration = Duration.zero
-      ..recentDurations.clear();
+    _statistics.reset();
     _urlStatistics.clear();
   }
 }
