@@ -204,6 +204,30 @@ void main() {
       expect(client.interceptors.toList(), before);
     });
 
+    for (final (name, rejected) in [
+      ('a base URL', const HttpClientConfig(baseUrl: 'api.example.com')),
+      (
+        'a timeout',
+        const HttpClientConfig(
+          baseUrl: 'https://b.test',
+          connectTimeout: Duration(seconds: -1),
+        ),
+      ),
+    ]) {
+      test('$name dio rejects throws and changes nothing', () {
+        const headers = HttpClientConfig(headers: {'X-Key': 'k'});
+        final client = _Client(ScriptedAdapter([reply(200)]))
+          ..configure(headers);
+        final before = client.interceptors.toList();
+
+        expect(() => client.configure(rejected), throwsA(isA<Error>()));
+        expect(client.currentConfig, headers);
+        expect(client.options.headers['X-Key'], 'k');
+        expect(client.baseUrl, '');
+        expect(client.interceptors.toList(), before);
+      });
+    }
+
     test('keeps a header set on dio.options and drops one the config '
         'stopped setting', () {
       final client = _Client(ScriptedAdapter([reply(200)]))
