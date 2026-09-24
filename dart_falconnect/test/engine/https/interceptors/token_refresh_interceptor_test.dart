@@ -155,6 +155,47 @@ void main() {
       expect(gated.requests[3].options.headers['authorization'], 'Bearer new');
     });
 
+    test('a token read that ends after a refresh finished joins that refresh '
+        'instead of starting another', () async {
+      final tokens = _Tokens()..gate = Completer<void>();
+      final slowRead = Completer<void>();
+      var reads = 0;
+      final server = _Server(tokens);
+      final client = _Client(
+        server,
+        HttpClientConfig(
+          auth: AuthConfig(
+            accessToken: () async {
+              // The read sees the store as it is when the read starts.
+              final value = tokens.current;
+              // Reads 1 and 2 are the stamps, 3 and 4 the two 401s: the
+              // second 401's read outlasts the refresh.
+              if (++reads == 4) await slowRead.future;
+              return value;
+            },
+            refresh: tokens.refresh,
+          ),
+        ),
+      );
+
+      final requests = [
+        client.dio.get<dynamic>('/x'),
+        client.dio.get<dynamic>('/x'),
+      ];
+      while (reads < 4) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      tokens.gate!.complete();
+      // The refreshing request's re-send reaches the server once the refresh
+      // is over.
+      await server.answered(3);
+      slowRead.complete();
+      final responses = await Future.wait(requests);
+
+      expect(tokens.refreshes, 1);
+      expect(responses.map((r) => r.statusCode), everyElement(200));
+    });
+
     test('a request that starts during a refresh waits and carries the new '
         'token', () async {
       final tokens = _Tokens()..gate = Completer<void>();
