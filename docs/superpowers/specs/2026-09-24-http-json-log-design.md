@@ -201,7 +201,7 @@ With `callFollowingResponseInterceptor`, every interceptor's `onResponse` runs f
 
 | # | Change | Action |
 |---|---|---|
-| 1 | `LogConfig` is a sealed union. The pretty-only fields (`request`, `requestHeader`, `requestBody`, `responseHeader`, `responseBody`, `error`) are not on the `LogConfig` type, nor in its `copyWith` | Match or cast to `PrettyLogConfig` before reading or copying them. This is the one source break of the release |
+| 1 | `LogConfig` is a sealed union. The pretty-only fields (`request`, `requestHeader`, `responseHeader`, `error`) are not on the `LogConfig` type, nor in its `copyWith`; `requestBody` and `responseBody` exist in both variants, so they stay on it | Match or cast to `PrettyLogConfig` before reading or copying them. This is the one source break of the release |
 | 2 | A cache hit reaches every response interceptor, and its `requestOptions` are the current request's | Custom interceptors that count responses now count hits; use `response.isCacheHit` to tell them apart |
 | 3 | The pretty log redacts sensitive headers and query values | Pass `redactHeaders: const {}` to see them in development |
 | 4 | The pretty log no longer changes the global `ansiColorDisabled` | Set it yourself if other code relied on the side effect |
@@ -246,7 +246,7 @@ Per the skill maintenance rule, in the same change:
 
 | File | Change |
 |---|---|
-| `skills/dart-falconx-package/references/http.md` | A "Server logging" section: `LogConfig.json()`, the field table of section 5, an example line, the redaction lists, and a note that an OpenTelemetry Collector's filelog receiver with a JSON parser ingests the lines. The box table gains `LogConfig.json`. The interceptor catalog gains `HttpJsonLogInterceptor`. A "Migrating to 2.1.0" section built from section 11. |
+| `skills/dart-falconx-package/references/http.md` | A "Server logging" section: `LogConfig.json()`, the field table of section 5, an example line, the redaction lists, and a note that an OpenTelemetry Collector's filelog receiver with a JSON parser ingests the lines. The box table gains `LogConfig.json`. The interceptor catalog gains `HttpJsonLogInterceptor`. The facts of section 11 written as current-state text; the skill carries no migration section, and section 11 feeds the release notes. |
 | `skills/dart-falconx-package/SKILL.md` | The interceptor and client-configuration rows. |
 | `dart_falconnect/CLAUDE.md` | The interceptor list gains `HttpJsonLogInterceptor`; the `HttpClientConfig` line names the `LogConfig` union. |
 | `CLAUDE.md` (root) | The interceptor summary, if it lists interceptors by name. |
