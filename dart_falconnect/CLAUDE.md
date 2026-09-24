@@ -66,7 +66,7 @@ Every `DatasourceBoundState` strategy returns `Result<DsType>`:
 ## Gotchas
 
 - `TokenBucketRateLimitInterceptor` refill timers outlive the last request: in `testWidgets`, call `dispose()` in the test body, since `addTearDown` runs too late; on a server, build one instance per process.
-- Interceptor tests live in `test/engine/https/interceptors/` and run under `fakeAsync`; other engine tests live under `test/engine/`, and the web gate under `test/web/`. Every test also runs in Chrome under `melos run test:web`; mark a `dart:io` test `@TestOn('vm')`.
+- Interceptor tests live in `test/engine/https/interceptors/` and run under `fakeAsync`; other engine tests live under `test/engine/`, and the web gate under `test/web/`.
 - Give every test Dio answered by `ScriptedAdapter` or `GatedAdapter` a `FoldingTransformer` (`test/engine/https/interceptors/_scripted_adapter.dart`): under `fakeAsync` on dart2js, Dio's `await for` body read awaits a root-zone future that `fakeAsync` never flushes, and the response stalls.
 - `NetworkExceptionHandlerInterceptor` converts a `DioException` to a `NetworkException` through `err.toException()` from `dart_falmodel`.
 - `SocketClient._replaySubject` holds a `PublishSubject`: a late listener misses earlier responses.

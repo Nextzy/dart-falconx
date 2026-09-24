@@ -25,6 +25,7 @@ dart_falconnect (top layer: network implementations)
 - Keep every package pure Dart: never depend on the Flutter SDK or import `package:flutter`.
 - Reach `dart:io` only from the `if (dart.library.io)` branch of a conditional import, as `dart_falmodel/lib/extensions/exception_extensions.dart` does; never import `dart:html`, `dart:ffi`, or `dart:isolate` under `lib/`.
 - Run `melos run test:platforms` after touching any `lib/` code that could behave differently on web, wasm, or native; it needs Chrome.
+- Mark a test that needs `dart:io` `@TestOn('vm')`; `melos run test:web` runs every other test in Chrome.
 
 ## Commands
 
@@ -38,7 +39,9 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 | `melos run fix`                          | `dart fix --apply` with a curated `--code=` allowlist               |
 | `melos run fix:format`                   | `fix`, then `format`                                                |
 | `melos run test`                         | `dart test` in every package with a `test/` dir, fail-fast          |
-| `melos run test:platforms`               | `dart_falconnect` compiles to js, wasm, and exe, then runs `test/web/` in Chrome |
+| `melos run test:platforms`               | `test:compile`, then `test:web`                                     |
+| `melos run test:compile`                 | compiles `dart_falconnect/test/web/compile_smoke.dart` to js, wasm, and exe |
+| `melos run test:web`                     | every package's tests in Chrome, under dart2js and then dart2wasm   |
 | `melos run build_runner`                 | `build --delete-conflicting-outputs` (use after merges)             |
 | `melos run build_runner:fast`            | `build` only, reuses the incremental cache (use when adding fields) |
 | `melos run build_runner:watch`           | Watch mode                                                          |
