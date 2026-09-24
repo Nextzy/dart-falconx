@@ -19,7 +19,8 @@ mixin _$TokenBucketRateLimitStatistics {
 /// cancelled before it was forwarded is not counted.
  int get forwarded;/// Requests rejected with a local 429 since construction, for a full
 /// queue or a paused host.
- int get rejected;/// Requests waiting in each host's own tiers, keyed by host.
+ int get rejected;/// Requests waiting in each host's own tiers, keyed by host. An idle
+/// host whose buckets have refilled drops out once a new host arrives.
  Map<String, int> get waitingByHost;/// Requests waiting in the global tiers.
  int get globalWaiting;/// Requests held by a pause, keyed by host.
  Map<String, int> get heldByHost;/// End time of each active pause, keyed by host.
@@ -234,9 +235,11 @@ class _TokenBucketRateLimitStatistics implements TokenBucketRateLimitStatistics 
 /// Requests rejected with a local 429 since construction, for a full
 /// queue or a paused host.
 @override final  int rejected;
-/// Requests waiting in each host's own tiers, keyed by host.
+/// Requests waiting in each host's own tiers, keyed by host. An idle
+/// host whose buckets have refilled drops out once a new host arrives.
  final  Map<String, int> _waitingByHost;
-/// Requests waiting in each host's own tiers, keyed by host.
+/// Requests waiting in each host's own tiers, keyed by host. An idle
+/// host whose buckets have refilled drops out once a new host arrives.
 @override Map<String, int> get waitingByHost {
   if (_waitingByHost is EqualUnmodifiableMapView) return _waitingByHost;
   // ignore: implicit_dynamic_type

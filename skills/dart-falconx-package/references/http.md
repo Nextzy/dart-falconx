@@ -238,6 +238,8 @@ const rateLimit = RateLimitConfig.tokenBucket(
 
 Tokens are never returned. When a later tier's full queue rejects a request, tokens already taken by earlier tiers stay spent. A request cancelled with a `CancelToken` while it waits for tokens keeps its queue place and still spends a token when it reaches the front; it is neither forwarded nor counted in `getStatistics().forwarded`. For screens that cancel queued requests often, keep `maxQueueSize` small or set `queueRequests: false`.
 
+Each host gets its own buckets on its first request. When a new host arrives, the interceptor forgets every host with no request inside or waiting whose buckets have refilled, so a server that calls many hosts keeps buckets only for recent ones; the next request to a forgotten host starts on full buckets, as it would have anyway. `getStatistics().waitingByHost` lists only the hosts it still remembers.
+
 ### Pause on 429 and 503
 
 A 429 pauses its host for its `Retry-After` (seconds or HTTP-date), else for `defaultPause`; a 503 pauses only when it carries `Retry-After`. Every pause is clamped to `maxPause`, never shortens an earlier one, and applies to hosts without a policy too. While a host is paused, a request waits when the remaining pause is at most `maxPauseWait` and fewer than `maxQueueSize` requests already wait; otherwise it fails at once with a local 429 carrying `Retry-After`. An extension that pushes the remaining pause past `maxPauseWait` also releases every held request, which then re-checks the pause and fails the same way, so a held request waits at most about `maxPauseWait` from admission. A request that gets its tokens during a pause spends them and waits again, so the ceiling also holds after the pause.
