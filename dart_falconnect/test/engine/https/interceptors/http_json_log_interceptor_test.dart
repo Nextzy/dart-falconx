@@ -30,6 +30,12 @@ class _Opaque {
   String toString() => 'opaque-value';
 }
 
+/// Throws from `toString()`, so no log can turn it into text.
+class _Unprintable {
+  @override
+  String toString() => throw StateError('unprintable');
+}
+
 /// A JSON log printing into [lines].
 HttpJsonLogInterceptor _log(
   List<Object?> lines, {
@@ -200,6 +206,31 @@ void main() {
       final response = await dio.get<dynamic>('/x');
 
       expect(response.statusCode, 200);
+    });
+
+    test('a value that cannot become text prints a minimal line and never '
+        'fails the request', () {
+      final lines = <Object?>[];
+      final outcomes = <Object>[];
+      fakeAsync((async) {
+        _dio(
+              ScriptedAdapter([reply(200)]),
+              (_) => [_log(lines, requestHeaders: true)],
+            )
+            .get<dynamic>(
+              '/x',
+              options: Options(headers: {'x-bad': _Unprintable()}),
+            )
+            .then(outcomes.add, onError: outcomes.add)
+            .ignore();
+        async.elapse(Duration.zero);
+      });
+
+      expect(outcomes.single, isA<Response<dynamic>>());
+      final line = _decode(lines).single;
+      expect(line.keys, ['timestamp', 'severity_text', 'body']);
+      expect(line['severity_text'], 'WARN');
+      expect(line['body'], 'GET a.test (log failed)');
     });
 
     test('a null printer prints to stdout', () async {

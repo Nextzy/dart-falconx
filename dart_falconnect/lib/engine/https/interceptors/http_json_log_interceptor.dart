@@ -66,8 +66,8 @@ class HttpJsonLogInterceptor extends Interceptor {
     Response<dynamic>? response,
     DioExceptionType? errorType,
   ) {
-    final line = jsonEncode(_fields(options, response, errorType));
     try {
+      final line = _line(options, response, errorType);
       final printer = config.logPrint;
       if (printer != null) {
         printer(line);
@@ -78,6 +78,25 @@ class HttpJsonLogInterceptor extends Interceptor {
       }
     } on Object {
       // A broken log sink must not turn a finished request into a failure.
+    }
+  }
+
+  /// The JSON line of one attempt, or a minimal `WARN` line when a header or
+  /// body value cannot be turned into text.
+  String _line(
+    RequestOptions options,
+    Response<dynamic>? response,
+    DioExceptionType? errorType,
+  ) {
+    try {
+      return jsonEncode(_fields(options, response, errorType));
+    } on Object {
+      return jsonEncode({
+        'timestamp': clock.now().toUtc().toIso8601String(),
+        'severity_text': 'WARN',
+        'body':
+            '${options.method.toUpperCase()} ${options.uri.host} (log failed)',
+      });
     }
   }
 

@@ -299,7 +299,7 @@ DefaultHttpClient.instance.configure(
 - Opt in to more with `LogConfig.json(requestHeaders: true, responseHeaders: true, requestBody: true, responseBody: true, maxBodyBytes: 4096)`. Headers appear as `http.request.header.<name>` lists; bodies as `falconx.request.body` and `falconx.response.body`, cut at `maxBodyBytes` UTF-8 bytes with a `.truncated` flag. Bodies are never redacted: turn them on only where they carry no personal data.
 - `redactHeaders` (default `defaultRedactedHeaders`) and `redactQueryParameters` (default `defaultRedactedQueryParameters`) apply to both log formats and compare names ignoring case. Extend them: `redactHeaders: {...defaultRedactedHeaders, 'x-tenant-secret'}`.
 - A retried request prints one line per attempt. Limiter diagnostics print as JSON lines with `severity_text` `DEBUG` while `diagnostics` is on.
-- A `logPrint` that throws is ignored; logging never fails a request.
+- A `logPrint` that throws is ignored, and a header or body value whose `toString()` throws leaves a minimal `WARN` line whose `body` ends in `(log failed)`; logging never fails a request.
 - An OpenTelemetry Collector's `filelog` receiver with a `json_parser` operator turns each line into a log record; the Datadog agent and Cloud Logging read JSON on stdout too. Cloud Logging without a Collector does not map `severity_text` to its own `severity`.
 - Switch formats at run time with `client.configure(client.currentConfig.copyWith(log: const LogConfig.json()))`; the limiters keep their state.
 
