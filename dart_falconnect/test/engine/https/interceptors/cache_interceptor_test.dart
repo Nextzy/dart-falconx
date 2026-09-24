@@ -282,6 +282,27 @@ void main() {
       expect(adapter.requests, hasLength(2));
     });
 
+    test('cacheFor never answers from an entry older than its '
+        'duration', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      await dio.get<dynamic>('/x');
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      final refetched = await dio.get<dynamic>(
+        '/x',
+        options: Options()..cacheFor = const Duration(milliseconds: 250),
+      );
+      final hit = await dio.get<dynamic>(
+        '/x',
+        options: Options()..cacheFor = const Duration(minutes: 1),
+      );
+
+      expect(refetched.isCacheHit, isFalse);
+      expect(hit.isCacheHit, isTrue);
+      expect(adapter.requests, hasLength(2));
+    });
+
     test('cachePolicy noCache neither reads nor stores', () async {
       final adapter = ScriptedAdapter([_cacheable()]);
       final dio = _dio(adapter, [CacheInterceptor()]);
