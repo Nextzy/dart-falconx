@@ -157,8 +157,10 @@ class HttpLogInterceptor extends Interceptor {
     if (enabled) {
       if (error) {
         logPrint(_error('*** DioError ***:'));
-        logPrint('URL: ${_url(err.requestOptions.uri)}');
-        logPrint('$err');
+        final uri = err.requestOptions.uri;
+        logPrint('URL: ${_url(uri)}');
+        // An inner error such as dart:io's HttpException prints the raw URI.
+        logPrint('$err'.replaceAll('$uri', _url(uri)));
         final response = err.response;
         if (response != null) {
           _printResponse(response);

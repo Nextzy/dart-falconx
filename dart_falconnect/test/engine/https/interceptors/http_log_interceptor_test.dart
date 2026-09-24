@@ -5,6 +5,17 @@ import 'package:test/test.dart';
 
 import '_scripted_adapter.dart';
 
+/// An error whose text carries the request URI, as `dart:io`'s
+/// `HttpException` does.
+class _UriError {
+  new(this.uri);
+
+  final Uri uri;
+
+  @override
+  String toString() => 'Connection closed, uri = $uri';
+}
+
 /// Runs one request through a pretty log built by [log] and returns the
 /// printed lines; [answer] settles the gated request after [elapsed].
 List<String> _run(
@@ -104,6 +115,30 @@ void main() {
           'URL: https://REDACTED:REDACTED@a.test/x?page=2&token=REDACTED';
       expect(lines.where((line) => line.startsWith('URL:')), [url, url]);
       expect(lines.join('\n'), isNot(contains('abc')));
+    });
+
+    test('an exception text prints the URL redacted', () {
+      final lines = <String>[];
+      fakeAsync((async) {
+        final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+          ..httpClientAdapter = ScriptedAdapter([
+            (options) => throw DioException(
+              requestOptions: options,
+              type: DioExceptionType.connectionError,
+              error: _UriError(options.uri),
+            ),
+          ])
+          ..transformer = FoldingTransformer()
+          ..interceptors.add(
+            HttpLogInterceptor(logPrint: (l) => lines.add('$l')),
+          );
+        dio.get<dynamic>('/x?token=secret').ignore();
+        async.elapse(Duration.zero);
+      });
+
+      final printed = lines.join('\n');
+      expect(printed, contains('uri = https://a.test/x?token=REDACTED'));
+      expect(printed, isNot(contains('secret')));
     });
 
     test('custom query parameter names replace the defaults', () {
