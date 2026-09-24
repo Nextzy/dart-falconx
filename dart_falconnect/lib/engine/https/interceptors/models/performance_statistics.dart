@@ -1,6 +1,7 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:dart_faltool/dart_faltool.dart';
 
 part 'generated/performance_statistics.freezed.dart';
+part 'generated/performance_statistics.g.dart';
 
 /// Aggregated performance statistics across multiple requests, as an
 /// immutable snapshot of one moment.
@@ -33,28 +34,39 @@ abstract class PerformanceStatistics with _$PerformanceStatistics {
     required int totalResponseSize,
 
     /// Sum of all request durations.
-    required Duration totalDuration,
+    @DurationMillisecondsConverter() required Duration totalDuration,
 
     /// Shortest recorded request duration.
-    required Duration minDuration,
+    @DurationMillisecondsConverter() required Duration minDuration,
 
     /// Longest recorded request duration.
-    required Duration maxDuration,
+    @DurationMillisecondsConverter() required Duration maxDuration,
 
     /// The most recent request durations, oldest first, capped at 100.
-    required List<Duration> recentDurations,
+    ///
+    /// Excluded from JSON: it is a rolling window, not a report field.
+    @JsonKey(includeToJson: false) required List<Duration> recentDurations,
   }) = _PerformanceStatistics;
+
+  /// Deserializes a [PerformanceStatistics] from a JSON map; the
+  /// computed getters are recomputed, not read.
+  factory fromJson(Map<String, dynamic> json) =>
+      _$PerformanceStatisticsFromJson(json);
 
   const new _();
 
   /// Returns the mean request duration, or [Duration.zero] if no requests
   /// have been recorded.
+  @DurationMillisecondsConverter()
+  @JsonKey(includeToJson: true, includeFromJson: false)
   Duration get averageDuration => totalRequests > 0
       ? Duration(milliseconds: totalDuration.inMilliseconds ~/ totalRequests)
       : Duration.zero;
 
   /// Returns the median request duration from the recent-durations window,
   /// or [Duration.zero] if the window is empty.
+  @DurationMillisecondsConverter()
+  @JsonKey(includeToJson: true, includeFromJson: false)
   Duration get medianDuration {
     if (recentDurations.isEmpty) return Duration.zero;
 
@@ -75,31 +87,17 @@ abstract class PerformanceStatistics with _$PerformanceStatistics {
 
   /// Returns the percentage of successful requests (0–100), or `0.0` if no
   /// requests have been recorded.
+  @JsonKey(includeToJson: true, includeFromJson: false)
   double get successRate =>
       totalRequests > 0 ? successfulRequests / totalRequests * 100 : 0.0;
 
-  /// Serializes the aggregated statistics to a JSON-compatible map.
-  Map<String, dynamic> toJson() {
-    return {
-      'totalRequests': totalRequests,
-      'successfulRequests': successfulRequests,
-      'failedRequests': failedRequests,
-      'successRate': successRate,
-      'statusCodeCounts': statusCodeCounts,
-      'errorCounts': errorCounts,
-      'totalRequestSize': totalRequestSize,
-      'totalResponseSize': totalResponseSize,
-      'averageRequestSize': totalRequests > 0
-          ? totalRequestSize ~/ totalRequests
-          : 0,
-      'averageResponseSize': totalRequests > 0
-          ? totalResponseSize ~/ totalRequests
-          : 0,
-      'totalDuration': totalDuration.inMilliseconds,
-      'averageDuration': averageDuration.inMilliseconds,
-      'medianDuration': medianDuration.inMilliseconds,
-      'minDuration': minDuration.inMilliseconds,
-      'maxDuration': maxDuration.inMilliseconds,
-    };
-  }
+  /// Mean request body size in bytes across recorded requests.
+  @JsonKey(includeToJson: true, includeFromJson: false)
+  int get averageRequestSize =>
+      totalRequests > 0 ? totalRequestSize ~/ totalRequests : 0;
+
+  /// Mean response body size in bytes across recorded requests.
+  @JsonKey(includeToJson: true, includeFromJson: false)
+  int get averageResponseSize =>
+      totalRequests > 0 ? totalResponseSize ~/ totalRequests : 0;
 }

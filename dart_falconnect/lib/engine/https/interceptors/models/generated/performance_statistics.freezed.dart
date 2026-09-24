@@ -12,6 +12,7 @@ part of '../performance_statistics.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$PerformanceStatistics {
 
@@ -23,16 +24,20 @@ mixin _$PerformanceStatistics {
  Map<String, int> get errorCounts;/// Cumulative size of all request bodies in bytes.
  int get totalRequestSize;/// Cumulative size of all response bodies in bytes.
  int get totalResponseSize;/// Sum of all request durations.
- Duration get totalDuration;/// Shortest recorded request duration.
- Duration get minDuration;/// Longest recorded request duration.
- Duration get maxDuration;/// The most recent request durations, oldest first, capped at 100.
- List<Duration> get recentDurations;
+@DurationMillisecondsConverter() Duration get totalDuration;/// Shortest recorded request duration.
+@DurationMillisecondsConverter() Duration get minDuration;/// Longest recorded request duration.
+@DurationMillisecondsConverter() Duration get maxDuration;/// The most recent request durations, oldest first, capped at 100.
+///
+/// Excluded from JSON: it is a rolling window, not a report field.
+@JsonKey(includeToJson: false) List<Duration> get recentDurations;
 /// Create a copy of PerformanceStatistics
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $PerformanceStatisticsCopyWith<PerformanceStatistics> get copyWith => _$PerformanceStatisticsCopyWithImpl<PerformanceStatistics>(this as PerformanceStatistics, _$identity);
 
+  /// Serializes this PerformanceStatistics to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -41,7 +46,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is PerformanceStatistics&&(identical(other.totalRequests, _this.totalRequests) || other.totalRequests == _this.totalRequests)&&(identical(other.successfulRequests, _this.successfulRequests) || other.successfulRequests == _this.successfulRequests)&&(identical(other.failedRequests, _this.failedRequests) || other.failedRequests == _this.failedRequests)&&const DeepCollectionEquality().equals(other.statusCodeCounts, _this.statusCodeCounts)&&const DeepCollectionEquality().equals(other.errorCounts, _this.errorCounts)&&(identical(other.totalRequestSize, _this.totalRequestSize) || other.totalRequestSize == _this.totalRequestSize)&&(identical(other.totalResponseSize, _this.totalResponseSize) || other.totalResponseSize == _this.totalResponseSize)&&(identical(other.totalDuration, _this.totalDuration) || other.totalDuration == _this.totalDuration)&&(identical(other.minDuration, _this.minDuration) || other.minDuration == _this.minDuration)&&(identical(other.maxDuration, _this.maxDuration) || other.maxDuration == _this.maxDuration)&&const DeepCollectionEquality().equals(other.recentDurations, _this.recentDurations));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as PerformanceStatistics;
@@ -62,7 +67,7 @@ abstract mixin class $PerformanceStatisticsCopyWith<$Res>  {
   factory $PerformanceStatisticsCopyWith(PerformanceStatistics value, $Res Function(PerformanceStatistics) _then) = _$PerformanceStatisticsCopyWithImpl;
 @useResult
 $Res call({
- int totalRequests, int successfulRequests, int failedRequests, Map<int, int> statusCodeCounts, Map<String, int> errorCounts, int totalRequestSize, int totalResponseSize, Duration totalDuration, Duration minDuration, Duration maxDuration, List<Duration> recentDurations
+ int totalRequests, int successfulRequests, int failedRequests, Map<int, int> statusCodeCounts, Map<String, int> errorCounts, int totalRequestSize, int totalResponseSize,@DurationMillisecondsConverter() Duration totalDuration,@DurationMillisecondsConverter() Duration minDuration,@DurationMillisecondsConverter() Duration maxDuration,@JsonKey(includeToJson: false) List<Duration> recentDurations
 });
 
 
@@ -177,7 +182,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int totalRequests,  int successfulRequests,  int failedRequests,  Map<int, int> statusCodeCounts,  Map<String, int> errorCounts,  int totalRequestSize,  int totalResponseSize,  Duration totalDuration,  Duration minDuration,  Duration maxDuration,  List<Duration> recentDurations)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int totalRequests,  int successfulRequests,  int failedRequests,  Map<int, int> statusCodeCounts,  Map<String, int> errorCounts,  int totalRequestSize,  int totalResponseSize, @DurationMillisecondsConverter()  Duration totalDuration, @DurationMillisecondsConverter()  Duration minDuration, @DurationMillisecondsConverter()  Duration maxDuration, @JsonKey(includeToJson: false)  List<Duration> recentDurations)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PerformanceStatistics() when $default != null:
 return $default(_that.totalRequests,_that.successfulRequests,_that.failedRequests,_that.statusCodeCounts,_that.errorCounts,_that.totalRequestSize,_that.totalResponseSize,_that.totalDuration,_that.minDuration,_that.maxDuration,_that.recentDurations);case _:
@@ -198,7 +203,7 @@ return $default(_that.totalRequests,_that.successfulRequests,_that.failedRequest
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int totalRequests,  int successfulRequests,  int failedRequests,  Map<int, int> statusCodeCounts,  Map<String, int> errorCounts,  int totalRequestSize,  int totalResponseSize,  Duration totalDuration,  Duration minDuration,  Duration maxDuration,  List<Duration> recentDurations)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int totalRequests,  int successfulRequests,  int failedRequests,  Map<int, int> statusCodeCounts,  Map<String, int> errorCounts,  int totalRequestSize,  int totalResponseSize, @DurationMillisecondsConverter()  Duration totalDuration, @DurationMillisecondsConverter()  Duration minDuration, @DurationMillisecondsConverter()  Duration maxDuration, @JsonKey(includeToJson: false)  List<Duration> recentDurations)  $default,) {final _that = this;
 switch (_that) {
 case _PerformanceStatistics():
 return $default(_that.totalRequests,_that.successfulRequests,_that.failedRequests,_that.statusCodeCounts,_that.errorCounts,_that.totalRequestSize,_that.totalResponseSize,_that.totalDuration,_that.minDuration,_that.maxDuration,_that.recentDurations);case _:
@@ -218,7 +223,7 @@ return $default(_that.totalRequests,_that.successfulRequests,_that.failedRequest
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int totalRequests,  int successfulRequests,  int failedRequests,  Map<int, int> statusCodeCounts,  Map<String, int> errorCounts,  int totalRequestSize,  int totalResponseSize,  Duration totalDuration,  Duration minDuration,  Duration maxDuration,  List<Duration> recentDurations)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int totalRequests,  int successfulRequests,  int failedRequests,  Map<int, int> statusCodeCounts,  Map<String, int> errorCounts,  int totalRequestSize,  int totalResponseSize, @DurationMillisecondsConverter()  Duration totalDuration, @DurationMillisecondsConverter()  Duration minDuration, @DurationMillisecondsConverter()  Duration maxDuration, @JsonKey(includeToJson: false)  List<Duration> recentDurations)?  $default,) {final _that = this;
 switch (_that) {
 case _PerformanceStatistics() when $default != null:
 return $default(_that.totalRequests,_that.successfulRequests,_that.failedRequests,_that.statusCodeCounts,_that.errorCounts,_that.totalRequestSize,_that.totalResponseSize,_that.totalDuration,_that.minDuration,_that.maxDuration,_that.recentDurations);case _:
@@ -230,11 +235,11 @@ return $default(_that.totalRequests,_that.successfulRequests,_that.failedRequest
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _PerformanceStatistics extends PerformanceStatistics {
-  const _PerformanceStatistics({required this.totalRequests, required this.successfulRequests, required this.failedRequests, required  Map<int, int> statusCodeCounts, required  Map<String, int> errorCounts, required this.totalRequestSize, required this.totalResponseSize, required this.totalDuration, required this.minDuration, required this.maxDuration, required  List<Duration> recentDurations}): _statusCodeCounts = statusCodeCounts,_errorCounts = errorCounts,_recentDurations = recentDurations,super._();
-  
+  const _PerformanceStatistics({required this.totalRequests, required this.successfulRequests, required this.failedRequests, required  Map<int, int> statusCodeCounts, required  Map<String, int> errorCounts, required this.totalRequestSize, required this.totalResponseSize, @DurationMillisecondsConverter() required this.totalDuration, @DurationMillisecondsConverter() required this.minDuration, @DurationMillisecondsConverter() required this.maxDuration, @JsonKey(includeToJson: false) required  List<Duration> recentDurations}): _statusCodeCounts = statusCodeCounts,_errorCounts = errorCounts,_recentDurations = recentDurations,super._();
+  factory _PerformanceStatistics.fromJson(Map<String, dynamic> json) => _$PerformanceStatisticsFromJson(json);
 
 /// Total number of requests recorded.
 @override final  int totalRequests;
@@ -265,15 +270,19 @@ class _PerformanceStatistics extends PerformanceStatistics {
 /// Cumulative size of all response bodies in bytes.
 @override final  int totalResponseSize;
 /// Sum of all request durations.
-@override final  Duration totalDuration;
+@override@DurationMillisecondsConverter() final  Duration totalDuration;
 /// Shortest recorded request duration.
-@override final  Duration minDuration;
+@override@DurationMillisecondsConverter() final  Duration minDuration;
 /// Longest recorded request duration.
-@override final  Duration maxDuration;
+@override@DurationMillisecondsConverter() final  Duration maxDuration;
 /// The most recent request durations, oldest first, capped at 100.
+///
+/// Excluded from JSON: it is a rolling window, not a report field.
  final  List<Duration> _recentDurations;
 /// The most recent request durations, oldest first, capped at 100.
-@override List<Duration> get recentDurations {
+///
+/// Excluded from JSON: it is a rolling window, not a report field.
+@override@JsonKey(includeToJson: false) List<Duration> get recentDurations {
   if (_recentDurations is EqualUnmodifiableListView) return _recentDurations;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_recentDurations);
@@ -286,14 +295,17 @@ class _PerformanceStatistics extends PerformanceStatistics {
 @pragma('vm:prefer-inline')
 _$PerformanceStatisticsCopyWith<_PerformanceStatistics> get copyWith => __$PerformanceStatisticsCopyWithImpl<_PerformanceStatistics>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$PerformanceStatisticsToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
     return identical(this, other) || (other.runtimeType == runtimeType&&other is _PerformanceStatistics&&(identical(other.totalRequests, totalRequests) || other.totalRequests == totalRequests)&&(identical(other.successfulRequests, successfulRequests) || other.successfulRequests == successfulRequests)&&(identical(other.failedRequests, failedRequests) || other.failedRequests == failedRequests)&&const DeepCollectionEquality().equals(other.statusCodeCounts, _statusCodeCounts)&&const DeepCollectionEquality().equals(other.errorCounts, _errorCounts)&&(identical(other.totalRequestSize, totalRequestSize) || other.totalRequestSize == totalRequestSize)&&(identical(other.totalResponseSize, totalResponseSize) || other.totalResponseSize == totalResponseSize)&&(identical(other.totalDuration, totalDuration) || other.totalDuration == totalDuration)&&(identical(other.minDuration, minDuration) || other.minDuration == minDuration)&&(identical(other.maxDuration, maxDuration) || other.maxDuration == maxDuration)&&const DeepCollectionEquality().equals(other.recentDurations, _recentDurations));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
     return Object.hash(runtimeType,totalRequests,successfulRequests,failedRequests,const DeepCollectionEquality().hash(_statusCodeCounts),const DeepCollectionEquality().hash(_errorCounts),totalRequestSize,totalResponseSize,totalDuration,minDuration,maxDuration,const DeepCollectionEquality().hash(_recentDurations));
@@ -312,7 +324,7 @@ abstract mixin class _$PerformanceStatisticsCopyWith<$Res> implements $Performan
   factory _$PerformanceStatisticsCopyWith(_PerformanceStatistics value, $Res Function(_PerformanceStatistics) _then) = __$PerformanceStatisticsCopyWithImpl;
 @override @useResult
 $Res call({
- int totalRequests, int successfulRequests, int failedRequests, Map<int, int> statusCodeCounts, Map<String, int> errorCounts, int totalRequestSize, int totalResponseSize, Duration totalDuration, Duration minDuration, Duration maxDuration, List<Duration> recentDurations
+ int totalRequests, int successfulRequests, int failedRequests, Map<int, int> statusCodeCounts, Map<String, int> errorCounts, int totalRequestSize, int totalResponseSize,@DurationMillisecondsConverter() Duration totalDuration,@DurationMillisecondsConverter() Duration minDuration,@DurationMillisecondsConverter() Duration maxDuration,@JsonKey(includeToJson: false) List<Duration> recentDurations
 });
 
 
