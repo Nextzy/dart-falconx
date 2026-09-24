@@ -2,6 +2,32 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'generated/log_config.freezed.dart';
 
+/// Headers both logs print as `REDACTED` by default; compared ignoring case.
+const Set<String> defaultRedactedHeaders = {
+  'authorization',
+  'cookie',
+  'proxy-authorization',
+  'set-cookie',
+  'x-api-key',
+};
+
+/// Query parameters whose values both logs print as `REDACTED` by default;
+/// compared ignoring case. Includes the OpenTelemetry `url.full` defaults.
+const Set<String> defaultRedactedQueryParameters = {
+  'access_token',
+  'api_key',
+  'apikey',
+  'awsaccesskeyid',
+  'key',
+  'password',
+  'secret',
+  'sig',
+  'signature',
+  'token',
+  'x-amz-signature',
+  'x-goog-signature',
+};
+
 /// HTTP logging settings; a non-null box adds `HttpLogInterceptor`.
 @freezed
 abstract class LogConfig with _$LogConfig {
