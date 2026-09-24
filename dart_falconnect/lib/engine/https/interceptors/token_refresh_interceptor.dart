@@ -85,7 +85,9 @@ class TokenRefreshInterceptor extends Interceptor {
     } on Object {
       return false;
     }
-    if (current != null && current != token) return true;
+    // The app signed out while the request was in flight: pass the 401 on.
+    if (current == null) return false;
+    if (current != token) return true;
     return session.refreshFor(token, err);
   }
 }

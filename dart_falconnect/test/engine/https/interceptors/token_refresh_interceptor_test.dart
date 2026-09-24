@@ -245,6 +245,28 @@ void main() {
       expect(server.requests, hasLength(2));
     });
 
+    test(
+      'a 401 that arrives after logout passes on without a refresh',
+      () async {
+        final tokens = _Tokens();
+        final server = _Server(
+          tokens,
+          statusFor: (_) {
+            // The app logs out while the request is in flight.
+            tokens.current = null;
+            return 401;
+          },
+        );
+        final client = _Client(server, HttpClientConfig(auth: tokens.config()));
+
+        final error = await _failure(client.dio.get<dynamic>('/x'));
+
+        expect(error.response?.statusCode, 401);
+        expect(tokens.refreshes, 0);
+        expect(tokens.failures, 0);
+      },
+    );
+
     test('a 401 on a request sent without a token passes on', () async {
       final tokens = _Tokens()..current = null;
       final server = _Server(tokens);
