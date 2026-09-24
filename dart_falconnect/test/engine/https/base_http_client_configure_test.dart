@@ -267,6 +267,14 @@ void main() {
       expect(client.options.headers['X-A'], '2');
     });
 
+    test('a User-Agent the config stopped setting is removed', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(const HttpClientConfig(userAgent: 'falcon/2'))
+        ..configure(const HttpClientConfig());
+
+      expect(client.options.headers.containsKey('User-Agent'), isFalse);
+    });
+
     test('a timeout dropped from the config is cleared', () {
       final client = _Client(ScriptedAdapter([reply(200)]))
         ..configure(const HttpClientConfig(sendTimeout: Duration(seconds: 3)))
