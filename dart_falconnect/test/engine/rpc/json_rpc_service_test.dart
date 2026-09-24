@@ -1,3 +1,7 @@
+// Starts a dart:io HttpServer on loopback, so it runs on the VM only.
+@TestOn('vm')
+library;
+
 import 'dart:io';
 
 import 'package:dart_falconnect/lib.dart';
