@@ -5,7 +5,8 @@ import 'package:dart_falconnect/lib.dart';
 ///
 /// The client orders the interceptor chain itself: the config's own
 /// `interceptors`, then log, cache, concurrency limit, rate limit, retry,
-/// and the exception handler last. [configure] applies a new
+/// the cache's offline fallback when its box enables it, and the exception
+/// handler last. [configure] applies a new
 /// configuration to requests that start after it returns; requests already
 /// running finish on the configuration they started with. Interceptors
 /// whose box is unchanged are kept, with their state.
@@ -67,8 +68,14 @@ abstract class BaseHttpClient implements RequestApiService {
       previous?.cache,
       config.cache,
       _cache,
-      (box) => CacheInterceptor(config: box, logPrint: _diagnostic),
+      (box) => CacheInterceptor(
+        config: _keepStore(box, previous?.cache),
+        logPrint: _diagnostic,
+      ),
     );
+    final cacheFallback = cache != null && _hasFallback(cache.config)
+        ? cache.fallback
+        : null;
     final concurrency = _keepOrBuild(
       previous?.concurrency,
       config.concurrency,
@@ -96,6 +103,7 @@ abstract class BaseHttpClient implements RequestApiService {
         ?concurrency,
         ?rateLimit,
         ?retry,
+        ?cacheFallback,
         config.exceptionHandler ?? _defaultExceptionHandler,
       ]);
     _config = config;
@@ -340,6 +348,23 @@ abstract class BaseHttpClient implements RequestApiService {
         .mapJson(converter)
         .catchWhenError(catchError);
   }
+
+  /// [box], carrying the current cache's memory store when only settings
+  /// that leave the stored entries valid changed since [before].
+  CacheConfig _keepStore(CacheConfig box, CacheConfig? before) {
+    final current = _cache;
+    if (current == null ||
+        before == null ||
+        box.store != null ||
+        before.store != null ||
+        box.maxSize != before.maxSize) {
+      return box;
+    }
+    return box.copyWith(store: current.store);
+  }
+
+  static bool _hasFallback(CacheConfig box) =>
+      box.hitCacheOnNetworkFailure || box.hitCacheOnErrorCodes.isNotEmpty;
 
   /// Keeps [current] when its box did not change, else builds a new one.
   static I? _keepOrBuild<B extends Object, I extends Object>(

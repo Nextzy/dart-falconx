@@ -93,6 +93,99 @@ void main() {
       ]);
     });
 
+    test('places the cache fallback after RetryInterceptor when the box '
+        'enables it', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(
+          const HttpClientConfig(
+            cache: CacheConfig(hitCacheOnNetworkFailure: true),
+            retry: RetryConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      final cache = client.interceptors.whereType<CacheInterceptor>().single;
+
+      expect(client.interceptors.map((i) => '${i.runtimeType}'), [
+        'ImplyContentTypeInterceptor',
+        'CacheInterceptor',
+        'RetryInterceptor',
+        '_CacheFallback',
+        'DefaultNetworkExceptionHandlerInterceptor',
+      ]);
+      expect(client.interceptors.elementAt(3), same(cache.fallback));
+
+      client.configure(
+        client.currentConfig.copyWith(
+          cache: const CacheConfig(hitCacheOnErrorCodes: {503}),
+        ),
+      );
+
+      expect(
+        client.interceptors.map((i) => '${i.runtimeType}'),
+        contains('_CacheFallback'),
+      );
+    });
+
+    test('a changed cache setting keeps the stored entries', () async {
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
+      final client = _Client(adapter)
+        ..configure(
+          const HttpClientConfig(
+            baseUrl: 'https://a.test',
+            cache: CacheConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      await client.dio.get<dynamic>('/x');
+      final before = client.interceptors.whereType<CacheInterceptor>().single;
+
+      client.configure(
+        client.currentConfig.copyWith(
+          cache: const CacheConfig(maxStale: Duration(hours: 1)),
+        ),
+      );
+      final after = client.interceptors.whereType<CacheInterceptor>().single;
+      final hit = await client.dio.get<dynamic>('/x');
+
+      expect(after, isNot(same(before)));
+      expect(after.store, same(before.store));
+      expect(hit.isCacheHit, isTrue);
+      expect(adapter.requests, hasLength(1));
+    });
+
+    test('a changed maxSize or store starts an empty cache', () async {
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
+      final client = _Client(adapter)
+        ..configure(
+          const HttpClientConfig(
+            baseUrl: 'https://a.test',
+            cache: CacheConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      await client.dio.get<dynamic>('/x');
+
+      client.configure(
+        client.currentConfig.copyWith(cache: const CacheConfig(maxSize: 1024)),
+      );
+      await client.dio.get<dynamic>('/x');
+      final store = MemCacheStore();
+      client.configure(
+        client.currentConfig.copyWith(cache: CacheConfig(store: store)),
+      );
+      await client.dio.get<dynamic>('/x');
+
+      expect(adapter.requests, hasLength(3));
+      expect(
+        client.interceptors.whereType<CacheInterceptor>().single.store,
+        same(store),
+      );
+    });
+
     test('keeps an unchanged box and rebuilds a changed one', () {
       final client = _Client(ScriptedAdapter([reply(200)]))
         ..configure(
