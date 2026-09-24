@@ -1,34 +1,9 @@
 import 'dart:convert';
 
 import 'package:dart_falconnect/engine/https/config/cache_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/models/cache_entry.dart';
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
-
-/// Response cache entry.
-///
-/// Store and read the [timestamp] in the same clock zone: the age is
-/// computed from `clock.now()` at read time, so mixing zones yields a
-/// negative age (the entry never expires) or an inflated one.
-class CacheEntry {
-  /// Creates a cache entry with the given [response], creation [timestamp],
-  /// and cache [maxAge].
-  new({required this.response, required this.timestamp, required this.maxAge});
-
-  /// The cached HTTP response.
-  final Response<dynamic> response;
-
-  /// The time at which this entry was stored.
-  final DateTime timestamp;
-
-  /// The maximum duration this entry remains valid.
-  final Duration maxAge;
-
-  /// Returns `true` if the entry has exceeded its [maxAge].
-  bool get isExpired {
-    final age = clock.now().difference(timestamp);
-    return age > maxAge;
-  }
-}
 
 /// Interceptor that caches HTTP responses.
 ///
