@@ -36,7 +36,7 @@ void main() {
     const performance = PerformanceConfig();
     expect(performance.maxMetricsHistory, 1000);
 
-    const log = LogConfig();
+    const log = PrettyLogConfig();
     expect(log.responseHeader, isFalse);
     expect(log.logPrint, isNull);
     expect(log.diagnostics, isTrue);

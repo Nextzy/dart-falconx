@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_faltool/dart_faltool.dart' show TokenBucketPolicy;
 import 'package:fake_async/fake_async.dart';
@@ -384,6 +386,108 @@ void main() {
           ),
           hasLength(1),
         );
+      });
+    });
+  });
+
+  group('log variants', () {
+    test('switching the log between pretty, JSON, and null rebuilds only '
+        'the log', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(
+          const HttpClientConfig(
+            log: LogConfig(),
+            rateLimit: RateLimitConfig.tokenBucket(global: [_policy]),
+            retry: RetryConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      final limiter = client.interceptors
+          .whereType<TokenBucketRateLimitInterceptor>()
+          .single;
+      final retry = client.interceptors.whereType<RetryInterceptor>().single;
+
+      client.configure(
+        client.currentConfig.copyWith(log: const LogConfig.json()),
+      );
+
+      expect(client.interceptors.whereType<HttpLogInterceptor>(), isEmpty);
+      final json = client.interceptors.whereType<HttpJsonLogInterceptor>();
+      expect(json, hasLength(1));
+      expect(client.interceptors.elementAt(1), same(json.single));
+      expect(
+        client.interceptors.whereType<TokenBucketRateLimitInterceptor>().single,
+        same(limiter),
+      );
+      expect(
+        client.interceptors.whereType<RetryInterceptor>().single,
+        same(retry),
+      );
+
+      client.configure(client.currentConfig.copyWith(log: null));
+
+      expect(client.interceptors.whereType<HttpJsonLogInterceptor>(), isEmpty);
+      expect(
+        client.interceptors.whereType<TokenBucketRateLimitInterceptor>().single,
+        same(limiter),
+      );
+    });
+
+    test('a limiter diagnostic prints as a JSON line in JSON mode', () {
+      fakeAsync((async) {
+        final lines = <Object?>[];
+        final client = _Client(ScriptedAdapter([reply(200)]))
+          ..configure(
+            HttpClientConfig(
+              baseUrl: 'https://a.test',
+              log: LogConfig.json(logPrint: lines.add),
+              rateLimit: const RateLimitConfig.tokenBucket(
+                perHost: [
+                  TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
+                ],
+                queueRequests: false,
+              ),
+            ),
+          );
+        client.dio.get<dynamic>('/1').ignore();
+        async.elapse(Duration.zero);
+        client.dio.get<dynamic>('/2').ignore();
+        async.elapse(Duration.zero);
+        client.dispose();
+
+        final decoded = [
+          for (final line in lines)
+            jsonDecode(line! as String) as Map<String, Object?>,
+        ];
+        final debug = decoded.where((l) => l['severity_text'] == 'DEBUG');
+        expect(debug.single.keys, ['timestamp', 'severity_text', 'body']);
+        expect(
+          debug.single['body'],
+          '[TokenBucketRateLimitInterceptor] Rate limit queue full for a.test',
+        );
+        expect(decoded.where((l) => l.containsKey('url.full')), hasLength(2));
+      });
+    });
+
+    test('a JSON log with diagnostics off prints no diagnostic', () {
+      fakeAsync((async) {
+        final lines = <Object?>[];
+        final client = _Client(ScriptedAdapter([reply(500)]))
+          ..configure(
+            HttpClientConfig(
+              baseUrl: 'https://a.test',
+              log: LogConfig.json(logPrint: lines.add, diagnostics: false),
+              retry: const RetryConfig(
+                maxAttempts: 1,
+                delay: Duration(milliseconds: 1),
+              ),
+            ),
+          );
+        client.dio.get<dynamic>('/x').ignore();
+        async.elapse(const Duration(seconds: 1));
+
+        expect(lines, hasLength(2));
+        expect(lines, everyElement(contains('"url.full"')));
       });
     });
   });

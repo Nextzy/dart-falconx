@@ -31,7 +31,7 @@ abstract class BaseHttpClient implements RequestApiService {
       DefaultNetworkExceptionHandlerInterceptor();
 
   HttpClientConfig? _config;
-  HttpLogInterceptor? _log;
+  Interceptor? _log;
   PerformanceInterceptor? _performance;
   CacheInterceptor? _cache;
   ConcurrencyLimitInterceptor? _concurrency;
@@ -362,7 +362,12 @@ abstract class BaseHttpClient implements RequestApiService {
     return build(after);
   }
 
-  HttpLogInterceptor _buildLog(LogConfig box) {
+  Interceptor _buildLog(LogConfig box) => switch (box) {
+    PrettyLogConfig() => _buildPrettyLog(box),
+    JsonLogConfig() => HttpJsonLogInterceptor(config: box),
+  };
+
+  HttpLogInterceptor _buildPrettyLog(PrettyLogConfig box) {
     final log = HttpLogInterceptor(
       request: box.request,
       requestHeader: box.requestHeader,
@@ -401,17 +406,26 @@ abstract class BaseHttpClient implements RequestApiService {
     _dio.options.validateStatus = next.validateStatus ?? _defaultValidateStatus;
   }
 
-  /// Prints an interceptor diagnostic through the current log box.
+  /// Prints an interceptor diagnostic through the current log box, as a
+  /// JSON line when the box is a [JsonLogConfig].
   void _diagnostic(String message) {
     final log = _config?.log;
     if (log == null || !log.diagnostics) return;
+    final line = switch (log) {
+      PrettyLogConfig() => message,
+      JsonLogConfig() => jsonEncode({
+        'timestamp': clock.now().toUtc().toIso8601String(),
+        'severity_text': 'DEBUG',
+        'body': message,
+      }),
+    };
     final printer = log.logPrint;
     if (printer != null) {
-      printer(message);
+      printer(line);
     } else {
       // Diagnostics go to the console when the config sets no printer.
       // ignore: avoid_print
-      print(message);
+      print(line);
     }
   }
 }

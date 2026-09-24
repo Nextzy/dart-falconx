@@ -1,5 +1,9 @@
 import 'dart:convert';
 
+/// Key in `RequestOptions.extra` holding the start time of the attempt,
+/// shared by both HTTP logs.
+const String logStartKey = 'dart_falconnect.log.start';
+
 /// Value printed in place of a redacted header, query value, or user info.
 const String redactedValue = 'REDACTED';
 
