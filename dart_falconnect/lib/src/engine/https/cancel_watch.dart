@@ -44,7 +44,13 @@ class _CancelHub {
   void _fire(DioException error) {
     _fired = true;
     for (final key in _watches.keys.toList()) {
-      _run(key, error);
+      try {
+        _run(key, error);
+      } on Object catch (thrown, stackTrace) {
+        // One failing watch must not stop the others; the error still
+        // reaches the zone, as an uncaught error would.
+        Zone.current.handleUncaughtError(thrown, stackTrace);
+      }
     }
   }
 
