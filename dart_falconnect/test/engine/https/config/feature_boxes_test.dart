@@ -1,0 +1,76 @@
+import 'package:dart_falconnect/dart_falconnect.dart';
+import 'package:dart_faltool/dart_faltool.dart' show TokenBucketPolicy;
+import 'package:test/test.dart';
+
+RetryConfig _retry(int attempts) => RetryConfig(maxAttempts: attempts);
+
+TokenBucketPolicy _policy(int permits) =>
+    TokenBucketPolicy(permits: permits, per: const Duration(seconds: 1));
+
+void main() {
+  test('defaults match the interceptor defaults', () {
+    const retry = RetryConfig();
+    expect(retry.maxAttempts, 3);
+    expect(retry.delay, const Duration(seconds: 1));
+    expect(retry.maxDelay, const Duration(seconds: 30));
+    expect(retry.maxDuration, const Duration(seconds: 60));
+    expect(retry.onRetry, isNull);
+
+    const cache = CacheConfig();
+    expect(cache.duration, const Duration(minutes: 15));
+    expect(cache.maxSize, 50 * 1024 * 1024);
+
+    const pause = PauseConfig();
+    expect(pause.maxPauseWait, const Duration(seconds: 10));
+    expect(pause.maxPause, const Duration(minutes: 10));
+    expect(pause.defaultPause, const Duration(seconds: 5));
+
+    const concurrency = ConcurrencyConfig();
+    expect(concurrency.global, isNull);
+    expect(concurrency.perHost, isNull);
+    expect(concurrency.hosts, isEmpty);
+    expect(concurrency.queueRequests, isTrue);
+    expect(concurrency.maxQueueSize, 50);
+    expect(concurrency.maxGlobalQueueSize, 500);
+
+    const performance = PerformanceConfig();
+    expect(performance.maxMetricsHistory, 1000);
+    expect(performance.collectDetailedTimings, isTrue);
+
+    const log = LogConfig();
+    expect(log.responseHeader, isFalse);
+    expect(log.logPrint, isNull);
+    expect(log.diagnostics, isTrue);
+  });
+
+  test('boxes compare by value', () {
+    expect(_retry(2), const RetryConfig(maxAttempts: 2));
+    expect(_retry(2).hashCode, const RetryConfig(maxAttempts: 2).hashCode);
+    expect(_retry(2), isNot(_retry(3)));
+    expect(
+      RateLimitConfig.tokenBucket(global: [_policy(5)]),
+      RateLimitConfig.tokenBucket(global: [_policy(5)]),
+    );
+    expect(
+      RateLimitConfig.tokenBucket(global: [_policy(5)]),
+      isNot(RateLimitConfig.tokenBucket(global: [_policy(6)])),
+    );
+  });
+
+  test('RateLimitConfig has exactly three variants', () {
+    String name(RateLimitConfig config) => switch (config) {
+      NoRateLimitConfig() => 'none',
+      PauseOnlyRateLimitConfig() => 'pause',
+      TokenBucketRateLimitConfig() => 'bucket',
+    };
+
+    expect(
+      [
+        name(const RateLimitConfig.none()),
+        name(const RateLimitConfig.pauseOnly()),
+        name(const RateLimitConfig.tokenBucket()),
+      ],
+      ['none', 'pause', 'bucket'],
+    );
+  });
+}

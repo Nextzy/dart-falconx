@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/retry_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
 import 'package:dart_falmodel/networks/https/retry_after.dart';
@@ -12,16 +13,6 @@ const String _disableKey = 'dart_falconnect.retry.disable';
 const String _attemptsKey = 'dart_falconnect.retry.attempts';
 const String _nonIdempotentKey = 'dart_falconnect.retry.nonIdempotent';
 const String _attemptKey = 'dart_falconnect.retry.attempt';
-
-/// Called before each retry waits.
-///
-/// [attempt] is 1 for the first retry. The stack trace of the failure is
-/// `error.stackTrace`.
-typedef RetryCallback = void Function(
-  DioException error,
-  int attempt,
-  Duration delay,
-);
 
 /// Per-request retry settings on [RequestOptions].
 extension FalconRetryRequestOptionsExtensions on RequestOptions {

@@ -1,3 +1,4 @@
+export 'config/config.dart';
 export 'default_http_client.dart';
 export 'extensions/extensions.dart';
 export 'http_client.dart';
