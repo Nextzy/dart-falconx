@@ -281,6 +281,28 @@ void main() {
       },
     );
 
+    test('the cache keeps one entry per token under a custom header', () async {
+      var token = 't1';
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
+      final client = _Client(
+        adapter,
+        HttpClientConfig(
+          baseUrl: 'https://a.test',
+          cache: const CacheConfig(),
+          auth: _auth(() => token, name: 'X-Access-Token'),
+        ),
+      );
+
+      await client.dio.get<dynamic>('/x');
+      token = 't2';
+      final second = await client.dio.get<dynamic>('/x');
+
+      expect(adapter.requests, hasLength(2));
+      expect(second.isCacheHit, isFalse);
+    });
+
     test('the cache keeps one entry per token', () async {
       var token = 't1';
       final adapter = ScriptedAdapter([
@@ -376,6 +398,50 @@ void main() {
       expect(text, contains('*** Request id-1 ***'));
       expect(text, contains('dart_falconnect.auth.token: REDACTED'));
       expect(text, isNot(contains('secret-token')));
+    });
+
+    test('a custom token header is redacted in both logs, as Authorization '
+        'is', () async {
+      final lines = <Object?>[];
+      final client = _Client(
+        ScriptedAdapter([reply(200)]),
+        HttpClientConfig(
+          log: LogConfig(logPrint: lines.add, requestHeader: true),
+          auth: _auth(() => 'secret-token', name: 'X-Access-Token'),
+        ),
+      );
+
+      await client.dio.get<dynamic>('/x');
+      client.configure(
+        client.currentConfig.copyWith(
+          log: LogConfig.json(logPrint: lines.add, requestHeaders: true),
+        ),
+      );
+      await client.dio.get<dynamic>('/x');
+
+      final text = lines.join('\n');
+      expect(text, contains('X-Access-Token'));
+      expect(text, contains('http.request.header.x-access-token'));
+      expect(text, isNot(contains('secret-token')));
+    });
+
+    test('an empty redaction set still prints a custom token header', () async {
+      final lines = <Object?>[];
+      final client = _Client(
+        ScriptedAdapter([reply(200)]),
+        HttpClientConfig(
+          log: LogConfig(
+            logPrint: lines.add,
+            requestHeader: true,
+            redactHeaders: const {},
+          ),
+          auth: _auth(() => 'secret-token', name: 'X-Access-Token'),
+        ),
+      );
+
+      await client.dio.get<dynamic>('/x');
+
+      expect(lines.join('\n'), contains('secret-token'));
     });
   });
 }

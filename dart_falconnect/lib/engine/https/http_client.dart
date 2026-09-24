@@ -1,4 +1,6 @@
 import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart'
+    show matchesName;
 
 /// Base class of every HTTP client in FalconX: one [Dio] configured by one
 /// [HttpClientConfig].
@@ -79,13 +81,19 @@ abstract class BaseHttpClient implements RequestApiService {
         : identical(session, _session) && _refresh != null
         ? _refresh
         : TokenRefreshInterceptor(session: session, dio: _dio);
-    final log = _keepOrBuild(previous?.log, config.log, _log, _buildLog);
+    final log = _keepOrBuild(
+      _logFor(previous?.log, previous?.auth),
+      _logFor(config.log, config.auth),
+      _log,
+      _buildLog,
+    );
+    final previousCache = _cacheFor(previous?.cache, previous?.auth);
     final cache = _keepOrBuild(
-      previous?.cache,
-      config.cache,
+      previousCache,
+      _cacheFor(config.cache, config.auth),
       _cache,
       (box) => CacheInterceptor(
-        config: _keepStore(box, previous?.cache),
+        config: _keepStore(box, previousCache),
         logPrint: _diagnostic,
       ),
     );
@@ -382,6 +390,40 @@ abstract class BaseHttpClient implements RequestApiService {
       return box;
     }
     return box.copyWith(store: current.store);
+  }
+
+  /// [box] with the token header of [auth] added to `redactHeaders` when
+  /// that set redacts `authorization`, so a custom header name is redacted
+  /// exactly as `Authorization` is.
+  static LogConfig? _logFor(LogConfig? box, AuthConfig? auth) {
+    if (box == null) return null;
+    final names = _withTokenHeader(box.redactHeaders, auth);
+    return identical(names, box.redactHeaders)
+        ? box
+        : box.copyWith(redactHeaders: names);
+  }
+
+  /// [box] with the token header of [auth] added to `keyHeaders` when that
+  /// set keys by `authorization`, so a custom header name splits entries
+  /// per token exactly as `Authorization` does.
+  static CacheConfig? _cacheFor(CacheConfig? box, AuthConfig? auth) {
+    if (box == null) return null;
+    final names = _withTokenHeader(box.keyHeaders, auth);
+    return identical(names, box.keyHeaders)
+        ? box
+        : box.copyWith(keyHeaders: names);
+  }
+
+  /// [names] plus the token header of [auth], lowercased, when [names]
+  /// holds `authorization` and not that header; otherwise [names] itself.
+  static Set<String> _withTokenHeader(Set<String> names, AuthConfig? auth) {
+    final header = auth?.headerName.toLowerCase();
+    if (header == null ||
+        matchesName(header, names) ||
+        !matchesName('authorization', names)) {
+      return names;
+    }
+    return {...names, header};
   }
 
   static bool _hasFallback(CacheConfig box) =>
