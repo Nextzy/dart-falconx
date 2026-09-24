@@ -1,6 +1,8 @@
 @TestOn('browser')
 library;
 
+import 'dart:convert';
+
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_falmodel/dart_falmodel.dart' show parseRetryAfter;
 import 'package:test/test.dart';
@@ -40,7 +42,23 @@ void main() {
       expect(TokenBucketRateLimitInterceptor(), isNotNull);
       expect(RetryAfterPauseInterceptor(), isNotNull);
       expect(HttpLogInterceptor(), isNotNull);
+      expect(HttpJsonLogInterceptor(), isNotNull);
       expect(DefaultNetworkExceptionHandlerInterceptor(), isNotNull);
+    });
+
+    test('HttpJsonLogInterceptor prints one JSON line on web', () async {
+      final lines = <Object?>[];
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = ScriptedAdapter([reply(200)]);
+      dio.interceptors.add(
+        HttpJsonLogInterceptor(config: JsonLogConfig(logPrint: lines.add)),
+      );
+
+      await dio.get<dynamic>('/x?token=t');
+
+      final line = jsonDecode(lines.single! as String) as Map<String, Object?>;
+      expect(line['url.full'], 'https://a.test/x?token=REDACTED');
+      expect(line['http.response.status_code'], 200);
     });
 
     test('parseRetryAfter reads an HTTP-date on web', () {

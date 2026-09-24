@@ -35,6 +35,8 @@ void main() {
   _sink(TokenBucketRateLimitInterceptor());
   _sink(RetryAfterPauseInterceptor());
   _sink(HttpLogInterceptor());
+  _sink(HttpJsonLogInterceptor());
+  _sink(const HttpClientConfig(log: LogConfig.json()));
   _sink(DefaultNetworkExceptionHandlerInterceptor());
 
   // JSON-RPC
