@@ -15,6 +15,10 @@ import 'package:dart_falconnect/lib.dart';
 /// which then calls [configure].
 abstract class BaseHttpClient implements RequestApiService {
   /// Creates a client on [dio] and applies [config].
+  ///
+  /// [config] owns the base URL, timeouts, content type, redirects,
+  /// `validateStatus`, and its header keys, so values set on [dio] for
+  /// those are replaced; the adapter and every other option stay.
   new({required Dio dio, HttpClientConfig config = const HttpClientConfig()})
     : _dio = dio,
       _defaultValidateStatus = BaseOptions().validateStatus {
