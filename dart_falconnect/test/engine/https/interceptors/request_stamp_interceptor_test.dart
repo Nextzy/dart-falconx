@@ -1,4 +1,5 @@
 import 'package:dart_falconnect/dart_falconnect.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/auth_extra.dart';
 import 'package:test/test.dart';
 
 import '_scripted_adapter.dart';
@@ -278,6 +279,7 @@ void main() {
           'Bearer t1',
           null,
         ]);
+        expect(adapter.requests.map((r) => r.stampedToken), ['t1', null]);
       },
     );
 
