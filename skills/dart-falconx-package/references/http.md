@@ -204,6 +204,7 @@ dio.get('/balance', options: Options()..cachePolicy = CachePolicy.noCache);
 - `cacheFor` must be positive. It forces the cache for that request, `no-store` included, and the entry expires that long after it was stored however often it is read. `CacheConfig(policy: CachePolicy.forceCache, maxStale: ...)` does the same for every request.
 - `keyHeaders` (default `authorization`, `accept`, `accept-language`) split one URL into separate entries, compared ignoring case. On a server that serves many users through one client, keep `authorization` in the set, or one user reads another's cached responses.
 - A hit is decoded again from stored bytes, so editing `response.data` never changes the cache. A response over 512,000 bytes, or over a fifth of `maxSize`, is not stored in the default memory store.
+- A streamed request (`ResponseType.stream`, as `dio.download` sends) is never stored or answered from the cache.
 - Diagnostics print the method, host, and path of a hit, never the query.
 
 | Where                      | Store                                                                                                                                                          | Note                                                                                  |

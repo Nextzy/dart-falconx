@@ -127,6 +127,45 @@ void main() {
       expect(revalidated.data, first.data);
     });
 
+    test('a streamed GET of a URL stored by another GET reaches the '
+        'network', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      await dio.get<dynamic>(
+        '/x',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final streamed = await dio.get<ResponseBody>(
+        '/x',
+        options: Options(responseType: ResponseType.stream),
+      );
+
+      expect(streamed.data, isA<ResponseBody>());
+      expect(adapter.requests, hasLength(2));
+    });
+
+    test('a streamed GET bypasses the cache, even when forced', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [
+        CacheInterceptor(
+          config: const CacheConfig(
+            policy: CachePolicy.forceCache,
+            maxStale: Duration(minutes: 1),
+          ),
+        ),
+      ]);
+      final stream = Options(responseType: ResponseType.stream);
+
+      await dio.get<dynamic>('/x');
+      final first = await dio.get<ResponseBody>('/x', options: stream);
+      final second = await dio.get<ResponseBody>('/x', options: stream);
+
+      expect(first.data, isA<ResponseBody>());
+      expect(second.data, isA<ResponseBody>());
+      expect(adapter.requests, hasLength(3));
+    });
+
     test('a 304 to a request the app made conditional stays an error', () {
       final adapter = ScriptedAdapter([reply(304)]);
       final dio = _dio(adapter, [CacheInterceptor()]);
