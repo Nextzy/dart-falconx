@@ -146,8 +146,8 @@ DefaultHttpClient.instance.configure(HttpClientConfig(
 | Field | Rule | Error message example |
 |---|---|---|
 | `proxy` | A host name or IPv4 address, a colon, and a port from 1 to 65535; no scheme, no path | `proxy "http://p:8080" must be host:port` |
-| `pins` key | A non-empty host name; compared without regard to case | `pin host "" is empty` |
-| `pins` value | A non-empty set; each pin is `sha256/` plus base64 that decodes to 32 bytes | `pin "AAAA" for api.example.com must be "sha256/" followed by base64 of 32 bytes` |
+| `pins` key | A non-empty bare host name, lowercased before the check (no port, brackets, or spaces); compared without regard to case | `pin host "" is empty`, `pin host "api.example.com:443" must be a bare host name` |
+| `pins` value | A non-empty set; each pin is `sha256/` plus base64, padded or not, that decodes to 32 bytes | `pin host "api.example.com" has no pin`, `pin "AAAA" for api.example.com must be "sha256/" followed by base64 of 32 bytes` |
 | `maxConnectionsPerHost` | Null or at least 1 | `maxConnectionsPerHost must be at least 1` |
 | `idleTimeout` | Not negative | `idleTimeout must not be negative` |
 
@@ -169,20 +169,24 @@ export 'platform_adapter_stub.dart'
     if (dart.library.js_interop) 'platform_adapter_web.dart';
 ```
 
-Each implementation exposes the same two functions. The stub's `platformAdapterBox` returns null, so `configure` never calls its `buildPlatformAdapter`, which throws `UnsupportedError`.
+Each implementation exposes the same three functions. The stub's `platformAdapterBox` returns null, so `configure` never calls its `buildPlatformAdapter`, which throws `UnsupportedError`. The stub and the web return no diagnostics.
 
 ```dart
 /// The box this platform reads from [config], or null.
 Object? platformAdapterBox(HttpClientConfig config);
 
 /// A new adapter built from [box], which [platformAdapterBox] returned.
-HttpClientAdapter buildPlatformAdapter(
-  Object box, {
-  required void Function(String message) logPrint,
+HttpClientAdapter buildPlatformAdapter(Object box);
+
+/// The diagnostics of section 10 for [config]: all of them when
+/// [adapterBuilt], else only the connection-limit one.
+List<String> adapterDiagnostics(
+  HttpClientConfig config, {
+  required bool adapterBuilt,
 });
 ```
 
-`spki.dart` in the same directory is pure Dart and computes the pin of a DER certificate (section 6), so its tests run on every platform.
+`spki.dart` in the same directory is pure Dart. It computes the pin of a DER certificate (section 6) and brings a pin to its padded form, so its tests run on every platform.
 
 ## 5. The IO adapter
 
