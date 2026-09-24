@@ -433,6 +433,32 @@ void main() {
       );
     });
 
+    test('the pretty log takes the redaction sets of its box', () async {
+      final lines = <Object?>[];
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(
+          HttpClientConfig(
+            baseUrl: 'https://a.test',
+            headers: const {'X-Tenant': 'acme'},
+            log: LogConfig(
+              redactHeaders: const {'x-tenant'},
+              redactQueryParameters: const {'page'},
+              logPrint: lines.add,
+            ),
+          ),
+        );
+
+      await client.dio.get<dynamic>('/x?page=2');
+
+      // Colour codes wrap header values; drop them to read the text.
+      final printed = lines
+          .join('\n')
+          .replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');
+      expect(printed, contains('X-Tenant: REDACTED'));
+      expect(printed, contains('https://a.test/x?page=REDACTED'));
+      expect(printed, isNot(contains('acme')));
+    });
+
     test('a limiter diagnostic prints as a JSON line in JSON mode', () {
       fakeAsync((async) {
         final lines = <Object?>[];

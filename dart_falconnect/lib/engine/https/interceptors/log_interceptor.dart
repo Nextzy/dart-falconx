@@ -1,17 +1,21 @@
 import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart';
 
-/// [LogInterceptor] is used to print logs during network requests.
-/// It's better to add [LogInterceptor] to the tail of the
-/// interceptors queue, otherwise the changes made in the
-/// interceptors behind A will not be printed out.
-/// This is because the execution of interceptors is in the order
-/// of addition.
+/// Prints each request, response, and error over several console lines,
+/// for a developer watching an app's console.
+///
+/// `BaseHttpClient` places it at position 2 of the chain, after the app's
+/// own interceptors, so it sees what they changed. Every response and
+/// error prints its status and duration. The URL, request headers, and
+/// response headers print redacted: see [redactHeaders] and
+/// [redactQueryParameters].
 class HttpLogInterceptor extends Interceptor {
   /// Creates an [HttpLogInterceptor].
   ///
   /// Each boolean flag controls which parts of the request/response cycle are
   /// logged. [logPrint] defaults to a chunked console printer that avoids
-  /// truncation on long payloads.
+  /// truncation on long payloads. Colour follows `ansiColorDisabled`, which
+  /// this class never writes.
   new({
     this.enabled = true,
     this.request = true,
@@ -20,10 +24,10 @@ class HttpLogInterceptor extends Interceptor {
     this.responseHeader = false,
     this.responseBody = true,
     this.error = true,
+    this.redactHeaders = defaultRedactedHeaders,
+    this.redactQueryParameters = defaultRedactedQueryParameters,
     this.logPrint = _logPrintLong,
-  }) {
-    ansiColorDisabled = !enabled;
-  }
+  });
 
   final AnsiPen _title = AnsiPen()..white(bold: true);
   final AnsiPen _error = AnsiPen()..red(bold: true);
@@ -50,6 +54,13 @@ class HttpLogInterceptor extends Interceptor {
   /// Print error message
   bool error;
 
+  /// Headers printed as `REDACTED`, compared ignoring case.
+  Set<String> redactHeaders;
+
+  /// Query parameters whose values print as `REDACTED`, compared ignoring
+  /// case.
+  Set<String> redactQueryParameters;
+
   /// Log printer; defaults print log to console.
   /// In flutter, you'd better use debugPrint.
   /// you can also write log in a file, for example:
@@ -66,10 +77,11 @@ class HttpLogInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    // A new map: extra may be const.
+    options.extra = {...options.extra, logStartKey: clock.now()};
     if (enabled) {
       logPrint(_title('*** Request ***'));
-      _printKV('URL', options.uri);
-      //options.headers;
+      _printKV('URL', _url(options.uri));
 
       if (request) {
         _printKV('method', _title(options.method));
@@ -87,7 +99,14 @@ class HttpLogInterceptor extends Interceptor {
       if (requestHeader) {
         logPrint('headers:');
         options.headers.forEach(
-          (key, v) => _printKV(' $key', _title(v?.toString() ?? '')),
+          (key, v) => _printKV(
+            ' $key',
+            _title(
+              matchesName(key, redactHeaders)
+                  ? redactedValue
+                  : v?.toString() ?? '',
+            ),
+          ),
         );
       }
       if (requestBody) {
@@ -138,13 +157,15 @@ class HttpLogInterceptor extends Interceptor {
     if (enabled) {
       if (error) {
         logPrint(_error('*** DioError ***:'));
-        logPrint('URL: ${err.requestOptions.uri}');
+        logPrint('URL: ${_url(err.requestOptions.uri)}');
         logPrint('$err');
         final response = err.response;
         if (response != null) {
           _printResponse(response);
+        } else {
+          _printKV('duration', _duration(err.requestOptions));
+          logPrint('');
         }
-        logPrint('');
       }
     }
 
@@ -153,16 +174,20 @@ class HttpLogInterceptor extends Interceptor {
 
   void _printResponse(Response<dynamic> response) {
     if (enabled) {
-      _printKV('URL', response.requestOptions.uri);
+      _printKV('URL', _url(response.requestOptions.uri));
+      _printKV('statusCode', response.statusCode ?? 0);
+      _printKV('duration', _duration(response.requestOptions));
       if (responseHeader) {
-        _printKV('statusCode', response.statusCode ?? 0);
         if (response.isRedirect) {
-          _printKV('redirect', response.realUri);
+          _printKV('redirect', _url(response.realUri));
         }
 
         logPrint('headers:');
         response.headers.forEach(
-          (key, v) => _printKV(' $key', v.join('\r\n\t')),
+          (key, v) => _printKV(
+            ' $key',
+            matchesName(key, redactHeaders) ? redactedValue : v.join('\r\n\t'),
+          ),
         );
       }
       if (responseBody) {
@@ -179,6 +204,17 @@ class HttpLogInterceptor extends Interceptor {
       }
       logPrint('');
     }
+  }
+
+  String _url(Uri uri) => redactUrl(uri, redactQueryParameters);
+
+  /// Milliseconds since `onRequest`; 0 when this log never saw the request.
+  String _duration(RequestOptions options) {
+    final start = options.extra[logStartKey];
+    final elapsed = start is DateTime
+        ? clock.now().difference(start)
+        : Duration.zero;
+    return '${elapsed.inMilliseconds}ms';
   }
 
   void _printKV(String key, Object? v) {
