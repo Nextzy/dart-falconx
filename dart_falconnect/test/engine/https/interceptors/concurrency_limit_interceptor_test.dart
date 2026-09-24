@@ -421,7 +421,9 @@ void main() {
 
   test('a cache hit, with CacheInterceptor first, takes no slot', () {
     fakeAsync((async) {
-      final adapter = ScriptedAdapter([reply(200)]);
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
       final limiter = ConcurrencyLimitInterceptor(
         config: const ConcurrencyConfig(perHost: 1),
       );
@@ -453,7 +455,10 @@ void main() {
 
       _get(dio, '/x', outcomes);
       _settle(async);
-      adapter.requests.single.respond(200);
+      adapter.requests.single.respond(
+        200,
+        headers: {'cache-control': 'max-age=60'},
+      );
       _settle(async);
       _get(dio, '/y', outcomes);
       _settle(async);

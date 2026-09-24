@@ -1,5 +1,4 @@
 import 'package:dart_falconnect/dart_falconnect.dart';
-import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:fake_async/fake_async.dart';
 import 'package:test/test.dart';
 
@@ -19,265 +18,365 @@ class _ResponseSpy extends Interceptor {
   }
 }
 
-Dio _dio(ScriptedAdapter adapter, List<Interceptor> chain) =>
+Dio _dio(HttpClientAdapter adapter, List<Interceptor> chain) =>
     Dio(BaseOptions(baseUrl: 'https://a.test'))
       ..httpClientAdapter = adapter
       ..transformer = FoldingTransformer()
       ..interceptors.addAll(chain);
 
+/// A 200 the server marks cacheable for a minute.
+Reply _cacheable() => reply(200, headers: {'cache-control': 'max-age=60'});
+
 Options _tagged(int id) => Options(extra: {'id': id});
 
+Options _auth(String token) =>
+    Options(headers: {'Authorization': 'Bearer $token'});
+
+List<String> _paths(ScriptedAdapter adapter) => [
+  for (final request in adapter.requests) request.uri.path,
+];
+
 void main() {
-  test('serves the cached response without a second network call', () async {
-    final adapter = ScriptedAdapter([reply(200)]);
-    final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = adapter
-      ..transformer = FoldingTransformer()
-      ..interceptors.add(CacheInterceptor());
+  group('following the server', () {
+    test('serves a response marked cacheable without a second network '
+        'call', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
 
-    final first = await dio.get<dynamic>('/x');
-    final second = await dio.get<dynamic>('/x');
+      final first = await dio.get<dynamic>('/x');
+      final second = await dio.get<dynamic>('/x');
 
-    expect(second.statusCode, 200);
-    expect(second.data, first.data);
-    expect([for (final request in adapter.requests) request.uri.path], ['/x']);
-  });
+      expect(second.statusCode, 200);
+      expect(second.data, first.data);
+      expect(_paths(adapter), ['/x']);
+    });
 
-  test('does not cache a non-GET response', () async {
-    final adapter = ScriptedAdapter([reply(200)]);
-    final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = adapter
-      ..transformer = FoldingTransformer()
-      ..interceptors.add(CacheInterceptor());
-
-    await dio.post<dynamic>('/x');
-    await dio.post<dynamic>('/x');
-
-    expect(adapter.requests, hasLength(2));
-  });
-
-  test('does not store a response with cache-control: no-store', () async {
-    final adapter = ScriptedAdapter([
-      reply(200, headers: {'cache-control': 'no-store'}),
-    ]);
-    final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = adapter
-      ..transformer = FoldingTransformer()
-      ..interceptors.add(CacheInterceptor());
-
-    await dio.get<dynamic>('/x');
-    await dio.get<dynamic>('/x');
-
-    expect(adapter.requests, hasLength(2));
-  });
-
-  test(
-    'bypasses the cache for a request with cache-control: no-cache',
-    () async {
+    test('does not store a response without cache headers', () async {
       final adapter = ScriptedAdapter([reply(200)]);
-      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-        ..httpClientAdapter = adapter
-        ..transformer = FoldingTransformer()
-        ..interceptors.add(CacheInterceptor());
-      final options = Options(headers: {'cache-control': 'no-cache'});
+      final dio = _dio(adapter, [CacheInterceptor()]);
 
-      await dio.get<dynamic>('/x', options: options);
-      await dio.get<dynamic>('/x', options: options);
+      await dio.get<dynamic>('/x');
+      final second = await dio.get<dynamic>('/x');
 
       expect(adapter.requests, hasLength(2));
-    },
-  );
-
-  test('refetches once the response max-age has passed', () {
-    fakeAsync((async) {
-      final adapter = ScriptedAdapter([
-        reply(200, headers: {'cache-control': 'max-age=1'}),
-      ]);
-      final cache = CacheInterceptor();
-      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-        ..httpClientAdapter = adapter
-        ..transformer = FoldingTransformer()
-        ..interceptors.add(cache);
-
-      final outcomes = <Object>[];
-      dio.get<dynamic>('/x').then(outcomes.add, onError: outcomes.add).ignore();
-      async.elapse(Duration.zero);
-
-      // Still inside the 1-second lifetime: served from the cache.
-      dio.get<dynamic>('/x').then(outcomes.add, onError: outcomes.add).ignore();
-      async.elapse(Duration.zero);
-      expect(adapter.requests, hasLength(1));
-
-      async.elapse(const Duration(seconds: 2));
-      cache.evictExpired();
-      dio.get<dynamic>('/x').then(outcomes.add, onError: outcomes.add).ignore();
-      async.elapse(Duration.zero);
-
-      expect(adapter.requests, hasLength(2));
-      expect(outcomes, hasLength(3));
+      expect(second.isCacheHit, isFalse);
     });
-  });
 
-  test('refetches once the Expires header is in the past', () {
-    fakeAsync((async) {
-      final expires = clock.now().add(const Duration(seconds: 1));
+    test('does not store a response with cache-control: no-store', () async {
       final adapter = ScriptedAdapter([
-        reply(200, headers: {'expires': expires.toIso8601String()}),
+        reply(200, headers: {'cache-control': 'max-age=60, no-store'}),
       ]);
-      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-        ..httpClientAdapter = adapter
-        ..transformer = FoldingTransformer()
-        ..interceptors.add(CacheInterceptor());
+      final dio = _dio(adapter, [CacheInterceptor()]);
 
-      dio.get<dynamic>('/x').ignore();
-      async.elapse(Duration.zero);
-      expect(adapter.requests, hasLength(1));
-
-      async.elapse(const Duration(seconds: 2));
-      dio.get<dynamic>('/x').ignore();
-      async.elapse(Duration.zero);
+      await dio.get<dynamic>('/x');
+      await dio.get<dynamic>('/x');
 
       expect(adapter.requests, hasLength(2));
     });
-  });
 
-  test('evicts the oldest entry when the cache outgrows maxSize', () async {
-    final adapter = ScriptedAdapter([reply(200)]);
-    final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = adapter
-      ..transformer = FoldingTransformer()
-      ..interceptors.add(
-        CacheInterceptor(config: const CacheConfig(maxSize: 60)),
+    test('does not cache a non-GET response', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      await dio.post<dynamic>('/x');
+      final second = await dio.post<dynamic>('/x');
+
+      expect(adapter.requests, hasLength(2));
+      expect(second.isCacheHit, isFalse);
+    });
+
+    test('reads an Expires HTTP-date', () async {
+      final adapter = ScriptedAdapter([
+        (options) => ResponseBody.fromString(
+          '{}',
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+            'expires': [
+              if (options.uri.path == '/past')
+                'Wed, 21 Oct 2015 07:28:00 GMT'
+              else
+                'Fri, 01 Jan 2100 00:00:00 GMT',
+            ],
+          },
+        ),
+      ]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      for (final path in ['/past', '/past', '/future', '/future']) {
+        await dio.get<dynamic>(path);
+      }
+
+      expect(_paths(adapter), ['/past', '/past', '/future']);
+    });
+
+    test('revalidates a stale entry with its ETag and answers a 304 with the '
+        'stored body', () async {
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=0', 'etag': '"v1"'}),
+        reply(304),
+      ]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      final first = await dio.get<dynamic>('/x');
+      final revalidated = await dio.get<dynamic>('/x');
+
+      expect(adapter.requests, hasLength(2));
+      expect(adapter.requests.last.headers['if-none-match'], '"v1"');
+      expect(revalidated.statusCode, 200);
+      expect(revalidated.data, first.data);
+    });
+
+    test('a 304 to a request the app made conditional stays an error', () {
+      final adapter = ScriptedAdapter([reply(304)]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      expect(
+        dio.get<dynamic>(
+          '/x',
+          options: Options(headers: {'if-none-match': '"v1"'}),
+        ),
+        throwsA(
+          isA<DioException>().having(
+            (e) => e.type,
+            'type',
+            DioExceptionType.badResponse,
+          ),
+        ),
       );
-
-    await dio.get<dynamic>('/a');
-    await dio.get<dynamic>('/b');
-    await dio.get<dynamic>('/b');
-    await dio.get<dynamic>('/a');
-
-    expect(
-      [for (final request in adapter.requests) request.uri.path],
-      ['/a', '/b', '/a'],
-    );
+    });
   });
 
-  test('clearCache drops every stored response', () async {
-    final adapter = ScriptedAdapter([reply(200)]);
-    final cache = CacheInterceptor();
-    final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = adapter
-      ..transformer = FoldingTransformer()
-      ..interceptors.add(cache);
+  group('the answer', () {
+    test('a hit carries the current request options and reaches response '
+        'interceptors before and after the cache', () async {
+      final before = _ResponseSpy();
+      final after = _ResponseSpy();
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60', 'x-a': '1'}),
+      ]);
+      final dio = _dio(adapter, [before, CacheInterceptor(), after]);
 
-    await dio.get<dynamic>('/x');
-    await dio.get<dynamic>('/x');
-    expect(adapter.requests, hasLength(1));
+      await dio.get<dynamic>('/x', options: _tagged(1));
+      final hit = await dio.get<dynamic>('/x', options: _tagged(2));
 
-    cache.clearCache();
-    await dio.get<dynamic>('/x');
+      expect(adapter.requests, hasLength(1));
+      expect(hit.requestOptions.extra['id'], 2);
+      expect(hit.statusCode, 200);
+      expect(hit.data, {'status': 200});
+      expect(hit.headers.value('x-a'), '1');
+      expect(before.responses, hasLength(2));
+      expect(after.responses, hasLength(2));
+      expect(before.responses.last.requestOptions.extra['id'], 2);
+      expect(after.responses.last.requestOptions.extra['id'], 2);
+    });
 
-    expect(adapter.requests, hasLength(2));
-  });
-
-  test('a hit carries the current request options and reaches response '
-      'interceptors before and after the cache', () async {
-    final before = _ResponseSpy();
-    final after = _ResponseSpy();
-    final adapter = ScriptedAdapter([
-      reply(200, headers: {'x-a': '1'}),
-    ]);
-    final dio = _dio(adapter, [before, CacheInterceptor(), after]);
-
-    await dio.get<dynamic>('/x', options: _tagged(1));
-    final hit = await dio.get<dynamic>('/x', options: _tagged(2));
-
-    expect(adapter.requests, hasLength(1));
-    expect(hit.requestOptions.extra['id'], 2);
-    expect(hit.statusCode, 200);
-    expect(hit.data, {'status': 200});
-    expect(hit.headers.value('x-a'), '1');
-    expect(before.responses, hasLength(2));
-    expect(after.responses, hasLength(2));
-    expect(before.responses.last.requestOptions.extra['id'], 2);
-    expect(after.responses.last.requestOptions.extra['id'], 2);
-  });
-
-  test(
-    'isCacheHit is true for a hit and false for a network response',
-    () async {
-      final dio = _dio(ScriptedAdapter([reply(200)]), [CacheInterceptor()]);
+    test('isCacheHit is true for a hit and false for a network '
+        'response', () async {
+      final dio = _dio(ScriptedAdapter([_cacheable()]), [CacheInterceptor()]);
 
       final network = await dio.get<dynamic>('/x');
       final hit = await dio.get<dynamic>('/x');
 
       expect(network.isCacheHit, isFalse);
       expect(hit.isCacheHit, isTrue);
-    },
-  );
+    });
 
-  test('a hit does not renew its entry', () {
-    fakeAsync((async) {
+    test('an app that edits a hit leaves the next hit unchanged', () async {
+      final dio = _dio(ScriptedAdapter([_cacheable()]), [CacheInterceptor()]);
+
+      await dio.get<dynamic>('/x');
+      final hit = await dio.get<dynamic>('/x');
+      (hit.data as Map<String, dynamic>)['status'] = 'edited';
+      hit.headers.set('x-edited', '1');
+      final next = await dio.get<dynamic>('/x');
+
+      expect(next.data, {'status': 200});
+      expect(next.headers.value('x-edited'), isNull);
+    });
+  });
+
+  group('per-request settings', () {
+    test('cacheFor stores a response without cache headers and drops it '
+        'after the duration', () async {
       final adapter = ScriptedAdapter([reply(200)]);
-      final dio = _dio(adapter, [
-        CacheInterceptor(
-          config: const CacheConfig(duration: Duration(minutes: 5)),
-        ),
-      ]);
-      final hits = <bool>[];
-      void read() {
-        dio.get<dynamic>('/x').then((r) => hits.add(r.isCacheHit)).ignore();
-        async.elapse(Duration.zero);
-      }
+      final dio = _dio(adapter, [CacheInterceptor()]);
+      final options = Options()..cacheFor = const Duration(milliseconds: 300);
 
-      read();
-      for (var minute = 1; minute <= 5; minute++) {
-        async.elapse(const Duration(minutes: 1));
-        read();
-      }
+      await dio.get<dynamic>('/x', options: options);
+      final hit = await dio.get<dynamic>('/x', options: options);
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await dio.get<dynamic>('/x', options: options);
+
+      expect(hit.isCacheHit, isTrue);
+      expect(adapter.requests, hasLength(2));
+    });
+
+    test("a hit does not push back its entry's expiry", () async {
+      final adapter = ScriptedAdapter([reply(200)]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+      final options = Options()..cacheFor = const Duration(milliseconds: 400);
+
+      await dio.get<dynamic>('/x', options: options);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      final hit = await dio.get<dynamic>('/x', options: options);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      await dio.get<dynamic>('/x', options: options);
+
+      expect(hit.isCacheHit, isTrue);
+      expect(adapter.requests, hasLength(2));
+    });
+
+    test('cachePolicy noCache neither reads nor stores', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+      final noCache = Options()..cachePolicy = CachePolicy.noCache;
+
+      await dio.get<dynamic>('/x', options: noCache);
+      await dio.get<dynamic>('/x', options: noCache);
+      await dio.get<dynamic>('/x');
+
+      expect(adapter.requests, hasLength(3));
+    });
+
+    test('cachePolicy refresh fetches and stores the fresh answer', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      await dio.get<dynamic>('/x');
+      final refreshed = await dio.get<dynamic>(
+        '/x',
+        options: Options()..cachePolicy = CachePolicy.refresh,
+      );
+      final hit = await dio.get<dynamic>('/x');
+
+      expect(refreshed.isCacheHit, isFalse);
+      expect(hit.isCacheHit, isTrue);
+      expect(adapter.requests, hasLength(2));
+    });
+
+    test('cacheFor must be positive', () {
+      expect(() => Options()..cacheFor = Duration.zero, throwsArgumentError);
+      expect(
+        () => RequestOptions()..cacheFor = const Duration(seconds: -1),
+        throwsArgumentError,
+      );
+    });
+  });
+
+  group('the key', () {
+    test('two users of one URL get separate entries', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      await dio.get<dynamic>('/me', options: _auth('alice'));
+      final bob = await dio.get<dynamic>('/me', options: _auth('bob'));
+      final alice = await dio.get<dynamic>('/me', options: _auth('alice'));
+
+      expect(bob.isCacheHit, isFalse);
+      expect(alice.isCacheHit, isTrue);
+      expect(adapter.requests, hasLength(2));
+    });
+
+    test('a header outside keyHeaders shares the entry', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      await dio.get<dynamic>('/x', options: Options(headers: {'x-trace': '1'}));
+      await dio.get<dynamic>('/x', options: Options(headers: {'x-trace': '2'}));
+
       expect(adapter.requests, hasLength(1));
-
-      async.elapse(const Duration(seconds: 1));
-      read();
-
-      expect(adapter.requests, hasLength(2));
-      expect(hits, [false, true, true, true, true, true, false]);
     });
-  });
 
-  test('the stored entry never carries the hit marker', () {
-    fakeAsync((async) {
-      final adapter = ScriptedAdapter([reply(200)]);
+    test('keyHeaders compare ignoring case', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
       final dio = _dio(adapter, [
-        CacheInterceptor(
-          config: const CacheConfig(duration: Duration(minutes: 1)),
-        ),
+        CacheInterceptor(config: const CacheConfig(keyHeaders: {'X-Tenant'})),
       ]);
-      final responses = <Response<dynamic>>[];
-      void read() {
-        dio.get<dynamic>('/x').then(responses.add).ignore();
-        async.elapse(Duration.zero);
-      }
 
-      read();
-      read();
-      async.elapse(const Duration(minutes: 2));
-      read();
-      read();
+      await dio.get<dynamic>(
+        '/x',
+        options: Options(headers: {'x-tenant': 'a'}),
+      );
+      await dio.get<dynamic>(
+        '/x',
+        options: Options(headers: {'X-TENANT': 'b'}),
+      );
 
       expect(adapter.requests, hasLength(2));
-      expect(responses.map((r) => r.isCacheHit), [false, true, false, true]);
     });
   });
 
-  test('a non-GET request is neither answered from nor stored in the '
-      'cache', () async {
-    final adapter = ScriptedAdapter([reply(200)]);
-    final dio = _dio(adapter, [CacheInterceptor()]);
+  group('the store', () {
+    test('a store passed in receives the entries and clearCache empties '
+        'it', () async {
+      final store = MemCacheStore();
+      final cache = CacheInterceptor(config: CacheConfig(store: store));
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [cache]);
 
-    await dio.post<dynamic>('/x');
-    final second = await dio.post<dynamic>('/x');
+      await dio.get<dynamic>('/x');
 
-    expect(adapter.requests, hasLength(2));
-    expect(second.isCacheHit, isFalse);
+      expect(cache.store, same(store));
+      expect(await store.getFromPath(RegExp('/x')), hasLength(1));
+
+      await cache.clearCache();
+      await dio.get<dynamic>('/x');
+
+      expect(adapter.requests, hasLength(2));
+    });
+
+    test('without a store it builds a memory store', () {
+      expect(CacheInterceptor().store, isA<MemCacheStore>());
+    });
+
+    test('a small maxSize still builds a memory store, and a non-positive '
+        'one throws', () {
+      expect(
+        CacheInterceptor(config: const CacheConfig(maxSize: 1024)).store,
+        isA<MemCacheStore>(),
+      );
+      expect(
+        () => CacheInterceptor(config: const CacheConfig(maxSize: 0)),
+        throwsArgumentError,
+      );
+    });
+  });
+
+  group('the chain', () {
+    test('a 304 revalidation returns its concurrency slot', () {
+      fakeAsync((async) {
+        final adapter = GatedAdapter();
+        final dio = _dio(adapter, [
+          CacheInterceptor(),
+          ConcurrencyLimitInterceptor(
+            config: const ConcurrencyConfig(perHost: 1),
+          ),
+        ]);
+        final outcomes = <Object>[];
+        void get() {
+          dio
+              .get<dynamic>('/x')
+              .then(outcomes.add, onError: outcomes.add)
+              .ignore();
+          async.elapse(Duration.zero);
+        }
+
+        get();
+        adapter.requests.last.respond(
+          200,
+          headers: {'cache-control': 'max-age=0', 'etag': '"v1"'},
+        );
+        async.elapse(Duration.zero);
+        get();
+        adapter.requests.last.respond(304);
+        async.elapse(Duration.zero);
+        get();
+
+        expect(outcomes, hasLength(2));
+        expect(outcomes.every((o) => o is Response), isTrue);
+        expect(adapter.requests, hasLength(3));
+      });
+    });
   });
 }

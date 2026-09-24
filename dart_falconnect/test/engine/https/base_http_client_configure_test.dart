@@ -496,14 +496,18 @@ void main() {
     test(
       'a printer that throws fails no request through a diagnostic',
       () async {
-        final client = _Client(ScriptedAdapter([reply(200)]))
-          ..configure(
-            HttpClientConfig(
-              baseUrl: 'https://a.test',
-              log: LogConfig.json(logPrint: (_) => throw StateError('sink')),
-              cache: const CacheConfig(),
-            ),
-          );
+        final client =
+            _Client(
+              ScriptedAdapter([
+                reply(200, headers: {'cache-control': 'max-age=60'}),
+              ]),
+            )..configure(
+              HttpClientConfig(
+                baseUrl: 'https://a.test',
+                log: LogConfig.json(logPrint: (_) => throw StateError('sink')),
+                cache: const CacheConfig(),
+              ),
+            );
 
         final network = await client.dio.get<dynamic>('/x');
         final hit = await client.dio.get<dynamic>('/x');
