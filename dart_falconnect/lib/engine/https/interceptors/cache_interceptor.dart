@@ -31,7 +31,8 @@ extension FalconCacheRequestOptionsExtensions on RequestOptions {
   set cachePolicy(CachePolicy? value) => extra = {...extra, _policyKey: value};
 
   /// Caches this request's response for this long, whatever the server's
-  /// headers say. Must be positive.
+  /// headers say, and never answers it from an entry older than this.
+  /// Must be positive.
   Duration? get cacheFor => extra[_forKey] as Duration?;
   set cacheFor(Duration? value) =>
       extra = {...extra, _forKey: _checkCacheFor(value)};
@@ -45,7 +46,8 @@ extension FalconCacheOptionsExtensions on Options {
   set cachePolicy(CachePolicy? value) => extra = {...?extra, _policyKey: value};
 
   /// Caches this request's response for this long, whatever the server's
-  /// headers say. Must be positive.
+  /// headers say, and never answers it from an entry older than this.
+  /// Must be positive.
   Duration? get cacheFor => extra?[_forKey] as Duration?;
   set cacheFor(Duration? value) =>
       extra = {...?extra, _forKey: _checkCacheFor(value)};
@@ -102,18 +104,24 @@ class CacheInterceptor extends Interceptor {
   );
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     if (_isStream(options)) {
       handler.next(options);
       return;
     }
     // A lookup carries no maxStale: the library would push an entry's
     // deletion back on every hit, and an entry must expire on time.
+    var lookup = _requestOptions(options, save: false);
+    // A forced lookup returns any entry, however old; one older than the
+    // request's lifetime is fetched again and stored anew.
+    if (lookup.policy == CachePolicy.forceCache && await _outlived(options)) {
+      lookup = _options(policy: CachePolicy.refresh, maxStale: null);
+    }
     // A new map: the library writes into extra, which may be unmodifiable.
-    options.extra = {
-      ...options.extra,
-      extraKey: _requestOptions(options, save: false),
-    };
+    options.extra = {...options.extra, extraKey: lookup};
     _cache.onRequest(
       options,
       _RevalidatingHandler(
@@ -193,6 +201,29 @@ class CacheInterceptor extends Interceptor {
     return sha256.string(input.toString()).hex();
   }
 
+  /// The key of [options], without the conditional headers the library may
+  /// have added.
+  String _keyOf(RequestOptions options) => _key(
+    url: options.uri,
+    headers: Map<String, String>.of(options.getFlattenHeaders())
+      ..removeWhere((name, _) => conditionalRequestHeaders.contains(name)),
+  );
+
+  /// Whether the entry of [options] is older than the request's lifetime,
+  /// `cacheFor` or else `CacheConfig.maxStale`. A store that throws answers
+  /// false; the library's own lookup then meets the same error.
+  Future<bool> _outlived(RequestOptions options) async {
+    final lifetime = options.cacheFor ?? config.maxStale;
+    if (lifetime == null) return false;
+    try {
+      final entry = await store.get(_keyOf(options));
+      return entry != null &&
+          DateTime.now().difference(entry.responseDate) > lifetime;
+    } on Object {
+      return false;
+    }
+  }
+
   /// Answers [err] from [store], or returns null to pass it on.
   Future<Response<dynamic>?> _fallbackFor(DioException err) async {
     final options = err.requestOptions;
@@ -206,9 +237,7 @@ class CacheInterceptor extends Interceptor {
         : config.hitCacheOnErrorCodes.contains(status);
     if (!allowed) return null;
     try {
-      final headers = Map<String, String>.of(options.getFlattenHeaders())
-        ..removeWhere((name, _) => conditionalRequestHeaders.contains(name));
-      final entry = await store.get(_key(url: options.uri, headers: headers));
+      final entry = await store.get(_keyOf(options));
       if (entry == null || entry.isStaled()) return null;
       final full = await entry.readContent(
         _options(policy: config.policy, maxStale: null),
