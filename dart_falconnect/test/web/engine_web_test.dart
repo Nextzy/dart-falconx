@@ -24,14 +24,13 @@ void main() {
     });
 
     test('All HTTP interceptors instantiate on web', () {
-      final cfg = HttpClientConfig.development();
       final dio = Dio();
-      expect(CacheInterceptor(config: cfg), isNotNull);
-      expect(ConcurrencyLimitInterceptor(config: cfg), isNotNull);
-      expect(RetryInterceptor(config: cfg, dio: dio), isNotNull);
-      expect(PerformanceInterceptor(config: cfg), isNotNull);
-      expect(TokenBucketRateLimitInterceptor(config: cfg), isNotNull);
-      expect(RetryAfterPauseInterceptor(config: cfg), isNotNull);
+      expect(CacheInterceptor(), isNotNull);
+      expect(ConcurrencyLimitInterceptor(), isNotNull);
+      expect(RetryInterceptor(dio: dio), isNotNull);
+      expect(PerformanceInterceptor(), isNotNull);
+      expect(TokenBucketRateLimitInterceptor(), isNotNull);
+      expect(RetryAfterPauseInterceptor(), isNotNull);
       expect(HttpLogInterceptor(), isNotNull);
       expect(DefaultNetworkExceptionHandlerInterceptor(), isNotNull);
     });
@@ -61,10 +60,10 @@ void main() {
         ..httpClientAdapter = ScriptedAdapter([reply(500), reply(200)]);
       dio.interceptors.add(
         RetryInterceptor(
-          config: const HttpClientConfig(
-            maxRetryAttempts: 2,
-            retryDelay: Duration(milliseconds: 1),
-            maxRetryDelay: Duration(milliseconds: 5),
+          config: const RetryConfig(
+            maxAttempts: 2,
+            delay: Duration(milliseconds: 1),
+            maxDelay: Duration(milliseconds: 5),
           ),
           dio: dio,
         ),
@@ -81,8 +80,7 @@ void main() {
       () async {
         final adapter = ScriptedAdapter([reply(200)]);
         final concurrency = ConcurrencyLimitInterceptor(
-          config: HttpClientConfig.development(),
-          perHost: 1,
+          config: const ConcurrencyConfig(perHost: 1),
         );
         final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
           ..httpClientAdapter = adapter;

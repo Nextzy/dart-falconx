@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dio/dio.dart';
 
@@ -22,18 +22,13 @@ import 'package:dio/dio.dart';
 /// which stops the error chain.
 class RetryAfterPauseInterceptor extends Interceptor {
   /// Creates a pause-only interceptor.
-  new({
-    required this.config,
-    Duration maxPauseWait = const Duration(seconds: 10),
-    Duration maxPause = const Duration(minutes: 10),
-    Duration? defaultPause = const Duration(seconds: 5),
-    int maxQueueSize = 50,
-  }) : _pause = _buildPause(
-         maxPauseWait: maxPauseWait,
-         maxPause: maxPause,
-         defaultPause: defaultPause,
-         maxQueueSize: maxQueueSize,
-       );
+  new({this.config = const PauseOnlyRateLimitConfig(), this.logPrint})
+    : _pause = _buildPause(
+        maxPauseWait: config.pause.maxPauseWait,
+        maxPause: config.pause.maxPause,
+        defaultPause: config.pause.defaultPause,
+        maxQueueSize: config.maxQueueSize,
+      );
 
   /// Builds the pause core, reporting a negative queue size under its
   /// public name before the core's own check can.
@@ -59,8 +54,11 @@ class RetryAfterPauseInterceptor extends Interceptor {
     );
   }
 
-  /// Configuration; `enableLogging` gates diagnostic prints.
-  final HttpClientConfig config;
+  /// Pause settings and hold-queue size.
+  final PauseOnlyRateLimitConfig config;
+
+  /// Prints diagnostics; null prints nothing.
+  final void Function(String message)? logPrint;
 
   final RetryAfterPause _pause;
 
@@ -122,11 +120,6 @@ class RetryAfterPauseInterceptor extends Interceptor {
   /// without a pause. Calling it again has no effect.
   void dispose() => _pause.dispose();
 
-  void _log(String message) {
-    if (config.enableLogging) {
-      // Intentional logging for pause diagnostics.
-      // ignore: avoid_print
-      print('[RetryAfterPauseInterceptor] $message');
-    }
-  }
+  void _log(String message) =>
+      logPrint?.call('[RetryAfterPauseInterceptor] $message');
 }

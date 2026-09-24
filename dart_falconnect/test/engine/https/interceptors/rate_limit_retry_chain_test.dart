@@ -8,11 +8,11 @@ import 'package:test/test.dart';
 
 import '_scripted_adapter.dart';
 
-const _config = HttpClientConfig(
-  maxRetryAttempts: 3,
-  retryDelay: Duration(seconds: 1),
-  maxRetryDelay: Duration(seconds: 30),
-  maxRetryDuration: Duration(seconds: 60),
+const _retry = RetryConfig(
+  maxAttempts: 3,
+  delay: Duration(seconds: 1),
+  maxDelay: Duration(seconds: 30),
+  maxDuration: Duration(seconds: 60),
 );
 
 /// The order the documentation prescribes: rate limiter, retry, exception
@@ -22,7 +22,7 @@ Dio _chain(ScriptedAdapter adapter, TokenBucketRateLimitInterceptor limiter) {
     ..httpClientAdapter = adapter;
   dio.interceptors.addAll([
     limiter,
-    RetryInterceptor(config: _config, dio: dio),
+    RetryInterceptor(config: _retry, dio: dio),
     DefaultNetworkExceptionHandlerInterceptor(),
   ]);
   return dio;
@@ -40,7 +40,7 @@ Dio _limitedChain(
   dio.interceptors.addAll([
     concurrency,
     limiter,
-    if (retry) RetryInterceptor(config: _config, dio: dio),
+    if (retry) RetryInterceptor(config: _retry, dio: dio),
     DefaultNetworkExceptionHandlerInterceptor(),
   ]);
   return dio;
@@ -53,7 +53,7 @@ void main() {
         reply(429, headers: {'retry-after': '3'}),
         reply(200),
       ]);
-      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final limiter = TokenBucketRateLimitInterceptor();
       final dio = _chain(adapter, limiter);
       final sentAt = <Duration>[];
       Object? outcome;
@@ -86,7 +86,7 @@ void main() {
         reply(429, headers: {'retry-after': '3'}),
         reply(200),
       ]);
-      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final limiter = TokenBucketRateLimitInterceptor();
       final dio = _chain(adapter, limiter);
 
       unawaited(dio.get<dynamic>('/x').then((_) {}, onError: (_) {}));
@@ -110,11 +110,10 @@ void main() {
     fakeAsync((async) {
       final adapter = ScriptedAdapter([reply(200)]);
       final limiter = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-        ],
-        queueRequests: false,
+        config: const TokenBucketRateLimitConfig(
+          perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+          queueRequests: false,
+        ),
       );
       final dio = _chain(adapter, limiter);
       final outcomes = <Object>[];
@@ -141,7 +140,7 @@ void main() {
         reply(429, headers: {'retry-after': '2'}),
         reply(200),
       ]);
-      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final limiter = TokenBucketRateLimitInterceptor();
       final dio = _chain(adapter, limiter);
 
       unawaited(dio.get<dynamic>('/x').then((_) {}, onError: (_) {}));
@@ -163,7 +162,7 @@ void main() {
         reply(429, headers: {'retry-after': '2'}),
         reply(200),
       ]);
-      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final limiter = TokenBucketRateLimitInterceptor();
       final dio = _chain(adapter, limiter)
         ..options.validateStatus = (status) => status != null && status < 500;
       final outcomes = <Object>[];
@@ -185,14 +184,14 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final concurrency = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 4,
+        config: const ConcurrencyConfig(perHost: 4),
       );
       final limiter = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 2, per: Duration(seconds: 1), burst: 2),
-        ],
+        config: const TokenBucketRateLimitConfig(
+          perHost: [
+            TokenBucketPolicy(permits: 2, per: Duration(seconds: 1), burst: 2),
+          ],
+        ),
       );
       final dio = _limitedChain(adapter, concurrency, limiter);
       for (var i = 0; i < 12; i++) {
@@ -228,10 +227,9 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final concurrency = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 1,
+        config: const ConcurrencyConfig(perHost: 1),
       );
-      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final limiter = TokenBucketRateLimitInterceptor();
       final dio = _limitedChain(adapter, concurrency, limiter, retry: false);
       final outcomes = <Object>[];
 
@@ -260,10 +258,9 @@ void main() {
         reply(200),
       ]);
       final concurrency = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 1,
+        config: const ConcurrencyConfig(perHost: 1),
       );
-      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final limiter = TokenBucketRateLimitInterceptor();
       final dio = _limitedChain(adapter, concurrency, limiter);
       Object? outcome;
 
@@ -287,10 +284,9 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final concurrency = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 1,
+        config: const ConcurrencyConfig(perHost: 1),
       );
-      final limiter = TokenBucketRateLimitInterceptor(config: _config);
+      final limiter = TokenBucketRateLimitInterceptor();
       final dio = _limitedChain(adapter, concurrency, limiter, retry: false)
         ..options.validateStatus = (status) => status != null && status < 500;
       final outcomes = <Object>[];

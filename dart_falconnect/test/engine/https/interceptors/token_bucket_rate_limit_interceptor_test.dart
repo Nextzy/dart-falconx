@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/engine/https/interceptors/token_bucket_rate_limit_interceptor.dart';
 import 'package:dart_faltool/dart_faltool.dart'
@@ -93,8 +93,6 @@ void _fail(
   _SilentErrorHandler(),
 );
 
-const _config = HttpClientConfig();
-
 void _send(
   TokenBucketRateLimitInterceptor interceptor,
   _Log log, {
@@ -111,7 +109,7 @@ void _send(
 void main() {
   test('forwards synchronously and creates no timer when no policy is set', () {
     fakeAsync((async) {
-      final interceptor = TokenBucketRateLimitInterceptor(config: _config);
+      final interceptor = TokenBucketRateLimitInterceptor();
       final log = _Log();
 
       _send(interceptor, log, times: 20);
@@ -124,10 +122,11 @@ void main() {
   test('forwards requests within burst without waiting', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 10, per: Duration(seconds: 1), burst: 5),
-        ],
+        config: const TokenBucketRateLimitConfig(
+          perHost: [
+            TokenBucketPolicy(permits: 10, per: Duration(seconds: 1), burst: 5),
+          ],
+        ),
       );
       final log = _Log();
 
@@ -143,10 +142,15 @@ void main() {
     fakeAsync((async) {
       // Burst 10, then (13 - 10 + 1) = 4 refills per 10 s: one every 2.5 s.
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 13, per: Duration(seconds: 10), burst: 10),
-        ],
+        config: const TokenBucketRateLimitConfig(
+          perHost: [
+            TokenBucketPolicy(
+              permits: 13,
+              per: Duration(seconds: 10),
+              burst: 10,
+            ),
+          ],
+        ),
       );
       final log = _Log();
 
@@ -167,15 +171,20 @@ void main() {
   test('a hosts entry replaces perHost for that host', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 2, per: Duration(seconds: 1), burst: 2),
-        ],
-        hosts: const {
-          'b.test': [
-            TokenBucketPolicy(permits: 5, per: Duration(seconds: 1), burst: 5),
+        config: const TokenBucketRateLimitConfig(
+          perHost: [
+            TokenBucketPolicy(permits: 2, per: Duration(seconds: 1), burst: 2),
           ],
-        },
+          hosts: {
+            'b.test': [
+              TokenBucketPolicy(
+                permits: 5,
+                per: Duration(seconds: 1),
+                burst: 5,
+              ),
+            ],
+          },
+        ),
       );
       final logA = _Log();
       final logB = _Log();
@@ -193,11 +202,10 @@ void main() {
   test('an empty hosts entry opts the host out of perHost', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-        ],
-        hosts: const {'free.test': []},
+        config: const TokenBucketRateLimitConfig(
+          perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+          hosts: {'free.test': []},
+        ),
       );
       final log = _Log();
 
@@ -211,12 +219,13 @@ void main() {
   test('matches hosts case-insensitively through Uri', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        hosts: const {
-          'api.partner.test': [
-            TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-          ],
-        },
+        config: const TokenBucketRateLimitConfig(
+          hosts: {
+            'api.partner.test': [
+              TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
+            ],
+          },
+        ),
       );
       final log = _Log();
 
@@ -231,12 +240,13 @@ void main() {
   test('rejects a hosts key that is not lowercase', () {
     expect(
       () => TokenBucketRateLimitInterceptor(
-        config: _config,
-        hosts: const {
-          'API.partner.test': [
-            TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-          ],
-        },
+        config: const TokenBucketRateLimitConfig(
+          hosts: {
+            'API.partner.test': [
+              TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
+            ],
+          },
+        ),
       ),
       throwsArgumentError,
     );
@@ -246,17 +256,17 @@ void main() {
     const invalid = TokenBucketPolicy(permits: 0, per: Duration(seconds: 1));
     expect(
       () => TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [invalid],
+        config: const TokenBucketRateLimitConfig(perHost: [invalid]),
       ),
       throwsArgumentError,
     );
     expect(
       () => TokenBucketRateLimitInterceptor(
-        config: _config,
-        hosts: const {
-          'a.test': [invalid],
-        },
+        config: const TokenBucketRateLimitConfig(
+          hosts: {
+            'a.test': [invalid],
+          },
+        ),
       ),
       throwsArgumentError,
     );
@@ -265,10 +275,9 @@ void main() {
   test('limits the same host across ports', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-        ],
+        config: const TokenBucketRateLimitConfig(
+          perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+        ),
       );
       final log = _Log();
 
@@ -285,11 +294,12 @@ void main() {
     fakeAsync((async) {
       // Tier 1: 5 per second, burst 5. Tier 2: 8 per minute, burst 8.
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 5, per: Duration(seconds: 1), burst: 5),
-          TokenBucketPolicy(permits: 8, per: Duration(minutes: 1), burst: 8),
-        ],
+        config: const TokenBucketRateLimitConfig(
+          perHost: [
+            TokenBucketPolicy(permits: 5, per: Duration(seconds: 1), burst: 5),
+            TokenBucketPolicy(permits: 8, per: Duration(minutes: 1), burst: 8),
+          ],
+        ),
       );
       final log = _Log();
 
@@ -309,10 +319,11 @@ void main() {
   test('global tiers are shared by every host', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        global: const [
-          TokenBucketPolicy(permits: 3, per: Duration(minutes: 1), burst: 3),
-        ],
+        config: const TokenBucketRateLimitConfig(
+          global: [
+            TokenBucketPolicy(permits: 3, per: Duration(minutes: 1), burst: 3),
+          ],
+        ),
       );
       final log = _Log();
 
@@ -329,11 +340,10 @@ void main() {
   test('rejects with 429 when a queue is full', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-        ],
-        maxQueueSize: 2,
+        config: const TokenBucketRateLimitConfig(
+          perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+          maxQueueSize: 2,
+        ),
       );
       final log = _Log();
 
@@ -361,11 +371,10 @@ void main() {
   test('rejects at once when queueRequests is false', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-        ],
-        queueRequests: false,
+        config: const TokenBucketRateLimitConfig(
+          perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+          queueRequests: false,
+        ),
       );
       final log = _Log();
 
@@ -381,11 +390,10 @@ void main() {
   test('dispose cancels waiting and new limited requests only', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-        ],
-        hosts: const {'free.test': []},
+        config: const TokenBucketRateLimitConfig(
+          perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+          hosts: {'free.test': []},
+        ),
       );
       final log = _Log();
 
@@ -416,7 +424,7 @@ void main() {
   group('pause', () {
     test('a 429 seen in onResponse pauses only its host', () {
       fakeAsync((async) {
-        final interceptor = TokenBucketRateLimitInterceptor(config: _config);
+        final interceptor = TokenBucketRateLimitInterceptor();
         final log = _Log();
         _respond(interceptor, _serverResponse(429, retryAfter: '3'));
 
@@ -433,7 +441,7 @@ void main() {
 
     test('a 429 seen in onError pauses its host', () {
       fakeAsync((async) {
-        final interceptor = TokenBucketRateLimitInterceptor(config: _config);
+        final interceptor = TokenBucketRateLimitInterceptor();
         final log = _Log();
         _fail(interceptor, _serverResponse(429, retryAfter: '3'));
 
@@ -450,7 +458,7 @@ void main() {
 
     test('rejects with a local 429 when the pause exceeds maxPauseWait', () {
       fakeAsync((async) {
-        final interceptor = TokenBucketRateLimitInterceptor(config: _config);
+        final interceptor = TokenBucketRateLimitInterceptor();
         final log = _Log();
         _respond(interceptor, _serverResponse(429, retryAfter: '60'));
 
@@ -469,7 +477,7 @@ void main() {
     test('a held request is released with a local 429 when an extension '
         'exceeds maxPauseWait', () {
       fakeAsync((async) {
-        final interceptor = TokenBucketRateLimitInterceptor(config: _config);
+        final interceptor = TokenBucketRateLimitInterceptor();
         final log = _Log();
         _respond(interceptor, _serverResponse(429, retryAfter: '3'));
 
@@ -496,8 +504,7 @@ void main() {
     test('queueRequests false rejects instead of holding', () {
       fakeAsync((async) {
         final interceptor = TokenBucketRateLimitInterceptor(
-          config: _config,
-          queueRequests: false,
+          config: const TokenBucketRateLimitConfig(queueRequests: false),
         );
         final log = _Log();
         _respond(interceptor, _serverResponse(429, retryAfter: '1'));
@@ -512,11 +519,10 @@ void main() {
     test('a local 429 fed back through onError starts no pause', () {
       fakeAsync((async) {
         final interceptor = TokenBucketRateLimitInterceptor(
-          config: _config,
-          perHost: const [
-            TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-          ],
-          queueRequests: false,
+          config: const TokenBucketRateLimitConfig(
+            perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+            queueRequests: false,
+          ),
         );
         final log = _Log();
         _send(interceptor, log, times: 2);
@@ -532,10 +538,9 @@ void main() {
       fakeAsync((async) {
         // One token per second, burst 1.
         final interceptor = TokenBucketRateLimitInterceptor(
-          config: _config,
-          perHost: const [
-            TokenBucketPolicy(permits: 1, per: Duration(seconds: 1)),
-          ],
+          config: const TokenBucketRateLimitConfig(
+            perHost: [TokenBucketPolicy(permits: 1, per: Duration(seconds: 1))],
+          ),
         );
         final sentAt = <Duration>[];
         final log = _Log();
@@ -573,10 +578,9 @@ void main() {
     test('a request cancelled while it waits for tokens is not counted', () {
       fakeAsync((async) {
         final interceptor = TokenBucketRateLimitInterceptor(
-          config: _config,
-          perHost: const [
-            TokenBucketPolicy(permits: 1, per: Duration(seconds: 1)),
-          ],
+          config: const TokenBucketRateLimitConfig(
+            perHost: [TokenBucketPolicy(permits: 1, per: Duration(seconds: 1))],
+          ),
         );
         final log = _Log();
         final token = CancelToken();
@@ -601,7 +605,7 @@ void main() {
 
     test('dispose cancels held requests', () {
       fakeAsync((async) {
-        final interceptor = TokenBucketRateLimitInterceptor(config: _config);
+        final interceptor = TokenBucketRateLimitInterceptor();
         final log = _Log();
         _respond(interceptor, _serverResponse(429, retryAfter: '3'));
         _send(interceptor, log);
@@ -618,14 +622,16 @@ void main() {
     test('rejects invalid pause settings', () {
       expect(
         () => TokenBucketRateLimitInterceptor(
-          config: _config,
-          maxPause: Duration.zero,
+          config: const TokenBucketRateLimitConfig(
+            pause: PauseConfig(maxPause: Duration.zero),
+          ),
         ),
         throwsArgumentError,
       );
       expect(
-        () =>
-            TokenBucketRateLimitInterceptor(config: _config, maxQueueSize: -1),
+        () => TokenBucketRateLimitInterceptor(
+          config: const TokenBucketRateLimitConfig(maxQueueSize: -1),
+        ),
         throwsA(
           isA<ArgumentError>().having((e) => e.name, 'name', 'maxQueueSize'),
         ),
@@ -638,12 +644,13 @@ void main() {
       for (final key in ['api.a.test:8080', ' a.test', '[::1]', '']) {
         expect(
           () => TokenBucketRateLimitInterceptor(
-            config: _config,
-            hosts: {
-              key: const [
-                TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-              ],
-            },
+            config: TokenBucketRateLimitConfig(
+              hosts: {
+                key: const [
+                  TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
+                ],
+              },
+            ),
           ),
           throwsArgumentError,
           reason: '"$key"',
@@ -651,8 +658,7 @@ void main() {
       }
       expect(
         TokenBucketRateLimitInterceptor(
-          config: _config,
-          hosts: const {'::1': []},
+          config: const TokenBucketRateLimitConfig(hosts: {'::1': []}),
         ),
         isNotNull,
       );
@@ -661,10 +667,9 @@ void main() {
     test('an invalid global policy throws', () {
       expect(
         () => TokenBucketRateLimitInterceptor(
-          config: _config,
-          global: const [
-            TokenBucketPolicy(permits: 0, per: Duration(seconds: 1)),
-          ],
+          config: const TokenBucketRateLimitConfig(
+            global: [TokenBucketPolicy(permits: 0, per: Duration(seconds: 1))],
+          ),
         ),
         throwsArgumentError,
       );
@@ -674,8 +679,7 @@ void main() {
       fakeAsync((async) {
         final hosts = <String, List<TokenBucketPolicy>>{};
         final interceptor = TokenBucketRateLimitInterceptor(
-          config: _config,
-          hosts: hosts,
+          config: TokenBucketRateLimitConfig(hosts: hosts),
         );
         hosts['a.test'] = const [
           TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
@@ -704,9 +708,10 @@ void main() {
           ],
         };
         final interceptor = TokenBucketRateLimitInterceptor(
-          config: _config,
-          perHost: perHost,
-          hosts: hostPolicies,
+          config: TokenBucketRateLimitConfig(
+            perHost: perHost,
+            hosts: hostPolicies,
+          ),
         );
         perHost.clear();
         hostPolicies['b.test']!.clear();
@@ -730,13 +735,14 @@ void main() {
   test('host tiers and global tiers apply together', () {
     fakeAsync((async) {
       final interceptor = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 2, per: Duration(minutes: 1), burst: 2),
-        ],
-        global: const [
-          TokenBucketPolicy(permits: 3, per: Duration(minutes: 1), burst: 3),
-        ],
+        config: const TokenBucketRateLimitConfig(
+          perHost: [
+            TokenBucketPolicy(permits: 2, per: Duration(minutes: 1), burst: 2),
+          ],
+          global: [
+            TokenBucketPolicy(permits: 3, per: Duration(minutes: 1), burst: 3),
+          ],
+        ),
       );
       final log = _Log();
 
