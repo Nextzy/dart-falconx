@@ -74,7 +74,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 
 ### Code generation
 
-- Generated files land in `lib/{{path}}/generated/{{file}}.g.dart` or `.freezed.dart`, per each package's `build.yaml`.
+- Generated files land in `lib/{{path}}/generated/{{file}}.g.dart` or `.freezed.dart`, per each package's `build.yaml`. `dart_falconnect` also generates Retrofit test fixtures into `test/{{path}}/generated/{{file}}.g.dart`.
 - Run `melos run build_runner` after editing a `@freezed` or `@JsonSerializable` class, and `melos run build_runner:check` before committing.
 
 ## Gotchas
