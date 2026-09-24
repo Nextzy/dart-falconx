@@ -78,7 +78,8 @@ abstract class BaseHttpClient implements RequestApiService {
       _concurrency,
       (box) => ConcurrencyLimitInterceptor(config: box, logPrint: _diagnostic),
     );
-    final rateLimit = previous != null && previous.rateLimit == config.rateLimit
+    final rateLimit =
+        _rateLimit != null && previous?.rateLimit == config.rateLimit
         ? _rateLimit
         : _buildRateLimit(config.rateLimit);
     final retry = _keepOrBuild(
@@ -128,6 +129,7 @@ abstract class BaseHttpClient implements RequestApiService {
   /// Disposes the stateful interceptors of the current configuration.
   ///
   /// Needed at the end of a test or a CLI; a Flutter app never calls it.
+  /// A later [configure] builds new limiters instead of keeping these.
   void dispose() {
     final rateLimit = _rateLimit;
     if (rateLimit is TokenBucketRateLimitInterceptor) {
@@ -136,6 +138,8 @@ abstract class BaseHttpClient implements RequestApiService {
       rateLimit.dispose();
     }
     _concurrency?.dispose();
+    _rateLimit = null;
+    _concurrency = null;
   }
 
   @override
