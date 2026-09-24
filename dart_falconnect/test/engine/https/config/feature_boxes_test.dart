@@ -17,8 +17,11 @@ void main() {
     expect(retry.onRetry, isNull);
 
     const cache = CacheConfig();
-    expect(cache.duration, const Duration(minutes: 15));
+    expect(cache.policy, CachePolicy.request);
+    expect(cache.maxStale, isNull);
     expect(cache.maxSize, 50 * 1024 * 1024);
+    expect(cache.store, isNull);
+    expect(cache.keyHeaders, {'authorization', 'accept', 'accept-language'});
 
     const pause = PauseConfig();
     expect(pause.maxPauseWait, const Duration(seconds: 10));

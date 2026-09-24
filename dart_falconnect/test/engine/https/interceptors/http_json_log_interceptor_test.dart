@@ -484,7 +484,9 @@ void main() {
       final lines = <Object?>[];
       fakeAsync((async) {
         final dio = _dio(
-          ScriptedAdapter([reply(200)]),
+          ScriptedAdapter([
+            reply(200, headers: {'cache-control': 'max-age=60'}),
+          ]),
           (_) => [_log(lines), CacheInterceptor()],
         );
         dio.get<dynamic>('/x').ignore();

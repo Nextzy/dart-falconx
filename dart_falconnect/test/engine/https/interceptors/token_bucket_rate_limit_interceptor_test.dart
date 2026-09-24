@@ -759,7 +759,9 @@ void main() {
         ),
       );
       final spy = _ResponseSpy();
-      final adapter = ScriptedAdapter([reply(200)]);
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
       final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
         ..httpClientAdapter = adapter
         ..transformer = FoldingTransformer()

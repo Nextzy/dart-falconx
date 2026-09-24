@@ -29,18 +29,18 @@ void main() {
     });
   });
 
-  test('CacheInterceptor prints a hit through logPrint', () async {
+  test('CacheInterceptor prints a hit through logPrint, without the '
+      'query', () async {
     final lines = <String>[];
-    final dio = _dio([reply(200)]);
+    final dio = _dio([
+      reply(200, headers: {'cache-control': 'max-age=60'}),
+    ]);
     dio.interceptors.add(CacheInterceptor(logPrint: lines.add));
 
-    await dio.get<dynamic>('/x');
-    await dio.get<dynamic>('/x');
+    await dio.get<dynamic>('/x?token=secret');
+    await dio.get<dynamic>('/x?token=secret');
 
-    expect(
-      lines.where((line) => line.startsWith('[CacheInterceptor] Cache hit')),
-      hasLength(1),
-    );
+    expect(lines, ['[CacheInterceptor] Hit for GET a.test/x']);
   });
 
   test('an interceptor without logPrint prints nothing', () {

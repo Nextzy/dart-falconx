@@ -44,6 +44,23 @@ void main() {
       expect(DefaultNetworkExceptionHandlerInterceptor(), isNotNull);
     });
 
+    test('CacheInterceptor serves a hit on web', () async {
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = adapter
+        ..interceptors.add(CacheInterceptor());
+      final options = Options(headers: {'Authorization': 'Bearer t'});
+
+      await dio.get<dynamic>('/x', options: options);
+      final hit = await dio.get<dynamic>('/x', options: options);
+
+      expect(hit.isCacheHit, isTrue);
+      expect(hit.data, {'status': 200});
+      expect(adapter.requests, hasLength(1));
+    });
+
     test('HttpJsonLogInterceptor prints one JSON line on web', () async {
       final lines = <Object?>[];
       final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
