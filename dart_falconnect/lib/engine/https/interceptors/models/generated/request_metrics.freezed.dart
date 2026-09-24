@@ -12,6 +12,7 @@ part of '../request_metrics.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$RequestMetrics {
 
@@ -30,6 +31,8 @@ mixin _$RequestMetrics {
 @pragma('vm:prefer-inline')
 $RequestMetricsCopyWith<RequestMetrics> get copyWith => _$RequestMetricsCopyWithImpl<RequestMetrics>(this as RequestMetrics, _$identity);
 
+  /// Serializes this RequestMetrics to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -38,7 +41,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is RequestMetrics&&(identical(other.method, _this.method) || other.method == _this.method)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.startTime, _this.startTime) || other.startTime == _this.startTime)&&(identical(other.endTime, _this.endTime) || other.endTime == _this.endTime)&&(identical(other.statusCode, _this.statusCode) || other.statusCode == _this.statusCode)&&(identical(other.error, _this.error) || other.error == _this.error)&&(identical(other.requestSize, _this.requestSize) || other.requestSize == _this.requestSize)&&(identical(other.responseSize, _this.responseSize) || other.responseSize == _this.responseSize));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as RequestMetrics;
@@ -224,11 +227,11 @@ return $default(_that.method,_that.url,_that.startTime,_that.endTime,_that.statu
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _RequestMetrics extends RequestMetrics {
   const _RequestMetrics({required this.method, required this.url, required this.startTime, this.endTime, this.statusCode, this.error, this.requestSize, this.responseSize}): super._();
-  
+  factory _RequestMetrics.fromJson(Map<String, dynamic> json) => _$RequestMetricsFromJson(json);
 
 /// HTTP method (e.g. `GET`, `POST`).
 @override final  String method;
@@ -253,14 +256,17 @@ class _RequestMetrics extends RequestMetrics {
 @pragma('vm:prefer-inline')
 _$RequestMetricsCopyWith<_RequestMetrics> get copyWith => __$RequestMetricsCopyWithImpl<_RequestMetrics>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$RequestMetricsToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
     return identical(this, other) || (other.runtimeType == runtimeType&&other is _RequestMetrics&&(identical(other.method, method) || other.method == method)&&(identical(other.url, url) || other.url == url)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.endTime, endTime) || other.endTime == endTime)&&(identical(other.statusCode, statusCode) || other.statusCode == statusCode)&&(identical(other.error, error) || other.error == error)&&(identical(other.requestSize, requestSize) || other.requestSize == requestSize)&&(identical(other.responseSize, responseSize) || other.responseSize == responseSize));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
     return Object.hash(runtimeType,method,url,startTime,endTime,statusCode,error,requestSize,responseSize);

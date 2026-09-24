@@ -34,13 +34,19 @@ void main() {
     });
 
     test('empty params map is kept (not null)', () {
-      const body = BatchJsonRpcBody<int>(method: 'ping', params: {});
+      const body = BatchJsonRpcBody<int>(
+        method: 'ping',
+        params: <String, dynamic>{},
+      );
 
-      expect(body.toJson(), {'method': 'ping', 'params': {}});
+      expect(body.toJson(), <String, dynamic>{
+        'method': 'ping',
+        'params': <String, dynamic>{},
+      });
     });
 
     test('fromResultJson never appears in the output', () {
-      final body = BatchJsonRpcBody<Map<String, dynamic>>(
+      const body = BatchJsonRpcBody<Map<String, dynamic>>(
         method: 'm',
         fromResultJson: _identity,
       );
