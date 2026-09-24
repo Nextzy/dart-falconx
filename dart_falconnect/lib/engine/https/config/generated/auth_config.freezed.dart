@@ -22,7 +22,8 @@ mixin _$AuthConfig {
 /// the refresh and never refreshes.
  RefreshCallback get refresh;/// Called once per failed refresh, and when a re-sent request gets a
 /// 401 again. Not awaited; an error it throws goes to the diagnostics.
- AuthFailedCallback? get onAuthFailed;/// Header that carries the token.
+ AuthFailedCallback? get onAuthFailed;/// Header that carries the token. A `BaseHttpClient` redacts it in both
+/// logs and keys the cache by it wherever it does so for `authorization`.
  String get headerName;/// Word placed before the token; an empty string sends the bare token.
  String get scheme;
 /// Create a copy of AuthConfig
@@ -238,7 +239,8 @@ class _AuthConfig implements AuthConfig {
 /// Called once per failed refresh, and when a re-sent request gets a
 /// 401 again. Not awaited; an error it throws goes to the diagnostics.
 @override final  AuthFailedCallback? onAuthFailed;
-/// Header that carries the token.
+/// Header that carries the token. A `BaseHttpClient` redacts it in both
+/// logs and keys the cache by it wherever it does so for `authorization`.
 @override@JsonKey() final  String headerName;
 /// Word placed before the token; an empty string sends the bare token.
 @override@JsonKey() final  String scheme;

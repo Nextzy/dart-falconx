@@ -36,7 +36,8 @@ abstract class AuthConfig with _$AuthConfig {
     /// 401 again. Not awaited; an error it throws goes to the diagnostics.
     AuthFailedCallback? onAuthFailed,
 
-    /// Header that carries the token.
+    /// Header that carries the token. A `BaseHttpClient` redacts it in both
+    /// logs and keys the cache by it wherever it does so for `authorization`.
     @Default('Authorization') String headerName,
 
     /// Word placed before the token; an empty string sends the bare token.
