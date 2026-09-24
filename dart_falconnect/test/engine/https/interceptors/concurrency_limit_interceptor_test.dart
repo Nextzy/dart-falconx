@@ -8,11 +8,10 @@ import 'package:test/test.dart';
 
 import '_scripted_adapter.dart';
 
-const _config = HttpClientConfig(
-  enableCache: false,
-  maxRetryAttempts: 1,
-  retryDelay: Duration(seconds: 1),
-  maxRetryDelay: Duration(seconds: 1),
+const _retry = RetryConfig(
+  maxAttempts: 1,
+  delay: Duration(seconds: 1),
+  maxDelay: Duration(seconds: 1),
 );
 
 Dio _dio(HttpClientAdapter adapter, List<Interceptor> Function(Dio) chain) {
@@ -88,7 +87,7 @@ class _ResendOnce extends Interceptor {
 
 void main() {
   test('forwards synchronously and builds nothing without a limit', () {
-    final limiter = ConcurrencyLimitInterceptor(config: _config);
+    final limiter = ConcurrencyLimitInterceptor();
     final handler = _RecordingHandler();
 
     unawaited(
@@ -105,7 +104,9 @@ void main() {
   test('perHost holds extra requests and releases them in FIFO order', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 2);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 2),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
 
@@ -139,9 +140,10 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final limiter = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 1,
-        hosts: {'b.test': 2, 'c.test': null},
+        config: const ConcurrencyConfig(
+          perHost: 1,
+          hosts: {'b.test': 2, 'c.test': null},
+        ),
       );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
@@ -164,9 +166,7 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final limiter = ConcurrencyLimitInterceptor(
-        config: _config,
-        global: 2,
-        hosts: {'c.test': null},
+        config: const ConcurrencyConfig(global: 2, hosts: {'c.test': null}),
       );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
@@ -192,13 +192,11 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final limiter = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 1,
-        maxQueueSize: 1,
+        config: const ConcurrencyConfig(perHost: 1, maxQueueSize: 1),
       );
       final dio = _dio(
         adapter,
-        (dio) => [limiter, RetryInterceptor(config: _config, dio: dio)],
+        (dio) => [limiter, RetryInterceptor(config: _retry, dio: dio)],
       );
       final outcomes = <Object>[];
 
@@ -223,10 +221,11 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final limiter = ConcurrencyLimitInterceptor(
-        config: _config,
-        global: 1,
-        perHost: 2,
-        maxGlobalQueueSize: 0,
+        config: const ConcurrencyConfig(
+          global: 1,
+          perHost: 2,
+          maxGlobalQueueSize: 0,
+        ),
       );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
@@ -247,9 +246,7 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final limiter = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 1,
-        queueRequests: false,
+        config: const ConcurrencyConfig(perHost: 1, queueRequests: false),
       );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
@@ -266,7 +263,9 @@ void main() {
   test('a server error gives the slot back', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
 
@@ -283,13 +282,14 @@ void main() {
   test('a local 429 and a cancel from the token bucket give the slot back', () {
     fakeAsync((async) {
       final adapter = ScriptedAdapter([reply(200)]);
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final bucket = TokenBucketRateLimitInterceptor(
-        config: _config,
-        perHost: const [
-          TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
-        ],
-        queueRequests: false,
+        config: const TokenBucketRateLimitConfig(
+          perHost: [TokenBucketPolicy(permits: 1, per: Duration(minutes: 1))],
+          queueRequests: false,
+        ),
       );
       final dio = _dio(adapter, (_) => [limiter, bucket]);
       final outcomes = <Object>[];
@@ -312,7 +312,9 @@ void main() {
   test('a request cancelled while it waits lets the next one through', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
       final token = CancelToken();
@@ -335,7 +337,9 @@ void main() {
   test('one CancelToken shared by requests in flight frees every slot', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 3);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 3),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
       final token = CancelToken();
@@ -365,11 +369,10 @@ void main() {
       fakeAsync((async) {
         final adapter = ScriptedAdapter([reply(503), reply(200)]);
         final limiter = ConcurrencyLimitInterceptor(
-          config: _config,
-          perHost: 1,
+          config: const ConcurrencyConfig(perHost: 1),
         );
         final dio = _dio(adapter, (dio) {
-          final retry = RetryInterceptor(config: _config, dio: dio);
+          final retry = RetryInterceptor(config: _retry, dio: dio);
           return limiterFirst ? [limiter, retry] : [retry, limiter];
         });
         final outcomes = <Object>[];
@@ -387,7 +390,9 @@ void main() {
   test('a re-send from an interceptor placed before it reuses the slot', () {
     fakeAsync((async) {
       final adapter = ScriptedAdapter([reply(401), reply(200)]);
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (dio) => [_ResendOnce(dio), limiter]);
       final outcomes = <Object>[];
 
@@ -402,11 +407,10 @@ void main() {
   test('a cache hit, with CacheInterceptor first, takes no slot', () {
     fakeAsync((async) {
       final adapter = ScriptedAdapter([reply(200)]);
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
-      final dio = _dio(
-        adapter,
-        (_) => [CacheInterceptor(config: const HttpClientConfig()), limiter],
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
       );
+      final dio = _dio(adapter, (_) => [CacheInterceptor(), limiter]);
       final outcomes = <Object>[];
 
       _get(dio, '/x', outcomes);
@@ -425,9 +429,7 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final limiter = ConcurrencyLimitInterceptor(
-        config: _config,
-        perHost: 1,
-        hosts: {'free.test': null},
+        config: const ConcurrencyConfig(perHost: 1, hosts: {'free.test': null}),
       );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
@@ -459,10 +461,12 @@ void main() {
   test('dispose cancels a retry that would reuse a held slot', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(
         adapter,
-        (dio) => [RetryInterceptor(config: _config, dio: dio), limiter],
+        (dio) => [RetryInterceptor(config: _retry, dio: dio), limiter],
       );
       final outcomes = <Object>[];
 
@@ -482,7 +486,9 @@ void main() {
   test('a stream response gives the slot back when its headers arrive', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
 
@@ -505,7 +511,9 @@ void main() {
   test('an idle host limit is forgotten', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
 
@@ -523,7 +531,9 @@ void main() {
   test('the permit in extra reads as its state', () {
     fakeAsync((async) {
       final adapter = ScriptedAdapter([reply(200)]);
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
 
@@ -548,12 +558,13 @@ void main() {
       int maxQueueSize = 50,
       int maxGlobalQueueSize = 500,
     }) => ConcurrencyLimitInterceptor(
-      config: _config,
-      global: global,
-      perHost: perHost,
-      hosts: hosts,
-      maxQueueSize: maxQueueSize,
-      maxGlobalQueueSize: maxGlobalQueueSize,
+      config: ConcurrencyConfig(
+        global: global,
+        perHost: perHost,
+        hosts: hosts,
+        maxQueueSize: maxQueueSize,
+        maxGlobalQueueSize: maxGlobalQueueSize,
+      ),
     );
 
     expect(() => build(global: 0), throwsArgumentError);
@@ -570,8 +581,12 @@ void main() {
   test('two limiters in one chain both give their slots back', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final global = ConcurrencyLimitInterceptor(config: _config, global: 5);
-      final perHost = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final global = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(global: 5),
+      );
+      final perHost = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [global, perHost]);
       final outcomes = <Object>[];
 
@@ -594,7 +609,9 @@ void main() {
   test('an interceptor that throws after it gives the slot back', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       var throws = true;
       final dio = _dio(
         adapter,
@@ -626,7 +643,9 @@ void main() {
   test('a request with a const extra map passes and gives its slot back', () {
     fakeAsync((async) {
       final adapter = ScriptedAdapter([reply(200)]);
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
 
@@ -644,9 +663,7 @@ void main() {
       fakeAsync((async) {
         final adapter = GatedAdapter();
         final limiter = ConcurrencyLimitInterceptor(
-          config: _config,
-          perHost: 1,
-          maxQueueSize: 2,
+          config: const ConcurrencyConfig(perHost: 1, maxQueueSize: 2),
         );
         final dio = _dio(adapter, (_) => [limiter]);
         final outcomes = <Object>[];
@@ -675,7 +692,9 @@ void main() {
   test('a cancel after the response changes nothing', () {
     fakeAsync((async) {
       final adapter = ScriptedAdapter([reply(200)]);
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
       final token = CancelToken();
@@ -695,9 +714,7 @@ void main() {
     fakeAsync((async) {
       final adapter = GatedAdapter();
       final limiter = ConcurrencyLimitInterceptor(
-        config: _config,
-        global: 1,
-        perHost: 1,
+        config: const ConcurrencyConfig(global: 1, perHost: 1),
       );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
@@ -729,7 +746,9 @@ void main() {
   test('two fetches of one queued RequestOptions share its slot', () {
     fakeAsync((async) {
       final adapter = GatedAdapter();
-      final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
       final dio = _dio(adapter, (_) => [limiter]);
       final outcomes = <Object>[];
       final shared = RequestOptions(path: '/shared', baseUrl: 'https://a.test');
@@ -764,7 +783,9 @@ void main() {
   });
 
   test('a request whose token is already cancelled gets the token error', () {
-    final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+    final limiter = ConcurrencyLimitInterceptor(
+      config: const ConcurrencyConfig(perHost: 1),
+    );
     final handler = _RecordingHandler();
     final token = CancelToken()..cancel('left');
     final options = RequestOptions(

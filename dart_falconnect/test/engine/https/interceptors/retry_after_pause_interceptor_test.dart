@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/engine/https/interceptors/retry_after_pause_interceptor.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
@@ -44,7 +44,6 @@ Response<dynamic> _response(int status, {String? retryAfter}) =>
     );
 
 void main() {
-  const config = HttpClientConfig();
   late List<RequestOptions> forwarded;
   late List<DioException> rejected;
 
@@ -64,7 +63,7 @@ void main() {
 
   test('forwards synchronously while no host is paused', () {
     fakeAsync((async) {
-      final interceptor = RetryAfterPauseInterceptor(config: config);
+      final interceptor = RetryAfterPauseInterceptor();
 
       send(interceptor);
 
@@ -75,7 +74,7 @@ void main() {
 
   test('holds a request until a short pause ends', () {
     fakeAsync((async) {
-      final interceptor = RetryAfterPauseInterceptor(config: config)
+      final interceptor = RetryAfterPauseInterceptor()
         ..onResponse(_response(429, retryAfter: '2'), _SilentResponseHandler());
 
       send(interceptor);
@@ -90,7 +89,7 @@ void main() {
 
   test('rejects with a local 429 when the pause is long', () {
     fakeAsync((async) {
-      final interceptor = RetryAfterPauseInterceptor(config: config)
+      final interceptor = RetryAfterPauseInterceptor()
         ..onError(
           DioException.badResponse(
             statusCode: 503,
@@ -110,7 +109,7 @@ void main() {
 
   test('a local 429 fed back through onError starts no pause', () {
     fakeAsync((async) {
-      final interceptor = RetryAfterPauseInterceptor(config: config);
+      final interceptor = RetryAfterPauseInterceptor();
       final local = localRateLimitRejection(
         RequestOptions(path: 'https://a.test/items'),
         retryAfter: const Duration(seconds: 30),
@@ -128,7 +127,7 @@ void main() {
 
   test('dispose cancels held requests and lifts every pause', () {
     fakeAsync((async) {
-      final interceptor = RetryAfterPauseInterceptor(config: config)
+      final interceptor = RetryAfterPauseInterceptor()
         ..onResponse(_response(429, retryAfter: '2'), _SilentResponseHandler());
       send(interceptor);
       async.flushMicrotasks();
@@ -145,7 +144,9 @@ void main() {
 
   test('rejects invalid settings', () {
     expect(
-      () => RetryAfterPauseInterceptor(config: config, maxQueueSize: -1),
+      () => RetryAfterPauseInterceptor(
+        config: const PauseOnlyRateLimitConfig(maxQueueSize: -1),
+      ),
       throwsA(
         isA<ArgumentError>().having((e) => e.name, 'name', 'maxQueueSize'),
       ),
@@ -154,7 +155,7 @@ void main() {
 
   group('onRequest wait loop', () {
     RetryAfterPauseInterceptor pausedFor(String retryAfter) =>
-        RetryAfterPauseInterceptor(config: config)..onResponse(
+        RetryAfterPauseInterceptor()..onResponse(
           _response(429, retryAfter: retryAfter),
           _SilentResponseHandler(),
         );

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/concurrency_config.dart';
 import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/host_key.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart'
@@ -89,49 +89,45 @@ class ConcurrencyLimitStatistics {
 class ConcurrencyLimitInterceptor extends Interceptor {
   /// Creates a concurrency limit interceptor.
   ///
-  /// Each key of [hosts] must be a bare host exactly as `Uri.host` returns
-  /// it: lowercase, with no port, brackets, or spaces. Every limit that is
-  /// set must be at least 1; queue sizes must not be negative.
-  new({
-    required this.config,
-    this.global,
-    this.perHost,
-    Map<String, int?> hosts = const {},
-    this.queueRequests = true,
-    this.maxQueueSize = 50,
-    this.maxGlobalQueueSize = 500,
-  }) : _hosts = _validated(
-         global: global,
-         perHost: perHost,
-         hosts: hosts,
-         maxQueueSize: maxQueueSize,
-         maxGlobalQueueSize: maxGlobalQueueSize,
-       ),
-       _globalBulkhead = global == null
-           ? null
-           : Bulkhead(
-               maxConcurrent: global,
-               maxQueued: queueRequests ? maxGlobalQueueSize : 0,
-             );
+  /// Each key of `config.hosts` must be a bare host exactly as `Uri.host`
+  /// returns it: lowercase, with no port, brackets, or spaces. Every limit
+  /// that is set must be at least 1; queue sizes must not be negative.
+  new({this.config = const ConcurrencyConfig(), this.logPrint})
+    : _hosts = _validated(
+        global: config.global,
+        perHost: config.perHost,
+        hosts: config.hosts,
+        maxQueueSize: config.maxQueueSize,
+        maxGlobalQueueSize: config.maxGlobalQueueSize,
+      ),
+      _globalBulkhead = config.global == null
+          ? null
+          : Bulkhead(
+              maxConcurrent: config.global!,
+              maxQueued: config.queueRequests ? config.maxGlobalQueueSize : 0,
+            );
 
-  /// Configuration; `enableLogging` gates diagnostic prints.
-  final HttpClientConfig config;
+  /// Limits and queue sizes.
+  final ConcurrencyConfig config;
+
+  /// Prints diagnostics; null prints nothing.
+  final void Function(String message)? logPrint;
 
   /// Most requests in flight to all hosts together; null means no limit.
-  final int? global;
+  int? get global => config.global;
 
   /// Most requests in flight to a host missing from `hosts`; null means no
   /// limit.
-  final int? perHost;
+  int? get perHost => config.perHost;
 
   /// Whether a request with no free slot waits (`true`) or is rejected.
-  final bool queueRequests;
+  bool get queueRequests => config.queueRequests;
 
   /// Queue capacity of each host limit.
-  final int maxQueueSize;
+  int get maxQueueSize => config.maxQueueSize;
 
   /// Queue capacity of the global limit.
-  final int maxGlobalQueueSize;
+  int get maxGlobalQueueSize => config.maxGlobalQueueSize;
 
   /// Gives every instance its own `extra` key, so two instances in one
   /// chain never overwrite each other's permit.
@@ -367,13 +363,8 @@ class ConcurrencyLimitInterceptor extends Interceptor {
     message: message,
   );
 
-  void _log(String message) {
-    if (config.enableLogging) {
-      // Intentional logging for concurrency limit diagnostics.
-      // ignore: avoid_print
-      print('[ConcurrencyLimitInterceptor] $message');
-    }
-  }
+  void _log(String message) =>
+      logPrint?.call('[ConcurrencyLimitInterceptor] $message');
 }
 
 /// A host's own limit, taken before the global one.

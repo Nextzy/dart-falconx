@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falconnect/engine/https/config/retry_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
@@ -21,7 +20,7 @@ extension FalconRetryRequestOptionsExtensions on RequestOptions {
   set disableRetry(bool value) => extra = {...extra, _disableKey: value};
 
   /// Most retries for this request; null uses
-  /// `HttpClientConfig.maxRetryAttempts`.
+  /// `RetryConfig.maxAttempts`.
   int? get retryAttempts => extra[_attemptsKey] as int?;
   set retryAttempts(int? value) =>
       extra = {...extra, _attemptsKey: _checkAttempts(value)};
@@ -43,7 +42,7 @@ extension FalconRetryOptionsExtensions on Options {
   set disableRetry(bool value) => extra = {...?extra, _disableKey: value};
 
   /// Most retries for this request; null uses
-  /// `HttpClientConfig.maxRetryAttempts`.
+  /// `RetryConfig.maxAttempts`.
   int? get retryAttempts => extra?[_attemptsKey] as int?;
   set retryAttempts(int? value) =>
       extra = {...?extra, _attemptsKey: _checkAttempts(value)};
@@ -91,18 +90,21 @@ class RetryInterceptor extends Interceptor {
   /// Creates a retry interceptor.
   ///
   /// [random] drives the backoff jitter; tests pass a seeded one.
-  new({required this.config, required this.dio, this.onRetry, Random? random})
-    : _random = random ?? Random();
+  new({
+    this.config = const RetryConfig(),
+    required this.dio,
+    this.logPrint,
+    Random? random,
+  }) : _random = random ?? Random();
 
-  /// Configuration: `maxRetryAttempts`, `retryDelay`, `maxRetryDelay`,
-  /// `maxRetryDuration`, and `enableLogging`.
-  final HttpClientConfig config;
+  /// Attempts, delays, deadline, and the `onRetry` callback.
+  final RetryConfig config;
 
   /// The [Dio] instance that sends every retry.
   final Dio dio;
 
-  /// Called before each retry waits.
-  final RetryCallback? onRetry;
+  /// Prints diagnostics; null prints nothing.
+  final void Function(String message)? logPrint;
 
   final Random _random;
 
@@ -142,7 +144,7 @@ class RetryInterceptor extends Interceptor {
         handler.next(current);
         return;
       }
-      onRetry?.call(current, attempt, delay);
+      config.onRetry?.call(current, attempt, delay);
       _log(
         'Retrying request $attempt after ${delay.inMilliseconds}ms: '
         '${original.method} ${original.uri}',
@@ -182,14 +184,14 @@ class RetryInterceptor extends Interceptor {
         : null;
     final Duration delay;
     if (retryAfter != null) {
-      if (retryAfter > config.maxRetryDelay) {
+      if (retryAfter > config.maxDelay) {
         return null;
       }
       delay = retryAfter;
     } else {
       delay = _backoff(attempt);
     }
-    if (elapsed + delay > config.maxRetryDuration) {
+    if (elapsed + delay > config.maxDuration) {
       return null;
     }
     return delay;
@@ -206,7 +208,7 @@ class RetryInterceptor extends Interceptor {
         err.type == DioExceptionType.badCertificate) {
       return false;
     }
-    if (attempt > (options.retryAttempts ?? config.maxRetryAttempts)) {
+    if (attempt > (options.retryAttempts ?? config.maxAttempts)) {
       return false;
     }
     final status = response?.statusCode;
@@ -228,10 +230,10 @@ class RetryInterceptor extends Interceptor {
   Duration _backoff(int attempt) {
     // Doubles never wrap, and 2^30 keeps the result exact on the web.
     final exponential =
-        config.retryDelay.inMilliseconds * pow(2.0, min(attempt - 1, 30));
+        config.delay.inMilliseconds * pow(2.0, min(attempt - 1, 30));
     final cap = max(
       0,
-      min(config.maxRetryDelay.inMilliseconds, exponential).toInt(),
+      min(config.maxDelay.inMilliseconds, exponential).toInt(),
     );
     return Duration(
       milliseconds: _random.nextInt(min(cap + 1, _maxRandomRange)),
@@ -266,11 +268,5 @@ class RetryInterceptor extends Interceptor {
     );
   }
 
-  void _log(String message) {
-    if (config.enableLogging) {
-      // Intentional logging for retry diagnostics.
-      // ignore: avoid_print
-      print('[RetryInterceptor] $message');
-    }
-  }
+  void _log(String message) => logPrint?.call('[RetryInterceptor] $message');
 }

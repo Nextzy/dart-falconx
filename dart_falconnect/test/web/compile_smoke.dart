@@ -26,13 +26,16 @@ void main() {
   _sink(StubHttpClient(dio: dio));
 
   // All interceptors
-  final cfg = HttpClientConfig.development();
-  _sink(CacheInterceptor(config: cfg));
-  _sink(ConcurrencyLimitInterceptor(config: cfg, global: 16, perHost: 4));
-  _sink(RetryInterceptor(config: cfg, dio: dio));
-  _sink(PerformanceInterceptor(config: cfg));
-  _sink(TokenBucketRateLimitInterceptor(config: cfg));
-  _sink(RetryAfterPauseInterceptor(config: cfg));
+  _sink(CacheInterceptor());
+  _sink(
+    ConcurrencyLimitInterceptor(
+      config: const ConcurrencyConfig(global: 16, perHost: 4),
+    ),
+  );
+  _sink(RetryInterceptor(dio: dio));
+  _sink(PerformanceInterceptor());
+  _sink(TokenBucketRateLimitInterceptor());
+  _sink(RetryAfterPauseInterceptor());
   _sink(HttpLogInterceptor());
   _sink(DefaultNetworkExceptionHandlerInterceptor());
 

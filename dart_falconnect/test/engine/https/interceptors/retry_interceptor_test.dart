@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/retry_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/engine/https/interceptors/retry_interceptor.dart';
 import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
@@ -12,27 +12,32 @@ import 'package:test/test.dart';
 
 import '_scripted_adapter.dart';
 
-const _config = HttpClientConfig(
-  maxRetryAttempts: 3,
-  retryDelay: Duration(seconds: 1),
-  maxRetryDelay: Duration(seconds: 30),
-  maxRetryDuration: Duration(seconds: 60),
+const _config = RetryConfig(
+  maxAttempts: 3,
+  delay: Duration(seconds: 1),
+  maxDelay: Duration(seconds: 30),
+  maxDuration: Duration(seconds: 60),
 );
 
 class _Client {
-  new(List<Reply> script, {HttpClientConfig config = _config})
+  new(List<Reply> script, {RetryConfig config = _config})
     : adapter = ScriptedAdapter(script) {
     dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
       ..httpClientAdapter = adapter;
     dio.interceptors.add(
       RetryInterceptor(
-        config: config,
+        config: RetryConfig(
+          maxAttempts: config.maxAttempts,
+          delay: config.delay,
+          maxDelay: config.maxDelay,
+          maxDuration: config.maxDuration,
+          onRetry: (error, attempt, delay) {
+            retries.add((attempt, delay));
+            retryErrors.add(error);
+          },
+        ),
         dio: dio,
         random: Random(7),
-        onRetry: (error, attempt, delay) {
-          retries.add((attempt, delay));
-          retryErrors.add(error);
-        },
       ),
     );
   }
@@ -90,7 +95,7 @@ void main() {
     fakeAsync((async) {
       final client = _Client(
         [reply(500)],
-        config: _config.copyWith(maxRetryDelay: const Duration(seconds: 3)),
+        config: _config.copyWith(maxDelay: const Duration(seconds: 3)),
       )..send((d) => d.get('/x'));
 
       async.elapse(const Duration(seconds: 30));
@@ -170,13 +175,13 @@ void main() {
     });
   });
 
-  test('stops before a retry would end past maxRetryDuration', () {
+  test('stops before a retry would end past maxDuration', () {
     fakeAsync((async) {
       final client = _Client(
         [
           reply(429, headers: {'retry-after': '1'}),
         ],
-        config: _config.copyWith(maxRetryDuration: const Duration(seconds: 2)),
+        config: _config.copyWith(maxDuration: const Duration(seconds: 2)),
       )..send((d) => d.get('/x'));
 
       async.elapse(const Duration(seconds: 30));
@@ -297,11 +302,11 @@ void main() {
     fakeAsync((async) {
       final client = _Client(
         [reply(500)],
-        config: const HttpClientConfig(
-          maxRetryAttempts: 80,
-          retryDelay: Duration(seconds: 1),
-          maxRetryDelay: Duration(milliseconds: 1),
-          maxRetryDuration: Duration(days: 365),
+        config: const RetryConfig(
+          maxAttempts: 80,
+          delay: Duration(seconds: 1),
+          maxDelay: Duration(milliseconds: 1),
+          maxDuration: Duration(days: 365),
         ),
       )..send((d) => d.get('/x'));
 
@@ -322,10 +327,11 @@ void main() {
     expect(() => options.retryAttempts = -1, throwsArgumentError);
   });
 
-  test('HttpClientConfig.test() never retries', () {
+  test('maxAttempts 0 never retries', () {
     fakeAsync((async) {
-      final client = _Client([reply(503)], config: HttpClientConfig.test())
-        ..send((d) => d.get('/x'));
+      final client = _Client([
+        reply(503),
+      ], config: const RetryConfig(maxAttempts: 0))..send((d) => d.get('/x'));
 
       async.elapse(const Duration(seconds: 30));
 

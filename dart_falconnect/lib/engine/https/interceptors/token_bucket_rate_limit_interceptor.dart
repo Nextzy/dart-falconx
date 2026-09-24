@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/host_key.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dart_faltool/dart_faltool.dart'
@@ -89,38 +89,30 @@ class TokenBucketRateLimitStatistics {
 class TokenBucketRateLimitInterceptor extends Interceptor {
   /// Creates a token bucket rate limit interceptor.
   ///
-  /// Each key of [hosts] must be a bare host exactly as `Uri.host` returns
-  /// it: lowercase, with no port, brackets, or spaces.
-  new({
-    required this.config,
-    List<TokenBucketPolicy> global = const [],
-    List<TokenBucketPolicy> perHost = const [],
-    Map<String, List<TokenBucketPolicy>> hosts = const {},
-    this.queueRequests = true,
-    this.maxQueueSize = 50,
-    this.maxGlobalQueueSize = 500,
-    Duration maxPauseWait = const Duration(seconds: 10),
-    Duration maxPause = const Duration(minutes: 10),
-    Duration? defaultPause = const Duration(seconds: 5),
-  }) : _perHost = List.unmodifiable(perHost),
-       _hosts = Map.unmodifiable({
-         for (final entry in hosts.entries)
-           entry.key: List<TokenBucketPolicy>.unmodifiable(entry.value),
-       }),
-       _globalLimiters = [
-         for (final policy in global)
-           policy.toRateLimiter(
-             maxQueueLength: queueRequests ? maxGlobalQueueSize : 0,
-           ),
-       ],
-       _pause = _buildPause(
-         maxPauseWait: maxPauseWait,
-         maxPause: maxPause,
-         defaultPause: defaultPause,
-         maxQueueSize: maxQueueSize,
-         holdRequests: queueRequests,
-       ) {
-    for (final host in hosts.keys) {
+  /// Each key of `config.hosts` must be a bare host exactly as `Uri.host`
+  /// returns it: lowercase, with no port, brackets, or spaces.
+  new({this.config = const TokenBucketRateLimitConfig(), this.logPrint})
+    : _perHost = List.unmodifiable(config.perHost),
+      _hosts = Map.unmodifiable({
+        for (final entry in config.hosts.entries)
+          entry.key: List<TokenBucketPolicy>.unmodifiable(entry.value),
+      }),
+      _globalLimiters = [
+        for (final policy in config.global)
+          policy.toRateLimiter(
+            maxQueueLength: config.queueRequests
+                ? config.maxGlobalQueueSize
+                : 0,
+          ),
+      ],
+      _pause = _buildPause(
+        maxPauseWait: config.pause.maxPauseWait,
+        maxPause: config.pause.maxPause,
+        defaultPause: config.pause.defaultPause,
+        maxQueueSize: config.maxQueueSize,
+        holdRequests: config.queueRequests,
+      ) {
+    for (final host in config.hosts.keys) {
       if (!isHostKey(host)) {
         throw ArgumentError.value(
           host,
@@ -129,23 +121,29 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
         );
       }
     }
-    for (final policy in [...perHost, ...hosts.values.expand((p) => p)]) {
+    for (final policy in [
+      ...config.perHost,
+      ...config.hosts.values.expand((p) => p),
+    ]) {
       policy.validate();
     }
   }
 
-  /// Configuration; `enableLogging` gates diagnostic prints.
-  final HttpClientConfig config;
+  /// Policies, queue sizes, and pause settings.
+  final TokenBucketRateLimitConfig config;
+
+  /// Prints diagnostics; null prints nothing.
+  final void Function(String message)? logPrint;
 
   /// Whether a request with no token, or to a briefly paused host, waits
   /// (`true`) or is rejected.
-  final bool queueRequests;
+  bool get queueRequests => config.queueRequests;
 
   /// Wait-queue capacity of each host tier, and of each host's pause.
-  final int maxQueueSize;
+  int get maxQueueSize => config.maxQueueSize;
 
   /// Wait-queue capacity of each global tier.
-  final int maxGlobalQueueSize;
+  int get maxGlobalQueueSize => config.maxGlobalQueueSize;
 
   final List<TokenBucketPolicy> _perHost;
   final Map<String, List<TokenBucketPolicy>> _hosts;
@@ -337,11 +335,6 @@ class TokenBucketRateLimitInterceptor extends Interceptor {
     message: message,
   );
 
-  void _log(String message) {
-    if (config.enableLogging) {
-      // Intentional logging for rate limit diagnostics.
-      // ignore: avoid_print
-      print('[TokenBucketRateLimitInterceptor] $message');
-    }
-  }
+  void _log(String message) =>
+      logPrint?.call('[TokenBucketRateLimitInterceptor] $message');
 }
