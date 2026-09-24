@@ -14,22 +14,22 @@
 
 ## Interceptor chain
 
-`BaseHttpClient.configure` assembles the chain in this order: the config's `interceptors` → `HttpLogInterceptor` or `HttpJsonLogInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → exception handler.
+`BaseHttpClient.configure` assembles the chain in this order: the config's `interceptors` → `HttpLogInterceptor` or `HttpJsonLogInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → the cache fallback, when its box enables it → exception handler.
 
-| Interceptor                                 | Role                                                                                                     |
-|---------------------------------------------|----------------------------------------------------------------------------------------------------------|
-| `HttpLogInterceptor`                        | ANSI-colored multi-line log; redacts listed headers and query values                                     |
-| `HttpJsonLogInterceptor`                    | one JSON line per attempt with OpenTelemetry field names, for servers                                    |
-| `CacheInterceptor`                          | in-memory cache of GET responses; a hit passes every response interceptor and reads `isCacheHit`         |
-| `ConcurrencyLimitInterceptor`               | caps requests in flight per host and in total on `resilience` `Bulkhead`s                                |
-| `TokenBucketRateLimitInterceptor`           | token buckets from `TokenBucketPolicy` lists plus a per-host pause on a 429 or 503 `Retry-After`         |
-| `RetryAfterPauseInterceptor`                | the pause alone; never chain it beside `TokenBucketRateLimitInterceptor`                                 |
-| `RetryInterceptor`                          | backoff retries bounded by `RetryConfig`; idempotent methods only, except on 429 and `connectionTimeout` |
-| `NetworkExceptionHandlerInterceptor`        | abstract; routes errors to `onClientError`, `onServerError`, or `onNonStandardError` by status range     |
-| `DefaultNetworkExceptionHandlerInterceptor` | rejects every error unchanged                                                                            |
+| Interceptor                                 | Role                                                                                                                                    |
+|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| `HttpLogInterceptor`                        | ANSI-colored multi-line log; redacts listed headers and query values                                                                    |
+| `HttpJsonLogInterceptor`                    | one JSON line per attempt with OpenTelemetry field names, for servers                                                                   |
+| `CacheInterceptor`                          | wraps `dio_cache_interceptor`: HTTP caching by server headers, keyed by URL and `keyHeaders`; `fallback` answers failures after retries |
+| `ConcurrencyLimitInterceptor`               | caps requests in flight per host and in total on `resilience` `Bulkhead`s                                                               |
+| `TokenBucketRateLimitInterceptor`           | token buckets from `TokenBucketPolicy` lists plus a per-host pause on a 429 or 503 `Retry-After`                                        |
+| `RetryAfterPauseInterceptor`                | the pause alone; never chain it beside `TokenBucketRateLimitInterceptor`                                                                |
+| `RetryInterceptor`                          | backoff retries bounded by `RetryConfig`; idempotent methods only, except on 429 and `connectionTimeout`                                |
+| `NetworkExceptionHandlerInterceptor`        | abstract; routes errors to `onClientError`, `onServerError`, or `onNonStandardError` by status range                                    |
+| `DefaultNetworkExceptionHandlerInterceptor` | rejects every error unchanged                                                                                                           |
 
 - The cache, concurrency, rate-limit, and retry interceptors take their config box plus an optional `logPrint`.
-- Unexported helpers: the pause core in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host-key rule in `lib/src/engine/https/interceptors/host_key.dart`, the log redaction helpers and the log start key in `lib/src/engine/https/interceptors/log_redaction.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart`.
+- Unexported helpers: the pause core in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host-key rule in `lib/src/engine/https/interceptors/host_key.dart`, the log redaction helpers and the log start key in `lib/src/engine/https/interceptors/log_redaction.dart`, the retry loop's final-error marker in `lib/src/engine/https/interceptors/retry_attempts.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart`.
 - Export a new interceptor from `interceptors/interceptors.dart`; that barrel also exports `local_rate_limit.dart`, which tells a client-made 429 from a server 429.
 - Interceptor model classes live in `interceptors/models/` as freezed classes (generated output in `models/generated/`); `getStatistics()` returns immutable snapshots, never live interceptor state.
 
@@ -70,6 +70,7 @@ Every `DatasourceBoundState` strategy returns `Result<DsType>`:
 - `TokenBucketRateLimitInterceptor` refill timers outlive the last request: in `testWidgets`, call `dispose()` in the test body, since `addTearDown` runs too late; on a server, build one instance per process.
 - Interceptor tests live in `test/engine/https/interceptors/` and run under `fakeAsync`; other engine tests live under `test/engine/`, and the web gate under `test/web/`.
 - Give every test Dio answered by `ScriptedAdapter` or `GatedAdapter` a `FoldingTransformer` (`test/engine/https/interceptors/_scripted_adapter.dart`): under `fakeAsync` on dart2js, Dio's `await for` body read awaits a root-zone future that `fakeAsync` never flushes, and the response stalls.
+- `dio_cache_interceptor` reads `DateTime.now()`, not `clock`: test cache expiry with short real waits, outside `fakeAsync`.
 - `NetworkExceptionHandlerInterceptor` converts a `DioException` to a `NetworkException` through `err.toException()` from `dart_falmodel`.
 - `SocketClient._replaySubject` holds a `PublishSubject`: a late listener misses earlier responses.
 - Wait on a `CancelToken` through `watchCancel`, never `cancelToken.whenCancel.then(...)`: a `Future` listener cannot be removed, so a long-lived token collects one per finished wait.
