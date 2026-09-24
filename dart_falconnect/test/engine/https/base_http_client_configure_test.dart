@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_faltool/dart_faltool.dart' show TokenBucketPolicy;
 import 'package:fake_async/fake_async.dart';
@@ -7,7 +9,11 @@ import 'interceptors/_scripted_adapter.dart';
 
 class _Client extends BaseHttpClient {
   new(HttpClientAdapter adapter)
-    : super(dio: Dio()..httpClientAdapter = adapter);
+    : super(
+        dio: Dio()
+          ..httpClientAdapter = adapter
+          ..transformer = FoldingTransformer(),
+      );
 }
 
 /// Records every error it sees and passes it on.
@@ -67,7 +73,6 @@ void main() {
           HttpClientConfig(
             interceptors: [custom],
             log: const LogConfig(),
-            performance: const PerformanceConfig(),
             cache: const CacheConfig(),
             concurrency: const ConcurrencyConfig(global: 4),
             rateLimit: const RateLimitConfig.pauseOnly(),
@@ -80,13 +85,105 @@ void main() {
         'ImplyContentTypeInterceptor',
         '_ErrorSpy',
         'HttpLogInterceptor',
-        'PerformanceInterceptor',
         'CacheInterceptor',
         'ConcurrencyLimitInterceptor',
         'RetryAfterPauseInterceptor',
         'RetryInterceptor',
         'DefaultNetworkExceptionHandlerInterceptor',
       ]);
+    });
+
+    test('places the cache fallback after RetryInterceptor when the box '
+        'enables it', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(
+          const HttpClientConfig(
+            cache: CacheConfig(hitCacheOnNetworkFailure: true),
+            retry: RetryConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      final cache = client.interceptors.whereType<CacheInterceptor>().single;
+
+      expect(client.interceptors.map((i) => '${i.runtimeType}'), [
+        'ImplyContentTypeInterceptor',
+        'CacheInterceptor',
+        'RetryInterceptor',
+        '_CacheFallback',
+        'DefaultNetworkExceptionHandlerInterceptor',
+      ]);
+      expect(client.interceptors.elementAt(3), same(cache.fallback));
+
+      client.configure(
+        client.currentConfig.copyWith(
+          cache: const CacheConfig(hitCacheOnErrorCodes: {503}),
+        ),
+      );
+
+      expect(
+        client.interceptors.map((i) => '${i.runtimeType}'),
+        contains('_CacheFallback'),
+      );
+    });
+
+    test('a changed cache setting keeps the stored entries', () async {
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
+      final client = _Client(adapter)
+        ..configure(
+          const HttpClientConfig(
+            baseUrl: 'https://a.test',
+            cache: CacheConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      await client.dio.get<dynamic>('/x');
+      final before = client.interceptors.whereType<CacheInterceptor>().single;
+
+      client.configure(
+        client.currentConfig.copyWith(
+          cache: const CacheConfig(maxStale: Duration(hours: 1)),
+        ),
+      );
+      final after = client.interceptors.whereType<CacheInterceptor>().single;
+      final hit = await client.dio.get<dynamic>('/x');
+
+      expect(after, isNot(same(before)));
+      expect(after.store, same(before.store));
+      expect(hit.isCacheHit, isTrue);
+      expect(adapter.requests, hasLength(1));
+    });
+
+    test('a changed maxSize or store starts an empty cache', () async {
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
+      final client = _Client(adapter)
+        ..configure(
+          const HttpClientConfig(
+            baseUrl: 'https://a.test',
+            cache: CacheConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      await client.dio.get<dynamic>('/x');
+
+      client.configure(
+        client.currentConfig.copyWith(cache: const CacheConfig(maxSize: 1024)),
+      );
+      await client.dio.get<dynamic>('/x');
+      final store = MemCacheStore();
+      client.configure(
+        client.currentConfig.copyWith(cache: CacheConfig(store: store)),
+      );
+      await client.dio.get<dynamic>('/x');
+
+      expect(adapter.requests, hasLength(3));
+      expect(
+        client.interceptors.whereType<CacheInterceptor>().single.store,
+        same(store),
+      );
     });
 
     test('keeps an unchanged box and rebuilds a changed one', () {
@@ -204,17 +301,24 @@ void main() {
       expect(client.interceptors.toList(), before);
     });
 
-    for (final (name, rejected) in [
-      ('a base URL', const HttpClientConfig(baseUrl: 'api.example.com')),
-      (
-        'a timeout',
-        const HttpClientConfig(
-          baseUrl: 'https://b.test',
-          connectTimeout: Duration(seconds: -1),
-        ),
-      ),
-    ]) {
-      test('$name dio rejects throws and changes nothing', () {
+    // dio checks a base URL only off the web, where a relative one is valid.
+    for (final (name, rejected, testOn)
+        in <(String, HttpClientConfig, String?)>[
+          (
+            'a base URL',
+            const HttpClientConfig(baseUrl: 'api.example.com'),
+            'vm',
+          ),
+          (
+            'a timeout',
+            const HttpClientConfig(
+              baseUrl: 'https://b.test',
+              connectTimeout: Duration(seconds: -1),
+            ),
+            null,
+          ),
+        ]) {
+      test('$name dio rejects throws and changes nothing', testOn: testOn, () {
         const headers = HttpClientConfig(headers: {'X-Key': 'k'});
         final client = _Client(ScriptedAdapter([reply(200)]))
           ..configure(headers);
@@ -227,6 +331,13 @@ void main() {
         expect(client.interceptors.toList(), before);
       });
     }
+
+    test('a relative base URL is accepted on web', testOn: 'browser', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(const HttpClientConfig(baseUrl: 'api/'));
+
+      expect(client.baseUrl, 'api/');
+    });
 
     test('keeps a header set on dio.options and drops one the config '
         'stopped setting', () {
@@ -366,6 +477,158 @@ void main() {
           ),
           hasLength(1),
         );
+      });
+    });
+  });
+
+  group('log variants', () {
+    test('switching the log between pretty, JSON, and null rebuilds only '
+        'the log', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(
+          const HttpClientConfig(
+            log: LogConfig(),
+            rateLimit: RateLimitConfig.tokenBucket(global: [_policy]),
+            retry: RetryConfig(),
+          ),
+        );
+      addTearDown(client.dispose);
+      final limiter = client.interceptors
+          .whereType<TokenBucketRateLimitInterceptor>()
+          .single;
+      final retry = client.interceptors.whereType<RetryInterceptor>().single;
+
+      client.configure(
+        client.currentConfig.copyWith(log: const LogConfig.json()),
+      );
+
+      expect(client.interceptors.whereType<HttpLogInterceptor>(), isEmpty);
+      final json = client.interceptors.whereType<HttpJsonLogInterceptor>();
+      expect(json, hasLength(1));
+      expect(client.interceptors.elementAt(1), same(json.single));
+      expect(
+        client.interceptors.whereType<TokenBucketRateLimitInterceptor>().single,
+        same(limiter),
+      );
+      expect(
+        client.interceptors.whereType<RetryInterceptor>().single,
+        same(retry),
+      );
+
+      client.configure(client.currentConfig.copyWith(log: null));
+
+      expect(client.interceptors.whereType<HttpJsonLogInterceptor>(), isEmpty);
+      expect(
+        client.interceptors.whereType<TokenBucketRateLimitInterceptor>().single,
+        same(limiter),
+      );
+    });
+
+    test('the pretty log takes the redaction sets of its box', () async {
+      final lines = <Object?>[];
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(
+          HttpClientConfig(
+            baseUrl: 'https://a.test',
+            headers: const {'X-Tenant': 'acme'},
+            log: LogConfig(
+              redactHeaders: const {'x-tenant'},
+              redactQueryParameters: const {'page'},
+              logPrint: lines.add,
+            ),
+          ),
+        );
+
+      await client.dio.get<dynamic>('/x?page=2');
+
+      // Colour codes wrap header values; drop them to read the text.
+      final printed = lines
+          .join('\n')
+          .replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');
+      expect(printed, contains('X-Tenant: REDACTED'));
+      expect(printed, contains('https://a.test/x?page=REDACTED'));
+      expect(printed, isNot(contains('acme')));
+    });
+
+    test('a limiter diagnostic prints as a JSON line in JSON mode', () {
+      fakeAsync((async) {
+        final lines = <Object?>[];
+        final client = _Client(ScriptedAdapter([reply(200)]))
+          ..configure(
+            HttpClientConfig(
+              baseUrl: 'https://a.test',
+              log: LogConfig.json(logPrint: lines.add),
+              rateLimit: const RateLimitConfig.tokenBucket(
+                perHost: [
+                  TokenBucketPolicy(permits: 1, per: Duration(minutes: 1)),
+                ],
+                queueRequests: false,
+              ),
+            ),
+          );
+        client.dio.get<dynamic>('/1').ignore();
+        async.elapse(Duration.zero);
+        client.dio.get<dynamic>('/2').ignore();
+        async.elapse(Duration.zero);
+        client.dispose();
+
+        final decoded = [
+          for (final line in lines)
+            jsonDecode(line! as String) as Map<String, Object?>,
+        ];
+        final debug = decoded.where((l) => l['severity_text'] == 'DEBUG');
+        expect(debug.single.keys, ['timestamp', 'severity_text', 'body']);
+        expect(
+          debug.single['body'],
+          '[TokenBucketRateLimitInterceptor] Rate limit queue full for a.test',
+        );
+        expect(decoded.where((l) => l.containsKey('url.full')), hasLength(2));
+      });
+    });
+
+    test(
+      'a printer that throws fails no request through a diagnostic',
+      () async {
+        final client =
+            _Client(
+              ScriptedAdapter([
+                reply(200, headers: {'cache-control': 'max-age=60'}),
+              ]),
+            )..configure(
+              HttpClientConfig(
+                baseUrl: 'https://a.test',
+                log: LogConfig.json(logPrint: (_) => throw StateError('sink')),
+                cache: const CacheConfig(),
+              ),
+            );
+
+        final network = await client.dio.get<dynamic>('/x');
+        final hit = await client.dio.get<dynamic>('/x');
+
+        expect(network.statusCode, 200);
+        expect(hit.isCacheHit, isTrue);
+      },
+    );
+
+    test('a JSON log with diagnostics off prints no diagnostic', () {
+      fakeAsync((async) {
+        final lines = <Object?>[];
+        final client = _Client(ScriptedAdapter([reply(500)]))
+          ..configure(
+            HttpClientConfig(
+              baseUrl: 'https://a.test',
+              log: LogConfig.json(logPrint: lines.add, diagnostics: false),
+              retry: const RetryConfig(
+                maxAttempts: 1,
+                delay: Duration(milliseconds: 1),
+              ),
+            ),
+          );
+        client.dio.get<dynamic>('/x').ignore();
+        async.elapse(const Duration(seconds: 1));
+
+        expect(lines, hasLength(2));
+        expect(lines, everyElement(contains('"url.full"')));
       });
     });
   });

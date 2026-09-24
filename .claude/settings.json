@@ -1,4 +1,5 @@
 {
+  "skillListingBudgetFraction": 0.03,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
@@ -44,5 +45,8 @@
     "baseRef": "head"
   },
   "enabledPlugins": {
+    "core-pack@nonthawit-local": true,
+    "dart-engineer-pack@nonthawit-local": true,
+    "software-engineer-pack@nonthawit-local": true
   }
 }

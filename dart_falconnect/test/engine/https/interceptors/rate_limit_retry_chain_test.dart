@@ -19,7 +19,8 @@ const _retry = RetryConfig(
 /// handler.
 Dio _chain(ScriptedAdapter adapter, TokenBucketRateLimitInterceptor limiter) {
   final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-    ..httpClientAdapter = adapter;
+    ..httpClientAdapter = adapter
+    ..transformer = FoldingTransformer();
   dio.interceptors.addAll([
     limiter,
     RetryInterceptor(config: _retry, dio: dio),
@@ -36,7 +37,8 @@ Dio _limitedChain(
   bool retry = true,
 }) {
   final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-    ..httpClientAdapter = adapter;
+    ..httpClientAdapter = adapter
+    ..transformer = FoldingTransformer();
   dio.interceptors.addAll([
     concurrency,
     limiter,

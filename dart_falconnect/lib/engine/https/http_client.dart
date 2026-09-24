@@ -4,8 +4,9 @@ import 'package:dart_falconnect/lib.dart';
 /// [HttpClientConfig].
 ///
 /// The client orders the interceptor chain itself: the config's own
-/// `interceptors`, then log, performance, cache, concurrency limit, rate
-/// limit, retry, and the exception handler last. [configure] applies a new
+/// `interceptors`, then log, cache, concurrency limit, rate limit, retry,
+/// the cache's offline fallback when its box enables it, and the exception
+/// handler last. [configure] applies a new
 /// configuration to requests that start after it returns; requests already
 /// running finish on the configuration they started with. Interceptors
 /// whose box is unchanged are kept, with their state.
@@ -31,8 +32,7 @@ abstract class BaseHttpClient implements RequestApiService {
       DefaultNetworkExceptionHandlerInterceptor();
 
   HttpClientConfig? _config;
-  HttpLogInterceptor? _log;
-  PerformanceInterceptor? _performance;
+  Interceptor? _log;
   CacheInterceptor? _cache;
   ConcurrencyLimitInterceptor? _concurrency;
   Interceptor? _rateLimit;
@@ -64,18 +64,18 @@ abstract class BaseHttpClient implements RequestApiService {
     config.applyTo(Dio());
     final previous = _config;
     final log = _keepOrBuild(previous?.log, config.log, _log, _buildLog);
-    final performance = _keepOrBuild(
-      previous?.performance,
-      config.performance,
-      _performance,
-      (box) => PerformanceInterceptor(config: box, logPrint: _diagnostic),
-    );
     final cache = _keepOrBuild(
       previous?.cache,
       config.cache,
       _cache,
-      (box) => CacheInterceptor(config: box, logPrint: _diagnostic),
+      (box) => CacheInterceptor(
+        config: _keepStore(box, previous?.cache),
+        logPrint: _diagnostic,
+      ),
     );
+    final cacheFallback = cache != null && _hasFallback(cache.config)
+        ? cache.fallback
+        : null;
     final concurrency = _keepOrBuild(
       previous?.concurrency,
       config.concurrency,
@@ -99,16 +99,15 @@ abstract class BaseHttpClient implements RequestApiService {
       ..addAll([
         ...config.interceptors,
         ?log,
-        ?performance,
         ?cache,
         ?concurrency,
         ?rateLimit,
         ?retry,
+        ?cacheFallback,
         config.exceptionHandler ?? _defaultExceptionHandler,
       ]);
     _config = config;
     _log = log;
-    _performance = performance;
     _cache = cache;
     _concurrency = concurrency;
     _rateLimit = rateLimit;
@@ -350,6 +349,23 @@ abstract class BaseHttpClient implements RequestApiService {
         .catchWhenError(catchError);
   }
 
+  /// [box], carrying the current cache's memory store when only settings
+  /// that leave the stored entries valid changed since [before].
+  CacheConfig _keepStore(CacheConfig box, CacheConfig? before) {
+    final current = _cache;
+    if (current == null ||
+        before == null ||
+        box.store != null ||
+        before.store != null ||
+        box.maxSize != before.maxSize) {
+      return box;
+    }
+    return box.copyWith(store: current.store);
+  }
+
+  static bool _hasFallback(CacheConfig box) =>
+      box.hitCacheOnNetworkFailure || box.hitCacheOnErrorCodes.isNotEmpty;
+
   /// Keeps [current] when its box did not change, else builds a new one.
   static I? _keepOrBuild<B extends Object, I extends Object>(
     B? before,
@@ -362,7 +378,12 @@ abstract class BaseHttpClient implements RequestApiService {
     return build(after);
   }
 
-  HttpLogInterceptor _buildLog(LogConfig box) {
+  Interceptor _buildLog(LogConfig box) => switch (box) {
+    PrettyLogConfig() => _buildPrettyLog(box),
+    JsonLogConfig() => HttpJsonLogInterceptor(config: box),
+  };
+
+  HttpLogInterceptor _buildPrettyLog(PrettyLogConfig box) {
     final log = HttpLogInterceptor(
       request: box.request,
       requestHeader: box.requestHeader,
@@ -370,6 +391,8 @@ abstract class BaseHttpClient implements RequestApiService {
       responseHeader: box.responseHeader,
       responseBody: box.responseBody,
       error: box.error,
+      redactHeaders: box.redactHeaders,
+      redactQueryParameters: box.redactQueryParameters,
     );
     final printer = box.logPrint;
     if (printer != null) log.logPrint = printer;
@@ -401,17 +424,31 @@ abstract class BaseHttpClient implements RequestApiService {
     _dio.options.validateStatus = next.validateStatus ?? _defaultValidateStatus;
   }
 
-  /// Prints an interceptor diagnostic through the current log box.
+  /// Prints an interceptor diagnostic through the current log box, as a
+  /// JSON line when the box is a [JsonLogConfig]. A printer that throws is
+  /// ignored, so a diagnostic never fails a request.
   void _diagnostic(String message) {
     final log = _config?.log;
     if (log == null || !log.diagnostics) return;
-    final printer = log.logPrint;
-    if (printer != null) {
-      printer(message);
-    } else {
-      // Diagnostics go to the console when the config sets no printer.
-      // ignore: avoid_print
-      print(message);
+    final line = switch (log) {
+      PrettyLogConfig() => message,
+      JsonLogConfig() => jsonEncode({
+        'timestamp': clock.now().toUtc().toIso8601String(),
+        'severity_text': 'DEBUG',
+        'body': message,
+      }),
+    };
+    try {
+      final printer = log.logPrint;
+      if (printer != null) {
+        printer(line);
+      } else {
+        // Diagnostics go to the console when the config sets no printer.
+        // ignore: avoid_print
+        print(line);
+      }
+    } on Object {
+      // A broken log sink must not turn a request into a failure.
     }
   }
 }

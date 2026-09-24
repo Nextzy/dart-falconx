@@ -1,7 +1,6 @@
 import 'package:dart_falconnect/engine/https/config/cache_config.dart';
 import 'package:dart_falconnect/engine/https/config/concurrency_config.dart';
 import 'package:dart_falconnect/engine/https/config/log_config.dart';
-import 'package:dart_falconnect/engine/https/config/performance_config.dart';
 import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
 import 'package:dart_falconnect/engine/https/config/retry_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/network_exception_handler_interceptor.dart';
@@ -49,9 +48,6 @@ abstract class HttpClientConfig with _$HttpClientConfig {
 
     /// HTTP logging; null turns it off.
     LogConfig? log,
-
-    /// Performance monitoring; null turns it off.
-    PerformanceConfig? performance,
 
     /// Response cache; null turns it off.
     CacheConfig? cache,

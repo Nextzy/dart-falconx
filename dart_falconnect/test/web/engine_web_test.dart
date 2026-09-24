@@ -1,6 +1,8 @@
 @TestOn('browser')
 library;
 
+import 'dart:convert';
+
 import 'package:dart_falconnect/dart_falconnect.dart';
 import 'package:dart_falmodel/dart_falmodel.dart' show parseRetryAfter;
 import 'package:test/test.dart';
@@ -14,7 +16,6 @@ void main() {
       expect(
         const HttpClientConfig(
           log: LogConfig(),
-          performance: PerformanceConfig(),
           cache: CacheConfig(),
           concurrency: ConcurrencyConfig(global: 16, perHost: 4),
           rateLimit: RateLimitConfig.tokenBucket(),
@@ -36,11 +37,43 @@ void main() {
       expect(CacheInterceptor(), isNotNull);
       expect(ConcurrencyLimitInterceptor(), isNotNull);
       expect(RetryInterceptor(dio: dio), isNotNull);
-      expect(PerformanceInterceptor(), isNotNull);
       expect(TokenBucketRateLimitInterceptor(), isNotNull);
       expect(RetryAfterPauseInterceptor(), isNotNull);
       expect(HttpLogInterceptor(), isNotNull);
+      expect(HttpJsonLogInterceptor(), isNotNull);
       expect(DefaultNetworkExceptionHandlerInterceptor(), isNotNull);
+    });
+
+    test('CacheInterceptor serves a hit on web', () async {
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = adapter
+        ..interceptors.add(CacheInterceptor());
+      final options = Options(headers: {'Authorization': 'Bearer t'});
+
+      await dio.get<dynamic>('/x', options: options);
+      final hit = await dio.get<dynamic>('/x', options: options);
+
+      expect(hit.isCacheHit, isTrue);
+      expect(hit.data, {'status': 200});
+      expect(adapter.requests, hasLength(1));
+    });
+
+    test('HttpJsonLogInterceptor prints one JSON line on web', () async {
+      final lines = <Object?>[];
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = ScriptedAdapter([reply(200)]);
+      dio.interceptors.add(
+        HttpJsonLogInterceptor(config: JsonLogConfig(logPrint: lines.add)),
+      );
+
+      await dio.get<dynamic>('/x?token=t');
+
+      final line = jsonDecode(lines.single! as String) as Map<String, Object?>;
+      expect(line['url.full'], 'https://a.test/x?token=REDACTED');
+      expect(line['http.response.status_code'], 200);
     });
 
     test('parseRetryAfter reads an HTTP-date on web', () {

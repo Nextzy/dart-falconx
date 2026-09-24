@@ -83,7 +83,7 @@ for (final item in items) {   // List<BatchJsonRpcItem<dynamic>>
 Rules:
 
 - Response items without an `id` are dropped before decoding.
-- `BatchJsonRpcBody.toJson()` sends only `method` and `params`; the response `id` is matched against `BatchJsonRpcBody.id` to find `fromResultJson`, so set ids that match what your server echoes. No match throws a null-check error.
+- `BatchJsonRpcBody.toJson()` (generated) sends only `method` and `params`, omitting nulls; `BatchJsonRpcBody.fromJson(json)` reads them back, ignoring the envelope keys. The response `id` is matched against `BatchJsonRpcBody.id` to find `fromResultJson`, so set ids that match what your server echoes. No match throws a null-check error.
 - `BatchJsonRpcItem` members: `isSuccess`, `isFailure`, `responseOrNull`, `errorOrNull`, `resolve({success, failure})`, `map(transform)`. Concrete `BatchJsonRpcSuccess(response)` and `BatchJsonRpcFailure(error)` support `switch` patterns.
 
 ## Error handling

@@ -1,90 +1,139 @@
-import 'dart:convert';
+import 'dart:math';
 
 import 'package:dart_falconnect/engine/https/config/cache_config.dart';
-import 'package:dart_faltool/dart_faltool.dart' show clock;
+import 'package:dart_falconnect/src/engine/https/interceptors/retry_attempts.dart';
+import 'package:dart_faltool/dart_faltool.dart' show sha256;
 import 'package:dio/dio.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 
-/// Response cache entry.
-///
-/// Store and read the [timestamp] in the same clock zone: the age is
-/// computed from `clock.now()` at read time, so mixing zones yields a
-/// negative age (the entry never expires) or an inflated one.
-class CacheEntry {
-  /// Creates a cache entry with the given [response], creation [timestamp],
-  /// and cache [maxAge].
-  new({required this.response, required this.timestamp, required this.maxAge});
+const String _policyKey = 'dart_falconnect.cache.policy';
+const String _forKey = 'dart_falconnect.cache.for';
+const String _fallbackKey = 'dart_falconnect.cache.fallback';
+const String _revalidatingKey = 'dart_falconnect.cache.revalidating';
 
-  /// The cached HTTP response.
-  final Response<dynamic> response;
+/// Tells a response answered by [CacheInterceptor] apart from one fetched
+/// from the network.
+extension FalconCacheHitResponseExtensions on Response<dynamic> {
+  /// Whether [CacheInterceptor] answered this response from its store,
+  /// without a network round trip, or through [CacheInterceptor.fallback].
+  bool get isCacheHit => extra[extraFromNetworkKey] == false;
 
-  /// The time at which this entry was stored.
-  final DateTime timestamp;
-
-  /// The maximum duration this entry remains valid.
-  final Duration maxAge;
-
-  /// Returns `true` if the entry has exceeded its [maxAge].
-  bool get isExpired {
-    final age = clock.now().difference(timestamp);
-    return age > maxAge;
-  }
+  /// Whether [CacheInterceptor.fallback] answered this response after the
+  /// request failed.
+  bool get isCacheFallback => extra[_fallbackKey] == true;
 }
 
-/// Interceptor that caches HTTP responses.
-///
-/// This interceptor implements a simple in-memory cache for GET
-/// requests with configurable cache duration and size limits.
-///
-/// Time is read through `clock.now()`: store and read cache entries in
-/// the same clock zone, including eviction ordering, which sorts
-/// timestamps stamped by that zone.
-class CacheInterceptor extends Interceptor {
-  /// Creates a new cache interceptor.
-  new({this.config = const CacheConfig(), this.logPrint});
+/// Per-request cache settings on [RequestOptions].
+extension FalconCacheRequestOptionsExtensions on RequestOptions {
+  /// Policy for this request; null uses `CacheConfig.policy`, or
+  /// [CachePolicy.forceCache] when [cacheFor] is set.
+  CachePolicy? get cachePolicy => extra[_policyKey] as CachePolicy?;
+  set cachePolicy(CachePolicy? value) => extra = {...extra, _policyKey: value};
 
-  /// Cache lifetime and size limit.
+  /// Caches this request's response for this long, whatever the server's
+  /// headers say, and never answers it from an entry older than this.
+  /// Must be positive; applies to `GET` only.
+  Duration? get cacheFor => extra[_forKey] as Duration?;
+  set cacheFor(Duration? value) =>
+      extra = {...extra, _forKey: _checkCacheFor(value)};
+}
+
+/// Per-request cache settings on [Options].
+extension FalconCacheOptionsExtensions on Options {
+  /// Policy for this request; null uses `CacheConfig.policy`, or
+  /// [CachePolicy.forceCache] when [cacheFor] is set.
+  CachePolicy? get cachePolicy => extra?[_policyKey] as CachePolicy?;
+  set cachePolicy(CachePolicy? value) => extra = {...?extra, _policyKey: value};
+
+  /// Caches this request's response for this long, whatever the server's
+  /// headers say, and never answers it from an entry older than this.
+  /// Must be positive; applies to `GET` only.
+  Duration? get cacheFor => extra?[_forKey] as Duration?;
+  set cacheFor(Duration? value) =>
+      extra = {...?extra, _forKey: _checkCacheFor(value)};
+}
+
+Duration? _checkCacheFor(Duration? value) {
+  if (value != null && value <= Duration.zero) {
+    throw ArgumentError.value(value, 'cacheFor', 'must be positive');
+  }
+  return value;
+}
+
+/// Caches `GET` responses on `dio_cache_interceptor`.
+///
+/// By default it follows the server's cache headers: it stores what a
+/// response marks cacheable, answers from [store] while an entry is fresh,
+/// and revalidates a stale entry with `If-None-Match` or
+/// `If-Modified-Since`. A request can force caching with `cacheFor`.
+///
+/// A hit is a new [Response] decoded from stored bytes and bound to the
+/// current request; it passes every response interceptor of the chain.
+/// Entries are keyed by the URL and the headers of `CacheConfig.keyHeaders`.
+/// A streamed request ([ResponseType.stream], as `Dio.download` sends) is
+/// never stored or answered from the cache. A store that throws never
+/// fails a request: it goes to the network, and its response stays unstored.
+///
+/// Place it before `ConcurrencyLimitInterceptor`, so a hit takes no slot,
+/// and place [fallback] after `RetryInterceptor`.
+class CacheInterceptor extends Interceptor {
+  /// Creates a cache on [config]; with no `config.store`, entries live in a
+  /// new `MemCacheStore` of `config.maxSize` bytes.
+  ///
+  /// Throws an [ArgumentError] when `config.maxSize` is not positive.
+  new({this.config = const CacheConfig(), this.logPrint})
+    : store = config.store ?? _memoryStore(config.maxSize);
+
+  /// Policy, key, store, and offline settings. Inside a `BaseHttpClient`,
+  /// `config.store` may hold the memory store the client kept from the
+  /// previous cache, while the client's `currentConfig.cache.store` stays
+  /// null.
   final CacheConfig config;
 
   /// Prints diagnostics; null prints nothing.
   final void Function(String message)? logPrint;
-  final Map<String, CacheEntry> _cache = {};
-  int _currentCacheSize = 0;
+
+  /// The store entries live in.
+  final CacheStore store;
+
+  /// Answers failed `GET` requests from [store]; place it after
+  /// `RetryInterceptor`, so it answers only after the last retry. It passes
+  /// every error on unless `hitCacheOnNetworkFailure` or
+  /// `hitCacheOnErrorCodes` is set.
+  late final Interceptor fallback = _CacheFallback(this);
+
+  late final DioCacheInterceptor _cache = DioCacheInterceptor(
+    options: _options(policy: config.policy, maxStale: null),
+  );
 
   @override
   Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Only cache GET requests
-    if (options.method != 'GET') {
-      return handler.next(options);
+    if (_isStream(options)) {
+      handler.next(options);
+      return;
     }
-
-    // Check for no-cache directive
-    final cacheControl = options.headers['cache-control'];
-    if (cacheControl == 'no-cache' || cacheControl == 'no-store') {
-      return handler.next(options);
+    // A lookup carries no maxStale: the library would push an entry's
+    // deletion back on every hit, and an entry must expire on time.
+    var lookup = _requestOptions(options, save: false);
+    // A forced lookup returns any entry, however old; one older than the
+    // request's lifetime is fetched again and stored anew.
+    if (lookup.policy == CachePolicy.forceCache && await _outlived(options)) {
+      lookup = _options(policy: CachePolicy.refresh, maxStale: null);
     }
-
-    // Generate cache key
-    final cacheKey = _generateCacheKey(options);
-
-    // Check if we have a valid cached response
-    final cachedEntry = _cache[cacheKey];
-    if (cachedEntry != null && !cachedEntry.isExpired) {
-      _log('Cache hit for: ${options.method} ${options.uri}');
-
-      // Return cached response
-      return handler.resolve(cachedEntry.response);
-    }
-
-    // Remove expired entry
-    if (cachedEntry != null && cachedEntry.isExpired) {
-      _removeFromCache(cacheKey);
-    }
-
-    // Continue with the request
-    handler.next(options);
+    // A new map: the library writes into extra, which may be unmodifiable.
+    options.extra = {...options.extra, extraKey: lookup};
+    _cache.onRequest(
+      options,
+      _RevalidatingHandler(
+        handler,
+        hadConditions: _hasConditions(options),
+        onHit: () => _log('Hit for ${_describe(options)}'),
+        onStoreError: _logStoreError,
+      ),
+    );
   }
 
   @override
@@ -92,212 +141,272 @@ class CacheInterceptor extends Interceptor {
     Response<dynamic> response,
     ResponseInterceptorHandler handler,
   ) {
-    // Only cache successful GET requests
-    if (response.requestOptions.method != 'GET' ||
-        response.statusCode == null ||
-        response.statusCode! < 200 ||
-        response.statusCode! >= 300) {
-      return handler.next(response);
-    }
-
-    // Check cache-control headers
-    final cacheControl = response.headers.value('cache-control');
-    if (cacheControl != null &&
-        (cacheControl.contains('no-cache') ||
-            cacheControl.contains('no-store'))) {
-      return handler.next(response);
-    }
-
-    // Generate cache key
-    final cacheKey = _generateCacheKey(response.requestOptions);
-
-    // Calculate cache duration
-    final cacheDuration = _getCacheDuration(response);
-
-    // Store in cache
-    _addToCache(cacheKey, response, cacheDuration);
-
-    handler.next(response);
-  }
-
-  /// Generates a unique cache key for a request.
-  String _generateCacheKey(RequestOptions options) {
-    final url = options.uri.toString();
-    final queryParams = jsonEncode(options.queryParameters);
-    final headers = jsonEncode(_getCacheableHeaders(options.headers));
-
-    final input = '$url:$queryParams:$headers';
-
-    // Simple hash function without crypto dependency
-    return input.hashCode.toString();
-  }
-
-  /// Gets headers that should be included in cache key
-  /// generation.
-  Map<String, dynamic> _getCacheableHeaders(Map<String, dynamic> headers) {
-    final cacheableHeaders = <String, dynamic>{};
-
-    // Include headers that affect response content
-    const relevantHeaders = [
-      'accept',
-      'accept-language',
-      'accept-encoding',
-      'authorization',
-    ];
-
-    for (final header in relevantHeaders) {
-      if (headers.containsKey(header)) {
-        cacheableHeaders[header] = headers[header];
-      }
-    }
-
-    return cacheableHeaders;
-  }
-
-  /// Determines cache duration from response headers or
-  /// config.
-  Duration _getCacheDuration(Response<dynamic> response) {
-    // Check Cache-Control max-age
-    final cacheControl = response.headers.value('cache-control');
-    if (cacheControl != null) {
-      final maxAgeMatch = RegExp(r'max-age=(\d+)').firstMatch(cacheControl);
-      if (maxAgeMatch != null) {
-        final seconds = int.tryParse(maxAgeMatch.group(1)!);
-        if (seconds != null) {
-          return Duration(seconds: seconds);
-        }
-      }
-    }
-
-    // Check Expires header
-    final expires = response.headers.value('expires');
-    if (expires != null) {
-      try {
-        // Parse common HTTP date formats
-        final expiresDate = DateTime.parse(expires);
-        final duration = expiresDate.difference(clock.now());
-        if (duration.isNegative) {
-          return Duration.zero;
-        }
-        return duration;
-        // Date parsing may throw FormatException or other types.
-        // ignore: avoid_catches_without_on_clauses
-      } catch (e) {
-        // Invalid expires header, ignore
-      }
-    }
-
-    // Use default from config
-    return config.duration;
-  }
-
-  /// Adds a response to the cache.
-  void _addToCache(String key, Response<dynamic> response, Duration maxAge) {
-    // Skip if duration is zero
-    if (maxAge == Duration.zero) {
+    final options = response.requestOptions;
+    if (_isStream(options)) {
+      handler.next(response);
       return;
     }
-
-    // Estimate response size
-    final responseSize = _estimateResponseSize(response);
-
-    // Check if adding this would exceed cache size
-    if (_currentCacheSize + responseSize > config.maxSize) {
-      _evictOldestEntries(responseSize);
-    }
-
-    // Add to cache
-    _cache[key] = CacheEntry(
-      response: response,
-      timestamp: clock.now(),
-      maxAge: maxAge,
-    );
-    _currentCacheSize += responseSize;
-
-    _log(
-      'Cached response for: '
-      '${response.requestOptions.method} '
-      '${response.requestOptions.uri} '
-      '(${responseSize ~/ 1024}KB, '
-      'expires in ${maxAge.inSeconds}s)',
+    options.extra = {
+      ...options.extra,
+      extraKey: _requestOptions(options, save: true),
+    };
+    _cache.onResponse(
+      response,
+      _StoringHandler(handler, response, onStoreError: _logStoreError),
     );
   }
 
-  /// Removes an entry from the cache.
-  void _removeFromCache(String key) {
-    final entry = _cache.remove(key);
-    if (entry != null) {
-      _currentCacheSize -= _estimateResponseSize(entry.response);
+  // The library resolves inside onError, which skips every later error
+  // interceptor; the fallback and 304 revalidation live elsewhere.
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) =>
+      handler.next(err);
+
+  /// Deletes every entry of [store].
+  Future<void> clearCache() => store.clean();
+
+  CacheOptions _options({
+    required CachePolicy policy,
+    required Duration? maxStale,
+  }) => CacheOptions(
+    store: store,
+    policy: policy,
+    maxStale: maxStale,
+    keyBuilder: _key,
+  );
+
+  /// The library options of one request. Only a save carries maxStale, which
+  /// the library stamps on the entry it stores.
+  CacheOptions _requestOptions(RequestOptions options, {required bool save}) {
+    final cacheFor = options.cacheFor;
+    return _options(
+      policy:
+          options.cachePolicy ??
+          (cacheFor != null ? CachePolicy.forceCache : config.policy),
+      maxStale: save ? cacheFor ?? config.maxStale : null,
+    );
+  }
+
+  /// The store key: a digest of the URL and the listed headers the request
+  /// carries, so header values such as tokens never sit in a key.
+  String _key({required Uri url, Map<String, String>? headers, Object? body}) {
+    final values = {
+      for (final MapEntry(:key, :value) in (headers ?? const {}).entries)
+        key.toLowerCase(): value,
+    };
+    final names = [for (final name in config.keyHeaders) name.toLowerCase()]
+      ..sort();
+    final input = StringBuffer('$url');
+    for (final name in names) {
+      final value = values[name];
+      if (value != null) input.write('\n$name: $value');
+    }
+    return sha256.string(input.toString()).hex();
+  }
+
+  /// The key of [options], without the conditional headers the library may
+  /// have added.
+  String _keyOf(RequestOptions options) => _key(
+    url: options.uri,
+    headers: Map<String, String>.of(options.getFlattenHeaders())
+      ..removeWhere((name, _) => conditionalRequestHeaders.contains(name)),
+  );
+
+  /// Whether the entry of [options] is older than the request's lifetime,
+  /// `cacheFor` or else `CacheConfig.maxStale`. A store that throws answers
+  /// false; the library's own lookup then meets the same error.
+  Future<bool> _outlived(RequestOptions options) async {
+    final lifetime = options.cacheFor ?? config.maxStale;
+    if (lifetime == null) return false;
+    try {
+      final entry = await store.get(_keyOf(options));
+      return entry != null &&
+          DateTime.now().difference(entry.responseDate) > lifetime;
+    } on Object {
+      return false;
     }
   }
 
-  /// Evicts oldest entries to make room for new entry.
-  void _evictOldestEntries(int requiredSize) {
-    // Sort entries by timestamp (oldest first)
-    final sortedEntries = _cache.entries.toList()
-      ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
-
-    // Remove entries until we have enough space
-    for (final entry in sortedEntries) {
-      if (_currentCacheSize + requiredSize <= config.maxSize) {
-        break;
-      }
-      _removeFromCache(entry.key);
+  /// Answers [err] from [store], or returns null to pass it on.
+  Future<Response<dynamic>?> _fallbackFor(DioException err) async {
+    final options = err.requestOptions;
+    if (err.type == DioExceptionType.cancel ||
+        (options.cancelToken?.isCancelled ?? false) ||
+        options.method.toUpperCase() != 'GET') {
+      return null;
+    }
+    final status = err.response?.statusCode;
+    final allowed = status == null
+        ? config.hitCacheOnNetworkFailure
+        : config.hitCacheOnErrorCodes.contains(status);
+    if (!allowed) return null;
+    try {
+      final entry = await store.get(_keyOf(options));
+      if (entry == null || entry.isStaled()) return null;
+      final full = await entry.readContent(
+        _options(policy: config.policy, maxStale: null),
+        readHeaders: true,
+        readBody: true,
+      );
+      final response = full.toResponse(options);
+      response.extra[_fallbackKey] = true;
+      _log(
+        'Answered ${_describe(options)} from the cache after '
+        '${status ?? err.type.name}',
+      );
+      return response;
+      // A broken store must not replace the request's own error.
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      return null;
     }
   }
 
-  /// Estimates the size of a response in bytes.
-  int _estimateResponseSize(Response<dynamic> response) {
-    // Start with headers size
-    var size = 0;
+  /// The library's default per-entry limit. The memory store also needs an
+  /// entry limit of at most a fifth of its total size.
+  static const int _maxEntrySize = 512000;
 
-    // Add headers size
-    response.headers.forEach((key, values) {
-      size += key.length;
-      for (final value in values) {
-        size += value.length;
-      }
-    });
-
-    // Add response data size
-    final data = response.data;
-    if (data is String) {
-      size += data.length;
-    } else if (data is List<int>) {
-      size += data.length;
-    } else if (data != null) {
-      // Estimate JSON size
-      try {
-        size += jsonEncode(data).length;
-        // JSON encoding may fail for non-serializable types.
-        // ignore: avoid_catches_without_on_clauses
-      } catch (e) {
-        // Can't encode, estimate 1KB
-        size += 1024;
-      }
+  static MemCacheStore _memoryStore(int maxSize) {
+    if (maxSize <= 0) {
+      throw ArgumentError.value(maxSize, 'maxSize', 'must be positive');
     }
-
-    return size;
+    return MemCacheStore(
+      maxSize: maxSize,
+      maxEntrySize: min(_maxEntrySize, maxSize ~/ 5),
+    );
   }
+
+  // The query may hold a secret, so diagnostics never print it.
+  static String _describe(RequestOptions options) =>
+      '${options.method} ${options.uri.host}${options.uri.path}';
+
+  // The library can neither store nor serve a stream, and fails the request
+  // when it tries, so a streamed request passes untouched.
+  static bool _isStream(RequestOptions options) =>
+      options.responseType == ResponseType.stream;
+
+  static bool _hasConditions(RequestOptions options) =>
+      conditionalRequestHeaders.any(options.headers.containsKey);
 
   void _log(String message) => logPrint?.call('[CacheInterceptor] $message');
 
-  /// Clears the entire cache.
-  void clearCache() {
-    _cache.clear();
-    _currentCacheSize = 0;
+  // The error's text may quote the request, so only its type is printed.
+  void _logStoreError(DioException error) => _log(
+    'Skipped the cache for ${_describe(error.requestOptions)} after '
+    '${error.error.runtimeType}',
+  );
+}
+
+/// Forwards to the real handler. A request the library made conditional
+/// accepts `304`, so revalidation stays on the response path, where every
+/// interceptor, `ConcurrencyLimitInterceptor` included, sees a response.
+class _RevalidatingHandler extends RequestInterceptorHandler {
+  new(
+    this._handler, {
+    required this.hadConditions,
+    required this.onHit,
+    required this.onStoreError,
+  });
+
+  final RequestInterceptorHandler _handler;
+
+  /// Whether the app itself made the request conditional.
+  final bool hadConditions;
+  final void Function() onHit;
+  final void Function(DioException error) onStoreError;
+
+  @override
+  void next(RequestOptions requestOptions) {
+    if (!hadConditions && CacheInterceptor._hasConditions(requestOptions)) {
+      final accept = requestOptions.validateStatus;
+      requestOptions.validateStatus = (status) =>
+          status == 304 || accept(status);
+      requestOptions.extra = {...requestOptions.extra, _revalidatingKey: true};
+    }
+    _handler.next(requestOptions);
   }
 
-  /// Removes expired entries from the cache.
-  void evictExpired() {
-    final keysToRemove = <String>[];
+  @override
+  void resolve(
+    Response<dynamic> response, [
+    bool callFollowingResponseInterceptor = false,
+  ]) {
+    onHit();
+    _handler.resolve(response, callFollowingResponseInterceptor);
+  }
 
-    _cache.forEach((key, entry) {
-      if (entry.isExpired) {
-        keysToRemove.add(key);
-      }
-    });
+  // The library rejects only when its store fails; the request then goes
+  // to the network as if nothing were stored.
+  @override
+  void reject(
+    DioException error, [
+    bool callFollowingErrorInterceptor = false,
+  ]) {
+    onStoreError(error);
+    _handler.next(error.requestOptions);
+  }
+}
 
-    keysToRemove.forEach(_removeFromCache);
+/// Forwards to the real handler. The library rejects a response only when
+/// its store fails; the app then gets the network response unstored.
+class _StoringHandler extends ResponseInterceptorHandler {
+  new(this._handler, this._response, {required this.onStoreError});
+
+  final ResponseInterceptorHandler _handler;
+
+  /// The response as it came from the network.
+  final Response<dynamic> _response;
+  final void Function(DioException error) onStoreError;
+
+  /// A `304` to a request the cache made conditional turns into the stored
+  /// response; one still here found no entry, for example after
+  /// `clearCache()`, and fails as dio's own `validateStatus` would fail it.
+  @override
+  void next(Response<dynamic> response) {
+    if (response.statusCode == 304 &&
+        response.requestOptions.extra[_revalidatingKey] == true) {
+      _handler.reject(
+        DioException.badResponse(
+          statusCode: 304,
+          requestOptions: response.requestOptions,
+          response: response,
+        ),
+        true,
+      );
+      return;
+    }
+    _handler.next(response);
+  }
+
+  @override
+  void resolve(Response<dynamic> response) => _handler.resolve(response);
+
+  @override
+  void reject(
+    DioException error, [
+    bool callFollowingErrorInterceptor = false,
+  ]) {
+    onStoreError(error);
+    next(_response);
+  }
+}
+
+/// The offline fallback of [CacheInterceptor.fallback].
+class _CacheFallback extends Interceptor {
+  new(this._cache);
+
+  final CacheInterceptor _cache;
+
+  @override
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    // A retry attempt's error passes here inside the retry loop; only the
+    // error the loop passes on after its last attempt may fall back.
+    if (isOpenRetryAttempt(err.requestOptions)) return handler.next(err);
+    final response = await _cache._fallbackFor(err);
+    if (response == null) return handler.next(err);
+    handler.resolve(response);
   }
 }

@@ -221,9 +221,8 @@ abstract class JsonRpcService {
           );
         }
 
-        final Function(Map<String, dynamic>? json)? fromResultJson = bodyList
-            .firstOrNullWhere((b) => b.id == id)
-            ?.fromResultJson;
+        final Object? Function(Map<String, dynamic>? json)? fromResultJson =
+            bodyList.firstOrNullWhere((b) => b.id == id)?.fromResultJson;
 
         return BatchJsonRpcSuccess(
           JsonRpcResponse(
@@ -231,7 +230,7 @@ abstract class JsonRpcService {
             id: intId,
             result: switch (result) {
               final Map<String, dynamic> map =>
-                fromResultJson!(map) as JsonRpcResult,
+                fromResultJson!(map)! as JsonRpcResult,
               _ => throw StateError('Invalid result type'),
             },
           ),
