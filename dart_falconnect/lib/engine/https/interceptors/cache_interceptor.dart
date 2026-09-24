@@ -32,7 +32,7 @@ extension FalconCacheRequestOptionsExtensions on RequestOptions {
 
   /// Caches this request's response for this long, whatever the server's
   /// headers say, and never answers it from an entry older than this.
-  /// Must be positive.
+  /// Must be positive; applies to `GET` only.
   Duration? get cacheFor => extra[_forKey] as Duration?;
   set cacheFor(Duration? value) =>
       extra = {...extra, _forKey: _checkCacheFor(value)};
@@ -47,7 +47,7 @@ extension FalconCacheOptionsExtensions on Options {
 
   /// Caches this request's response for this long, whatever the server's
   /// headers say, and never answers it from an entry older than this.
-  /// Must be positive.
+  /// Must be positive; applies to `GET` only.
   Duration? get cacheFor => extra?[_forKey] as Duration?;
   set cacheFor(Duration? value) =>
       extra = {...?extra, _forKey: _checkCacheFor(value)};
@@ -84,7 +84,10 @@ class CacheInterceptor extends Interceptor {
   new({this.config = const CacheConfig(), this.logPrint})
     : store = config.store ?? _memoryStore(config.maxSize);
 
-  /// Policy, key, store, and offline settings.
+  /// Policy, key, store, and offline settings. Inside a `BaseHttpClient`,
+  /// `config.store` may hold the memory store the client kept from the
+  /// previous cache, while the client's `currentConfig.cache.store` stays
+  /// null.
   final CacheConfig config;
 
   /// Prints diagnostics; null prints nothing.
