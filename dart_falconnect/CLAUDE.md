@@ -9,18 +9,17 @@
 ## HTTP (`engine/https/`)
 
 - `BaseHttpClient` implements `RequestApiService`. `configure()` keeps each interceptor whose config box is unchanged, with its state, and rebuilds the rest. Every request method funnels into one private `_request()` that chains `.mapJson(converter).catchWhenError(catchError)`.
-- `HttpClientConfig` (freezed) holds the Dio options it owns plus one box per feature, with no presets. A null `log`, `performance`, `cache`, `concurrency`, or `retry` box turns that feature off. `rateLimit` defaults to `RateLimitConfig.none()`; its `pauseOnly` variant builds `RetryAfterPauseInterceptor`, and `tokenBucket` builds `TokenBucketRateLimitInterceptor`. A `LogConfig()` box builds `HttpLogInterceptor`; a `LogConfig.json()` box builds `HttpJsonLogInterceptor`.
+- `HttpClientConfig` (freezed) holds the Dio options it owns plus one box per feature, with no presets. A null `log`, `cache`, `concurrency`, or `retry` box turns that feature off. `rateLimit` defaults to `RateLimitConfig.none()`; its `pauseOnly` variant builds `RetryAfterPauseInterceptor`, and `tokenBucket` builds `TokenBucketRateLimitInterceptor`. A `LogConfig()` box builds `HttpLogInterceptor`; a `LogConfig.json()` box builds `HttpJsonLogInterceptor`.
 - `extensions/response_extensions.dart` provides `mapJson()`, `unwrapResponse()`, and `catchWhenError()` on response futures, plus `copyWith()` and `transformData()` on `Response<dynamic>?`.
 
 ## Interceptor chain
 
-`BaseHttpClient.configure` assembles the chain in this order: the config's `interceptors` → `HttpLogInterceptor` or `HttpJsonLogInterceptor` → `PerformanceInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → exception handler.
+`BaseHttpClient.configure` assembles the chain in this order: the config's `interceptors` → `HttpLogInterceptor` or `HttpJsonLogInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → exception handler.
 
 | Interceptor                                 | Role                                                                                                     |
 |---------------------------------------------|----------------------------------------------------------------------------------------------------------|
 | `HttpLogInterceptor`                        | ANSI-colored multi-line log; redacts listed headers and query values                                     |
 | `HttpJsonLogInterceptor`                    | one JSON line per attempt with OpenTelemetry field names, for servers                                    |
-| `PerformanceInterceptor`                    | per-request timing and aggregate statistics                                                              |
 | `CacheInterceptor`                          | in-memory cache of GET responses; a hit passes every response interceptor and reads `isCacheHit`         |
 | `ConcurrencyLimitInterceptor`               | caps requests in flight per host and in total on `resilience` `Bulkhead`s                                |
 | `TokenBucketRateLimitInterceptor`           | token buckets from `TokenBucketPolicy` lists plus a per-host pause on a 429 or 503 `Retry-After`         |
@@ -29,10 +28,10 @@
 | `NetworkExceptionHandlerInterceptor`        | abstract; routes errors to `onClientError`, `onServerError`, or `onNonStandardError` by status range     |
 | `DefaultNetworkExceptionHandlerInterceptor` | rejects every error unchanged                                                                            |
 
-- The cache, concurrency, performance, rate-limit, and retry interceptors take their config box plus an optional `logPrint`.
+- The cache, concurrency, rate-limit, and retry interceptors take their config box plus an optional `logPrint`.
 - Unexported helpers: the pause core in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host-key rule in `lib/src/engine/https/interceptors/host_key.dart`, the log redaction helpers and the log start key in `lib/src/engine/https/interceptors/log_redaction.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart`.
 - Export a new interceptor from `interceptors/interceptors.dart`; that barrel also exports `local_rate_limit.dart`, which tells a client-made 429 from a server 429.
-- Interceptor model classes live in `interceptors/models/` as freezed classes (generated output in `models/generated/`); `getStatistics()` and `getUrlStatistics()` return immutable snapshots, never live interceptor state.
+- Interceptor model classes live in `interceptors/models/` as freezed classes (generated output in `models/generated/`); `getStatistics()` returns immutable snapshots, never live interceptor state.
 
 ## WebSocket (`engine/sockets/`)
 

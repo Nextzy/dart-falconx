@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24
 **Packages:** `dart_falconnect`
-**Version:** 2.1.0. The owner accepted one small, documented break for this minor release (section 11).
+**Version:** 2.1.0. The owner accepted two documented source breaks for this minor release (section 11); dart_falconx has no consumers yet.
 **Builds on:** the client-config core (`2026-09-24-default-http-client-config-design.md`), which defines `HttpClientConfig`, the `log` box, and the chain order.
 
 ## 1. Context
@@ -192,7 +192,6 @@ With `callFollowingResponseInterceptor`, every interceptor's `onResponse` runs f
 | Interceptor | Effect of a hit |
 |---|---|
 | Custom interceptors, `HttpLogInterceptor`, `HttpJsonLogInterceptor` | Their `onResponse` now pairs with the `onRequest` they already saw |
-| `PerformanceInterceptor` | Records the hit. Before this change the stale `requestOptions` pointed at the first request's metrics object |
 | `ConcurrencyLimitInterceptor` | No permit in `extra`, so `_permitOf(...)?.release()` does nothing |
 | `TokenBucketRateLimitInterceptor`, `RetryAfterPauseInterceptor` | A cached response is 2xx, so no pause starts. Tests must confirm that no counter moves |
 | `RetryInterceptor`, the exception handler | Pass the response on |
@@ -201,11 +200,12 @@ With `callFollowingResponseInterceptor`, every interceptor's `onResponse` runs f
 
 | # | Change | Action |
 |---|---|---|
-| 1 | `LogConfig` is a sealed union. The pretty-only fields (`request`, `requestHeader`, `responseHeader`, `error`) are not on the `LogConfig` type, nor in its `copyWith`; `requestBody` and `responseBody` exist in both variants, so they stay on it | Match or cast to `PrettyLogConfig` before reading or copying them. This is the one source break of the release |
+| 1 | `LogConfig` is a sealed union. The pretty-only fields (`request`, `requestHeader`, `responseHeader`, `error`) are not on the `LogConfig` type, nor in its `copyWith`; `requestBody` and `responseBody` exist in both variants, so they stay on it | Match or cast to `PrettyLogConfig` before reading or copying them. This is a source break |
 | 2 | A cache hit reaches every response interceptor, and its `requestOptions` are the current request's | Custom interceptors that count responses now count hits; use `response.isCacheHit` to tell them apart |
 | 3 | The pretty log redacts sensitive headers and query values | Pass `redactHeaders: const {}` to see them in development |
 | 4 | The pretty log no longer changes the global `ansiColorDisabled` | Set it yourself if other code relied on the side effect |
 | 5 | The pretty log prints status and duration for every response | Nothing |
+| 6 | `PerformanceInterceptor`, `PerformanceConfig`, `HttpClientConfig.performance`, `RequestMetrics`, and `PerformanceStatistics` are removed; the chain drops position 3 | Read the duration from the JSON log line (`http.client.request.duration`) or the pretty log; aggregate it in the log backend. This is a source break |
 
 ## 12. Testing plan
 
