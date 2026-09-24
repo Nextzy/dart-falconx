@@ -420,6 +420,31 @@ void main() {
       expect(concurrency.forwarded, 2);
       expect(rateLimit.forwarded, 2);
     });
+
+    test('the JSON log prints both attempts with one request ID', () async {
+      final lines = <Object?>[];
+      final tokens = _Tokens();
+      final server = _Server(tokens);
+      final client = _Client(
+        server,
+        HttpClientConfig(
+          log: LogConfig.json(logPrint: lines.add, diagnostics: false),
+          requestId: RequestIdConfig(generate: () => 'id-1'),
+          auth: tokens.config(),
+        ),
+      );
+
+      await client.dio.get<dynamic>('/x');
+
+      final fields = [
+        for (final line in lines) jsonDecode(line! as String) as Map,
+      ];
+      expect(fields, hasLength(2));
+      expect(fields.map((f) => f['falconx.request.id']), ['id-1', 'id-1']);
+      expect(fields[0]['http.response.status_code'], 401);
+      expect(fields[0], isNot(contains('falconx.auth.resent')));
+      expect(fields[1]['falconx.auth.resent'], isTrue);
+    });
   });
 
   group('zone guard', () {

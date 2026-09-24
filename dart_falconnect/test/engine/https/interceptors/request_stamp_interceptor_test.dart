@@ -357,4 +357,25 @@ void main() {
       expect(adapter.requests, isEmpty);
     });
   });
+  group('logs', () {
+    test('the pretty log prints the request ID in the request title and '
+        'never the token', () async {
+      final lines = <Object?>[];
+      final client = _Client(
+        ScriptedAdapter([reply(200)]),
+        HttpClientConfig(
+          log: LogConfig(logPrint: lines.add, requestHeader: true),
+          requestId: RequestIdConfig(generate: () => 'id-1'),
+          auth: _auth(() => 'secret-token'),
+        ),
+      );
+
+      await client.dio.get<dynamic>('/x');
+
+      final text = lines.join('\n');
+      expect(text, contains('*** Request id-1 ***'));
+      expect(text, contains('dart_falconnect.auth.token: REDACTED'));
+      expect(text, isNot(contains('secret-token')));
+    });
+  });
 }
