@@ -49,9 +49,16 @@ List<String> _urls(Iterable<GatedRequest> requests) => [
 /// rest of the Dio chain.
 class _RecordingHandler extends RequestInterceptorHandler {
   final forwarded = <RequestOptions>[];
+  final rejected = <DioException>[];
 
   @override
   void next(RequestOptions requestOptions) => forwarded.add(requestOptions);
+
+  @override
+  void reject(
+    DioException error, [
+    bool callFollowingErrorInterceptor = false,
+  ]) => rejected.add(error);
 }
 
 /// Re-sends the first failed request from `onError`, as an auth refresh
@@ -229,7 +236,10 @@ void main() {
       _get(dio, '/2', outcomes);
       _settle(async);
 
-      expect(outcomes.single, isA<DioException>());
+      final error = outcomes.single as DioException;
+      expect(error.error, isA<BulkheadRejectedException>());
+      expect(error.response?.statusCode, 429);
+      expect(limiter.getStatistics().rejected, 1);
       expect(limiter.getStatistics().activeByHost, {'a.test': 1});
     });
   });
@@ -752,5 +762,23 @@ void main() {
       _settle(async);
       expect(_urls(adapter.inFlight), ['https://a.test/after']);
     });
+  });
+
+  test('a request whose token is already cancelled gets the token error', () {
+    final limiter = ConcurrencyLimitInterceptor(config: _config, perHost: 1);
+    final handler = _RecordingHandler();
+    final token = CancelToken()..cancel('left');
+    final options = RequestOptions(
+      path: 'https://a.test/x',
+      cancelToken: token,
+    );
+
+    unawaited(limiter.onRequest(options, handler));
+
+    final error = handler.rejected.single;
+    expect(error.type, DioExceptionType.cancel);
+    expect(error.error, 'left');
+    expect(error.requestOptions, same(options));
+    expect(limiter.getStatistics().activeByHost, isEmpty);
   });
 }

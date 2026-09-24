@@ -191,7 +191,7 @@ class ConcurrencyLimitInterceptor extends Interceptor {
     final cancelToken = options.cancelToken;
     if (cancelToken != null && cancelToken.isCancelled) {
       handler.reject(
-        _cancelled(options, cancelToken.cancelError, 'Request cancelled'),
+        cancelToken.cancelError!.copyWith(requestOptions: options),
       );
       return;
     }

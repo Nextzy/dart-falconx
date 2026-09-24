@@ -50,4 +50,21 @@ void main() {
     }
     expect(activeCancelWatches(token), 0);
   });
+
+  test('a throwing watch does not stop the others', () async {
+    final token = CancelToken();
+    final calls = <String>[];
+    final errors = <Object>[];
+
+    await runZonedGuarded(() async {
+      watchCancel(token, (_) => throw StateError('boom'));
+      watchCancel(token, (_) => calls.add('second'));
+      token.cancel();
+      await Future<void>.delayed(Duration.zero);
+    }, (error, _) => errors.add(error));
+
+    expect(calls, ['second']);
+    expect(errors.single, isA<StateError>());
+    expect(activeCancelWatches(token), 0);
+  });
 }
