@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$PerformanceConfig {
 
 /// Most request metrics kept in memory.
- int get maxMetricsHistory;/// Whether to collect detailed timing information.
- bool get collectDetailedTimings;
+ int get maxMetricsHistory;
 /// Create a copy of PerformanceConfig
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,20 +28,20 @@ $PerformanceConfigCopyWith<PerformanceConfig> get copyWith => _$PerformanceConfi
 @override
 bool operator ==(Object other) {
   final _this = this as PerformanceConfig;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PerformanceConfig&&(identical(other.maxMetricsHistory, _this.maxMetricsHistory) || other.maxMetricsHistory == _this.maxMetricsHistory)&&(identical(other.collectDetailedTimings, _this.collectDetailedTimings) || other.collectDetailedTimings == _this.collectDetailedTimings));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PerformanceConfig&&(identical(other.maxMetricsHistory, _this.maxMetricsHistory) || other.maxMetricsHistory == _this.maxMetricsHistory));
 }
 
 
 @override
 int get hashCode {
   final _this = this as PerformanceConfig;
-  return Object.hash(runtimeType,_this.maxMetricsHistory,_this.collectDetailedTimings);
+  return Object.hash(runtimeType,_this.maxMetricsHistory);
 }
 
 @override
 String toString() {
   final _this = this as PerformanceConfig;
-  return 'PerformanceConfig(maxMetricsHistory: ${_this.maxMetricsHistory}, collectDetailedTimings: ${_this.collectDetailedTimings})';
+  return 'PerformanceConfig(maxMetricsHistory: ${_this.maxMetricsHistory})';
 }
 
 
@@ -53,7 +52,7 @@ abstract mixin class $PerformanceConfigCopyWith<$Res>  {
   factory $PerformanceConfigCopyWith(PerformanceConfig value, $Res Function(PerformanceConfig) _then) = _$PerformanceConfigCopyWithImpl;
 @useResult
 $Res call({
- int maxMetricsHistory, bool collectDetailedTimings
+ int maxMetricsHistory
 });
 
 
@@ -70,11 +69,10 @@ class _$PerformanceConfigCopyWithImpl<$Res>
 
 /// Create a copy of PerformanceConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? maxMetricsHistory = null,Object? collectDetailedTimings = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? maxMetricsHistory = null,}) {
   return _then(PerformanceConfig(
 maxMetricsHistory: null == maxMetricsHistory ? _self.maxMetricsHistory : maxMetricsHistory // ignore: cast_nullable_to_non_nullable
-as int,collectDetailedTimings: null == collectDetailedTimings ? _self.collectDetailedTimings : collectDetailedTimings // ignore: cast_nullable_to_non_nullable
-as bool,
+as int,
   ));
 }
 
@@ -159,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int maxMetricsHistory,  bool collectDetailedTimings)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int maxMetricsHistory)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PerformanceConfig() when $default != null:
-return $default(_that.maxMetricsHistory,_that.collectDetailedTimings);case _:
+return $default(_that.maxMetricsHistory);case _:
   return orElse();
 
 }
@@ -180,10 +178,10 @@ return $default(_that.maxMetricsHistory,_that.collectDetailedTimings);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int maxMetricsHistory,  bool collectDetailedTimings)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int maxMetricsHistory)  $default,) {final _that = this;
 switch (_that) {
 case _PerformanceConfig():
-return $default(_that.maxMetricsHistory,_that.collectDetailedTimings);case _:
+return $default(_that.maxMetricsHistory);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +198,10 @@ return $default(_that.maxMetricsHistory,_that.collectDetailedTimings);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int maxMetricsHistory,  bool collectDetailedTimings)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int maxMetricsHistory)?  $default,) {final _that = this;
 switch (_that) {
 case _PerformanceConfig() when $default != null:
-return $default(_that.maxMetricsHistory,_that.collectDetailedTimings);case _:
+return $default(_that.maxMetricsHistory);case _:
   return null;
 
 }
@@ -215,13 +213,11 @@ return $default(_that.maxMetricsHistory,_that.collectDetailedTimings);case _:
 
 
 class _PerformanceConfig implements PerformanceConfig {
-  const _PerformanceConfig({this.maxMetricsHistory = 1000, this.collectDetailedTimings = true});
+  const _PerformanceConfig({this.maxMetricsHistory = 1000});
   
 
 /// Most request metrics kept in memory.
 @override@JsonKey() final  int maxMetricsHistory;
-/// Whether to collect detailed timing information.
-@override@JsonKey() final  bool collectDetailedTimings;
 
 /// Create a copy of PerformanceConfig
 /// with the given fields replaced by the non-null parameter values.
@@ -233,18 +229,18 @@ _$PerformanceConfigCopyWith<_PerformanceConfig> get copyWith => __$PerformanceCo
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PerformanceConfig&&(identical(other.maxMetricsHistory, maxMetricsHistory) || other.maxMetricsHistory == maxMetricsHistory)&&(identical(other.collectDetailedTimings, collectDetailedTimings) || other.collectDetailedTimings == collectDetailedTimings));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PerformanceConfig&&(identical(other.maxMetricsHistory, maxMetricsHistory) || other.maxMetricsHistory == maxMetricsHistory));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,maxMetricsHistory,collectDetailedTimings);
+    return Object.hash(runtimeType,maxMetricsHistory);
 }
 
 @override
 String toString() {
-    return 'PerformanceConfig(maxMetricsHistory: $maxMetricsHistory, collectDetailedTimings: $collectDetailedTimings)';
+    return 'PerformanceConfig(maxMetricsHistory: $maxMetricsHistory)';
 }
 
 
@@ -255,7 +251,7 @@ abstract mixin class _$PerformanceConfigCopyWith<$Res> implements $PerformanceCo
   factory _$PerformanceConfigCopyWith(_PerformanceConfig value, $Res Function(_PerformanceConfig) _then) = __$PerformanceConfigCopyWithImpl;
 @override @useResult
 $Res call({
- int maxMetricsHistory, bool collectDetailedTimings
+ int maxMetricsHistory
 });
 
 
@@ -272,11 +268,10 @@ class __$PerformanceConfigCopyWithImpl<$Res>
 
 /// Create a copy of PerformanceConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? maxMetricsHistory = null,Object? collectDetailedTimings = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? maxMetricsHistory = null,}) {
   return _then(_PerformanceConfig(
 maxMetricsHistory: null == maxMetricsHistory ? _self.maxMetricsHistory : maxMetricsHistory // ignore: cast_nullable_to_non_nullable
-as int,collectDetailedTimings: null == collectDetailedTimings ? _self.collectDetailedTimings : collectDetailedTimings // ignore: cast_nullable_to_non_nullable
-as bool,
+as int,
   ));
 }
 

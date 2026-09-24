@@ -1,103 +1,9 @@
 import 'dart:collection';
 
 import 'package:dart_falconnect/engine/https/config/performance_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/models/request_metrics.dart';
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
-
-/// Performance metrics for a single request.
-///
-/// Store and read [startTime] and [endTime] in the same clock zone: the
-/// `totalDuration` fallback and `toJson` read `clock.now()` in the
-/// reader's zone, so reading outside the request's zone reports
-/// real-now minus zone-stamped start (a huge or negative duration).
-class RequestMetrics {
-  /// Creates a [RequestMetrics] instance for tracking a request identified by
-  /// [method], [url], and [startTime].
-  new({required this.method, required this.url, required this.startTime});
-
-  /// HTTP method (e.g. `GET`, `POST`).
-  final String method;
-
-  /// Full request URL.
-  final String url;
-
-  /// Timestamp when the request was initiated.
-  final DateTime startTime;
-
-  /// Timestamp when the response (or error) was received.
-  DateTime? endTime;
-
-  /// HTTP status code of the response, if available.
-  int? statusCode;
-
-  /// Error description if the request failed.
-  String? error;
-
-  /// Time spent in DNS lookup.
-  ///
-  /// Always `null` on web — browsers do not expose XHR timing
-  /// breakdowns to dio.
-  Duration? dnsLookupTime;
-
-  /// Time spent establishing connection.
-  ///
-  /// Always `null` on web — browsers do not expose XHR timing
-  /// breakdowns to dio.
-  Duration? connectionTime;
-
-  /// Time spent in TLS handshake.
-  ///
-  /// Always `null` on web — browsers do not expose XHR timing
-  /// breakdowns to dio.
-  Duration? tlsHandshakeTime;
-
-  /// Time spent sending the request.
-  Duration? requestTime;
-
-  /// Time spent waiting for first byte.
-  ///
-  /// Always `null` on web — browsers do not expose XHR timing
-  /// breakdowns to dio.
-  Duration? timeToFirstByte;
-
-  /// Time spent downloading response.
-  ///
-  /// Always `null` on web — browsers do not expose XHR timing
-  /// breakdowns to dio.
-  Duration? downloadTime;
-
-  /// Total request duration.
-  Duration get totalDuration => endTime != null
-      ? endTime!.difference(startTime)
-      : clock.now().difference(startTime);
-
-  /// Request body size in bytes.
-  int? requestSize;
-
-  /// Response body size in bytes.
-  int? responseSize;
-
-  /// Serializes this metrics snapshot to a JSON-compatible map.
-  Map<String, dynamic> toJson() {
-    return {
-      'method': method,
-      'url': url,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime?.toIso8601String(),
-      'statusCode': statusCode,
-      'error': error,
-      'totalDuration': totalDuration.inMilliseconds,
-      'dnsLookupTime': dnsLookupTime?.inMilliseconds,
-      'connectionTime': connectionTime?.inMilliseconds,
-      'tlsHandshakeTime': tlsHandshakeTime?.inMilliseconds,
-      'requestTime': requestTime?.inMilliseconds,
-      'timeToFirstByte': timeToFirstByte?.inMilliseconds,
-      'downloadTime': downloadTime?.inMilliseconds,
-      'requestSize': requestSize,
-      'responseSize': responseSize,
-    };
-  }
-}
 
 /// Aggregated performance statistics across multiple requests.
 class PerformanceStatistics {
@@ -256,9 +162,6 @@ class PerformanceInterceptor extends Interceptor {
   /// Maximum number of detailed metrics to keep in memory.
   int get maxMetricsHistory => config.maxMetricsHistory;
 
-  /// Whether to collect detailed timing information.
-  bool get collectDetailedTimings => config.collectDetailedTimings;
-
   /// Recent request metrics.
   final Queue<RequestMetrics> _metricsHistory = Queue<RequestMetrics>();
 
@@ -271,14 +174,12 @@ class PerformanceInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     // Create metrics for this request
-    final metrics =
-        RequestMetrics(
-            method: options.method,
-            url: options.uri.toString(),
-            startTime: clock.now(),
-          )
-          // Estimate request size
-          ..requestSize = _estimateRequestSize(options);
+    final metrics = RequestMetrics(
+      method: options.method,
+      url: options.uri.toString(),
+      startTime: clock.now(),
+      requestSize: _estimateRequestSize(options),
+    );
 
     // Store metrics in request options
     options.extra['performanceMetrics'] = metrics;
@@ -298,21 +199,19 @@ class PerformanceInterceptor extends Interceptor {
       return handler.next(response);
     }
 
-    // Update metrics
-    metrics
-      ..endTime = clock.now()
-      ..statusCode = response.statusCode
-      // Estimate response size
-      ..responseSize = _estimateResponseSize(response);
-
-    // Add to history and statistics
-    _addMetrics(metrics);
+    // Complete the metrics snapshot and record the copy
+    final completed = metrics.copyWith(
+      endTime: clock.now(),
+      statusCode: response.statusCode,
+      responseSize: _estimateResponseSize(response),
+    );
+    _addMetrics(completed);
 
     _log(
-      '${metrics.method} ${metrics.url} - '
-      '${metrics.totalDuration.inMilliseconds}ms, '
-      'status: ${metrics.statusCode}, '
-      'response: ${metrics.responseSize} bytes',
+      '${completed.method} ${completed.url} - '
+      '${completed.totalDuration.inMilliseconds}ms, '
+      'status: ${completed.statusCode}, '
+      'response: ${completed.responseSize} bytes',
     );
 
     handler.next(response);
@@ -327,24 +226,21 @@ class PerformanceInterceptor extends Interceptor {
       return handler.next(err);
     }
 
-    // Update metrics
-    metrics
-      ..endTime = clock.now()
-      ..statusCode = err.response?.statusCode
-      ..error = err.type.toString();
-
-    if (err.response != null) {
-      metrics.responseSize = _estimateResponseSize(err.response!);
-    }
-
-    // Add to history and statistics
-    _addMetrics(metrics);
+    // Complete the metrics snapshot and record the copy
+    final response = err.response;
+    final completed = metrics.copyWith(
+      endTime: clock.now(),
+      statusCode: response?.statusCode,
+      error: err.type.toString(),
+      responseSize: response == null ? null : _estimateResponseSize(response),
+    );
+    _addMetrics(completed);
 
     _log(
-      '${metrics.method} ${metrics.url} - '
+      '${completed.method} ${completed.url} - '
       'FAILED: '
-      '${metrics.totalDuration.inMilliseconds}ms, '
-      'error: ${metrics.error}',
+      '${completed.totalDuration.inMilliseconds}ms, '
+      'error: ${completed.error}',
     );
 
     handler.next(err);
