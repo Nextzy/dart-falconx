@@ -228,6 +228,7 @@ class CacheInterceptor extends Interceptor {
   Future<Response<dynamic>?> _fallbackFor(DioException err) async {
     final options = err.requestOptions;
     if (err.type == DioExceptionType.cancel ||
+        (options.cancelToken?.isCancelled ?? false) ||
         options.method.toUpperCase() != 'GET') {
       return null;
     }
