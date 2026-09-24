@@ -320,6 +320,21 @@ void main() {
       expect(adapter.requests, hasLength(3));
     });
 
+    test('cachePolicy noCache drops the stored entry', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [CacheInterceptor()]);
+
+      await dio.get<dynamic>('/x');
+      await dio.get<dynamic>(
+        '/x',
+        options: Options()..cachePolicy = CachePolicy.noCache,
+      );
+      final after = await dio.get<dynamic>('/x');
+
+      expect(after.isCacheHit, isFalse);
+      expect(adapter.requests, hasLength(3));
+    });
+
     test('cachePolicy refresh fetches and stores the fresh answer', () async {
       final adapter = ScriptedAdapter([_cacheable()]);
       final dio = _dio(adapter, [CacheInterceptor()]);
