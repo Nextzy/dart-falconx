@@ -73,7 +73,6 @@ void main() {
           HttpClientConfig(
             interceptors: [custom],
             log: const LogConfig(),
-            performance: const PerformanceConfig(),
             cache: const CacheConfig(),
             concurrency: const ConcurrencyConfig(global: 4),
             rateLimit: const RateLimitConfig.pauseOnly(),
@@ -86,7 +85,6 @@ void main() {
         'ImplyContentTypeInterceptor',
         '_ErrorSpy',
         'HttpLogInterceptor',
-        'PerformanceInterceptor',
         'CacheInterceptor',
         'ConcurrencyLimitInterceptor',
         'RetryAfterPauseInterceptor',

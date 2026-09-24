@@ -16,7 +16,6 @@ void main() {
       expect(
         const HttpClientConfig(
           log: LogConfig(),
-          performance: PerformanceConfig(),
           cache: CacheConfig(),
           concurrency: ConcurrencyConfig(global: 16, perHost: 4),
           rateLimit: RateLimitConfig.tokenBucket(),
@@ -38,7 +37,6 @@ void main() {
       expect(CacheInterceptor(), isNotNull);
       expect(ConcurrencyLimitInterceptor(), isNotNull);
       expect(RetryInterceptor(dio: dio), isNotNull);
-      expect(PerformanceInterceptor(), isNotNull);
       expect(TokenBucketRateLimitInterceptor(), isNotNull);
       expect(RetryAfterPauseInterceptor(), isNotNull);
       expect(HttpLogInterceptor(), isNotNull);

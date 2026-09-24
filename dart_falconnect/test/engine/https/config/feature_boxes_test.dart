@@ -33,9 +33,6 @@ void main() {
     expect(concurrency.maxQueueSize, 50);
     expect(concurrency.maxGlobalQueueSize, 500);
 
-    const performance = PerformanceConfig();
-    expect(performance.maxMetricsHistory, 1000);
-
     const log = PrettyLogConfig();
     expect(log.responseHeader, isFalse);
     expect(log.logPrint, isNull);

@@ -6,7 +6,6 @@ export 'local_rate_limit.dart';
 export 'log_interceptor.dart';
 export 'models/models.dart';
 export 'network_exception_handler_interceptor.dart';
-export 'performance_interceptor.dart';
 export 'retry_after_pause_interceptor.dart';
 export 'retry_interceptor.dart';
 export 'token_bucket_rate_limit_interceptor.dart';

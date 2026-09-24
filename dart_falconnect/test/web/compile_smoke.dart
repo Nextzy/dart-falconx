@@ -31,7 +31,6 @@ void main() {
     ),
   );
   _sink(RetryInterceptor(dio: dio));
-  _sink(PerformanceInterceptor());
   _sink(TokenBucketRateLimitInterceptor());
   _sink(RetryAfterPauseInterceptor());
   _sink(HttpLogInterceptor());

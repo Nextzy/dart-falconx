@@ -65,7 +65,6 @@ void main() {
     final dio = Dio();
 
     expect(CacheInterceptor().config, const CacheConfig());
-    expect(PerformanceInterceptor().config, const PerformanceConfig());
     expect(RetryInterceptor(dio: dio).config, const RetryConfig());
     expect(ConcurrencyLimitInterceptor().config, const ConcurrencyConfig());
     expect(
