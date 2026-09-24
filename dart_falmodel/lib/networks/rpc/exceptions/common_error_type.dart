@@ -92,7 +92,7 @@ enum JsonRpcRequestErrorTypeEnum implements JsonRpcRequestErrorType {
 interface class JsonRpcExternalApiErrorType implements JsonRpcErrorType;
 
 /// Concrete external-API error codes used in JSON-RPC error responses.
-enum JsonRpcExternalApiErrorTypeEnum {
+enum JsonRpcExternalApiErrorTypeEnum implements JsonRpcExternalApiErrorType {
   /// The external API returned a response that is not valid JSON-RPC 2.0.
   INVALID_JSON_RPC,
 

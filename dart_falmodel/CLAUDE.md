@@ -29,7 +29,7 @@ To add a network exception:
 
 - `JsonRpcCommonException` extends `CommonException`; `JsonRpcDataLayerException` and `JsonRpcDomainLayerException` extend `JsonRpcCommonException` and have concrete subclasses such as `JsonRpcDatabaseException`.
 - `JsonRpcErrorCategory` values: `API_ERROR`, `EXTERNAL_API_ERROR`, `INVALID_REQUEST_ERROR`, `UNKNOWN`.
-- `JsonRpcApiErrorType` and `JsonRpcRequestErrorType` are marker interfaces. Server codes live in `JsonRpcApiErrorTypeEnum` (`UNAUTHORIZED`, `RATE_LIMITED`); client codes live in `JsonRpcRequestErrorTypeEnum` (`BAD_REQUEST`, `INCORRECT_TYPE`).
+- `JsonRpcApiErrorType`, `JsonRpcRequestErrorType`, and `JsonRpcExternalApiErrorType` are marker interfaces, and `toJsonRpcError()` reads the category from them. Server codes live in `JsonRpcApiErrorTypeEnum` (`UNAUTHORIZED`, `RATE_LIMITED`), client codes in `JsonRpcRequestErrorTypeEnum` (`BAD_REQUEST`, `INCORRECT_TYPE`), and external-API codes in `JsonRpcExternalApiErrorTypeEnum`; a new code enum implements its marker.
 - Export every new RPC exception file from `lib/networks/rpc/exceptions/exceptions.dart`.
 
 ## Result
