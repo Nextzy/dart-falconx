@@ -2,7 +2,6 @@
 library;
 
 import 'package:dart_falconnect/dart_falconnect.dart';
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_falmodel/dart_falmodel.dart' show parseRetryAfter;
 import 'package:test/test.dart';
 

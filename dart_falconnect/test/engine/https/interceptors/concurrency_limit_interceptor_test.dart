@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:dart_falconnect/dart_falconnect.dart';
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
 import 'package:dart_faltool/dart_faltool.dart'
     show BulkheadRejectedException, TokenBucketPolicy;
 import 'package:fake_async/fake_async.dart';
