@@ -68,7 +68,8 @@ Duration? _checkCacheFor(Duration? value) {
 /// current request; it passes every response interceptor of the chain.
 /// Entries are keyed by the URL and the headers of `CacheConfig.keyHeaders`.
 /// A streamed request ([ResponseType.stream], as `Dio.download` sends) is
-/// never stored or answered from the cache.
+/// never stored or answered from the cache. A store that throws never
+/// fails a request: it goes to the network, and its response stays unstored.
 ///
 /// Place it before `ConcurrencyLimitInterceptor`, so a hit takes no slot,
 /// and place [fallback] after `RetryInterceptor`.
@@ -118,6 +119,7 @@ class CacheInterceptor extends Interceptor {
         handler,
         hadConditions: _hasConditions(options),
         onHit: () => _log('Hit for ${_describe(options)}'),
+        onStoreError: _logStoreError,
       ),
     );
   }
@@ -136,7 +138,10 @@ class CacheInterceptor extends Interceptor {
       ...options.extra,
       extraKey: _requestOptions(options, save: true),
     };
-    _cache.onResponse(response, handler);
+    _cache.onResponse(
+      response,
+      _StoringHandler(handler, response, onStoreError: _logStoreError),
+    );
   }
 
   // The library resolves inside onError, which skips every later error
@@ -250,19 +255,31 @@ class CacheInterceptor extends Interceptor {
       conditionalRequestHeaders.any(options.headers.containsKey);
 
   void _log(String message) => logPrint?.call('[CacheInterceptor] $message');
+
+  // The error's text may quote the request, so only its type is printed.
+  void _logStoreError(DioException error) => _log(
+    'Skipped the cache for ${_describe(error.requestOptions)} after '
+    '${error.error.runtimeType}',
+  );
 }
 
 /// Forwards to the real handler. A request the library made conditional
 /// accepts `304`, so revalidation stays on the response path, where every
 /// interceptor, `ConcurrencyLimitInterceptor` included, sees a response.
 class _RevalidatingHandler extends RequestInterceptorHandler {
-  new(this._handler, {required this.hadConditions, required this.onHit});
+  new(
+    this._handler, {
+    required this.hadConditions,
+    required this.onHit,
+    required this.onStoreError,
+  });
 
   final RequestInterceptorHandler _handler;
 
   /// Whether the app itself made the request conditional.
   final bool hadConditions;
   final void Function() onHit;
+  final void Function(DioException error) onStoreError;
 
   @override
   void next(RequestOptions requestOptions) {
@@ -283,11 +300,43 @@ class _RevalidatingHandler extends RequestInterceptorHandler {
     _handler.resolve(response, callFollowingResponseInterceptor);
   }
 
+  // The library rejects only when its store fails; the request then goes
+  // to the network as if nothing were stored.
   @override
   void reject(
     DioException error, [
     bool callFollowingErrorInterceptor = false,
-  ]) => _handler.reject(error, callFollowingErrorInterceptor);
+  ]) {
+    onStoreError(error);
+    _handler.next(error.requestOptions);
+  }
+}
+
+/// Forwards to the real handler. The library rejects a response only when
+/// its store fails; the app then gets the network response unstored.
+class _StoringHandler extends ResponseInterceptorHandler {
+  new(this._handler, this._response, {required this.onStoreError});
+
+  final ResponseInterceptorHandler _handler;
+
+  /// The response as it came from the network.
+  final Response<dynamic> _response;
+  final void Function(DioException error) onStoreError;
+
+  @override
+  void next(Response<dynamic> response) => _handler.next(response);
+
+  @override
+  void resolve(Response<dynamic> response) => _handler.resolve(response);
+
+  @override
+  void reject(
+    DioException error, [
+    bool callFollowingErrorInterceptor = false,
+  ]) {
+    onStoreError(error);
+    _handler.next(_response);
+  }
 }
 
 /// The offline fallback of [CacheInterceptor.fallback].

@@ -18,6 +18,22 @@ class _ResponseSpy extends Interceptor {
   }
 }
 
+/// A memory store whose reads or writes fail, as a full disk would.
+class _BrokenStore extends MemCacheStore {
+  new({this.failGet = false, this.failSet = false});
+
+  final bool failGet;
+  final bool failSet;
+
+  @override
+  Future<CacheResponse?> get(String key) =>
+      failGet ? Future.error(StateError('disk full')) : super.get(key);
+
+  @override
+  Future<void> set(CacheResponse response) =>
+      failSet ? Future.error(StateError('disk full')) : super.set(response);
+}
+
 Dio _dio(HttpClientAdapter adapter, List<Interceptor> chain) =>
     Dio(BaseOptions(baseUrl: 'https://a.test'))
       ..httpClientAdapter = adapter
@@ -363,6 +379,42 @@ void main() {
       await dio.get<dynamic>('/x');
 
       expect(adapter.requests, hasLength(2));
+    });
+
+    test('a store that fails to read lets the request reach the '
+        'network', () async {
+      final adapter = ScriptedAdapter([_cacheable()]);
+      final dio = _dio(adapter, [
+        CacheInterceptor(
+          config: CacheConfig(store: _BrokenStore(failGet: true)),
+        ),
+      ]);
+
+      final response = await dio.get<dynamic>('/x');
+
+      expect(response.data, {'status': 200});
+      expect(adapter.requests, hasLength(1));
+    });
+
+    test('a store that fails to write still hands over the response, and '
+        'says so without the query', () async {
+      final lines = <String>[];
+      final dio = _dio(ScriptedAdapter([_cacheable()]), [
+        CacheInterceptor(
+          config: CacheConfig(store: _BrokenStore(failSet: true)),
+          logPrint: lines.add,
+        ),
+      ]);
+
+      final response = await dio.get<dynamic>('/x?token=secret');
+
+      expect(response.statusCode, 200);
+      expect(response.data, {'status': 200});
+      expect(
+        lines.single,
+        '[CacheInterceptor] Skipped the cache for GET a.test/x after '
+        'StateError',
+      );
     });
 
     test('without a store it builds a memory store', () {
