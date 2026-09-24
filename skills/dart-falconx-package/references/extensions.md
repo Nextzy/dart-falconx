@@ -7,7 +7,7 @@
 - Convert: `toIntOrZero`, `toDoubleOrZero`, `toBoolean`, `toBooleanOrNull`, `toMap`, `toMapOrNull`, `toMapOrEmpty`, `toByte`, `hashSha256`, `removeHttp`, `containsIgnoreCase`, `countOccurrence`, `escapeHtml`, `unescapeHtml`.
 - Format: `toCamelCase`, `toSnakeCase`, `toPascalCase`, `toKebabCase`, `capitalize`, `capitalizeWord`, `truncate`, `maskPhoneNumber`, `maskEmail`.
 - Validate: `isUrl` / `isNotUrl`, `isEmail` / `isNotEmail`, `isNumeric`, `isJson` / `isNotJson`, `isPhoneNumber` / `isNotPhoneNumber`, `isTime` / `isNotTime`, `removeWhiteSpace`, `removeHtmlTags`, `normalizeWhitespace`; patterns in `FormatRegex`.
-- Base64: `isBase64`, `toBase64`, `fromBase64ToString`, `fromBase64ToByte`.
+- Base64: `isBase64`, `toBase64`, `fromBase64ToString`, `fromBase64ToBytes`. `isBase64` is true for non-empty input that `fromBase64ToBytes` decodes: standard or URL-safe alphabet, padded or unpadded.
 - Enum: `toEnum<T>(List<T> values, {defaultValue, caseSensitive = false})`, `toEnumOrNull<T>(values, {caseSensitive})`, `isValidEnum<T>()`.
 
 `String?`: `or(default)`, `toIntOrNull`, `toIntOrZero`, `toDoubleOrNull`, `toDoubleOrZero`, `toBooleanOrNull`, `toMapOrNull`, `toMapOrEmpty`, `isUrl`, `isEmail`, `isJson`, `removeWhiteSpace`, `normalizeWhitespace`, `capitalize`, `truncate`, `maskPhoneNumber`, `maskEmail`.
