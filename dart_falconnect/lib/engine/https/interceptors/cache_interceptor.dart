@@ -5,10 +5,25 @@ import 'package:dart_falconnect/engine/https/interceptors/models/cache_entry.dar
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
+/// Key in `Response.extra` that marks a response answered from the cache.
+const String _cacheHitKey = 'dart_falconnect.cacheHit';
+
+/// Tells a response answered by [CacheInterceptor] apart from one fetched
+/// from the network.
+extension FalconCacheHitResponseExtensions on Response<dynamic> {
+  /// Whether [CacheInterceptor] answered this response from its cache.
+  bool get isCacheHit => extra[_cacheHitKey] == true;
+}
+
 /// Interceptor that caches HTTP responses.
 ///
 /// This interceptor implements a simple in-memory cache for GET
 /// requests with configurable cache duration and size limits.
+///
+/// A hit is a new [Response] bound to the current request's options and
+/// marked `isCacheHit`; it passes every response interceptor of the chain,
+/// and is never stored again, so an entry expires on time however often it
+/// is read.
 ///
 /// Time is read through `clock.now()`: store and read cache entries in
 /// the same clock zone, including eviction ordering, which sorts
@@ -48,9 +63,8 @@ class CacheInterceptor extends Interceptor {
     final cachedEntry = _cache[cacheKey];
     if (cachedEntry != null && !cachedEntry.isExpired) {
       _log('Cache hit for: ${options.method} ${options.uri}');
-
-      // Return cached response
-      return handler.resolve(cachedEntry.response);
+      // true runs every response interceptor, those before the cache too.
+      return handler.resolve(_hit(cachedEntry.response, options), true);
     }
 
     // Remove expired entry
@@ -67,6 +81,11 @@ class CacheInterceptor extends Interceptor {
     Response<dynamic> response,
     ResponseInterceptorHandler handler,
   ) {
+    // Storing a hit again would renew its lifetime, so it would never expire.
+    if (response.isCacheHit) {
+      return handler.next(response);
+    }
+
     // Only cache successful GET requests
     if (response.requestOptions.method != 'GET' ||
         response.statusCode == null ||
@@ -94,6 +113,18 @@ class CacheInterceptor extends Interceptor {
 
     handler.next(response);
   }
+
+  /// Builds the answer to [options] from a [cached] response, bound to the
+  /// current request and marked as a hit.
+  Response<dynamic> _hit(Response<dynamic> cached, RequestOptions options) =>
+      Response<dynamic>(
+        data: cached.data,
+        headers: cached.headers,
+        requestOptions: options,
+        statusCode: cached.statusCode,
+        statusMessage: cached.statusMessage,
+        extra: {...cached.extra, _cacheHitKey: true},
+      );
 
   /// Generates a unique cache key for a request.
   String _generateCacheKey(RequestOptions options) {

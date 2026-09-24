@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_falconnect/engine/https/config/config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/cache_interceptor.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/engine/https/interceptors/token_bucket_rate_limit_interceptor.dart';
 import 'package:dart_faltool/dart_faltool.dart'
@@ -8,6 +9,8 @@ import 'package:dart_faltool/dart_faltool.dart'
 import 'package:dio/dio.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:test/test.dart';
+
+import '_scripted_adapter.dart';
 
 /// Records what the interceptor does with each request, standing in for the
 /// rest of the Dio chain.
@@ -92,6 +95,20 @@ void _fail(
   ),
   _SilentErrorHandler(),
 );
+
+/// Records every response it sees and passes it on.
+class _ResponseSpy extends Interceptor {
+  final List<Response<dynamic>> responses = [];
+
+  @override
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
+    responses.add(response);
+    handler.next(response);
+  }
+}
 
 void _send(
   TokenBucketRateLimitInterceptor interceptor,
@@ -729,6 +746,38 @@ void main() {
         });
         interceptor.dispose();
       });
+    });
+  });
+
+  test('a cache hit passes onResponse without moving a counter', () {
+    fakeAsync((async) {
+      final interceptor = TokenBucketRateLimitInterceptor(
+        config: const TokenBucketRateLimitConfig(
+          perHost: [
+            TokenBucketPolicy(permits: 1, per: Duration(minutes: 1), burst: 1),
+          ],
+        ),
+      );
+      final spy = _ResponseSpy();
+      final adapter = ScriptedAdapter([reply(200)]);
+      final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
+        ..httpClientAdapter = adapter
+        ..transformer = FoldingTransformer()
+        ..interceptors.addAll([CacheInterceptor(), interceptor, spy]);
+
+      dio.get<dynamic>('/x').ignore();
+      async.elapse(Duration.zero);
+      dio.get<dynamic>('/x').ignore();
+      async.elapse(Duration.zero);
+
+      expect(spy.responses.map((r) => r.isCacheHit), [false, true]);
+      expect(adapter.requests, hasLength(1));
+      final stats = interceptor.getStatistics();
+      expect(stats.forwarded, 1);
+      expect(stats.rejected, 0);
+      expect(stats.waitingByHost, {'a.test': 0});
+      expect(stats.pausedUntilByHost, isEmpty);
+      interceptor.dispose();
     });
   });
 
