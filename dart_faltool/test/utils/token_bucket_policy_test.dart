@@ -32,15 +32,16 @@ int _maxInAnyWindow(List<Duration> admitted, Duration per) {
 }
 
 void main() {
-  group('TokenBucketPolicy.burst', () {
-    test('defaults to 10% of permits', () {
+  group('TokenBucketPolicy.effectiveBurst', () {
+    test('defaults to 10% of permits and leaves burst null', () {
       const policy = TokenBucketPolicy(permits: 100, per: Duration(minutes: 1));
-      expect(policy.burst, 10);
+      expect(policy.effectiveBurst, 10);
+      expect(policy.burst, isNull);
     });
 
     test('defaults to at least 1', () {
       const policy = TokenBucketPolicy(permits: 5, per: Duration(seconds: 1));
-      expect(policy.burst, 1);
+      expect(policy.effectiveBurst, 1);
     });
 
     test('uses an explicit value', () {
@@ -50,6 +51,18 @@ void main() {
         burst: 40,
       );
       expect(policy.burst, 40);
+      expect(policy.effectiveBurst, 40);
+    });
+  });
+
+  group('TokenBucketPolicy equality', () {
+    TokenBucketPolicy build(int permits) =>
+        TokenBucketPolicy(permits: permits, per: const Duration(seconds: 1));
+
+    test('policies with equal fields are equal', () {
+      expect(build(5), build(5));
+      expect(build(5).hashCode, build(5).hashCode);
+      expect(build(5), isNot(build(6)));
     });
   });
 
