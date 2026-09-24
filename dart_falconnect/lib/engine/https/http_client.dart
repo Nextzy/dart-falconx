@@ -5,9 +5,9 @@ import 'package:dart_falconnect/lib.dart';
 ///
 /// The client orders the interceptor chain itself: the request stamp when
 /// `requestId`, `headerProvider`, or `auth` is set, the config's own
-/// `interceptors`, then log, cache, concurrency limit, rate limit, retry,
-/// the cache's offline fallback when its box enables it, and the exception
-/// handler last. [configure] applies a new
+/// `interceptors`, then log, cache, concurrency limit, rate limit, token
+/// refresh, retry, the cache's offline fallback when its box enables it,
+/// and the exception handler last. [configure] applies a new
 /// configuration to requests that start after it returns; requests already
 /// running finish on the configuration they started with. Interceptors
 /// whose box is unchanged are kept, with their state.
@@ -35,6 +35,7 @@ abstract class BaseHttpClient implements RequestApiService {
   HttpClientConfig? _config;
   AuthSession? _session;
   RequestStampInterceptor? _stamp;
+  TokenRefreshInterceptor? _refresh;
   Interceptor? _log;
   CacheInterceptor? _cache;
   ConcurrencyLimitInterceptor? _concurrency;
@@ -73,6 +74,11 @@ abstract class BaseHttpClient implements RequestApiService {
       (box) => AuthSession(box, logPrint: _diagnostic),
     );
     final stamp = _buildStamp(previous, config, session);
+    final refresh = session == null
+        ? null
+        : identical(session, _session) && _refresh != null
+        ? _refresh
+        : TokenRefreshInterceptor(session: session, dio: _dio);
     final log = _keepOrBuild(previous?.log, config.log, _log, _buildLog);
     final cache = _keepOrBuild(
       previous?.cache,
@@ -113,6 +119,7 @@ abstract class BaseHttpClient implements RequestApiService {
         ?cache,
         ?concurrency,
         ?rateLimit,
+        ?refresh,
         ?retry,
         ?cacheFallback,
         config.exceptionHandler ?? _defaultExceptionHandler,
@@ -120,6 +127,7 @@ abstract class BaseHttpClient implements RequestApiService {
     _config = config;
     _session = session;
     _stamp = stamp;
+    _refresh = refresh;
     _log = log;
     _cache = cache;
     _concurrency = concurrency;
