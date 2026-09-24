@@ -420,4 +420,21 @@ void main() {
       ),
     );
   });
+
+  test('configure after dispose rebuilds the limiters', () async {
+    final client = _Client(ScriptedAdapter([reply(200)]))
+      ..configure(
+        const HttpClientConfig(
+          baseUrl: 'https://a.test',
+          concurrency: ConcurrencyConfig(global: 2),
+          rateLimit: RateLimitConfig.tokenBucket(global: [_policy]),
+        ),
+      )
+      ..dispose();
+
+    client.configure(client.currentConfig);
+    addTearDown(client.dispose);
+
+    await expectLater(client.dio.get<dynamic>('/x'), completes);
+  });
 }
