@@ -42,8 +42,8 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 | `melos run test:platforms`               | `test:compile`, then `test:web`                                     |
 | `melos run test:compile`                 | compiles `dart_falconnect/test/web/compile_smoke.dart` to js, wasm, and exe |
 | `melos run test:web`                     | every package's tests in Chrome, under dart2js and then dart2wasm   |
-| `melos run build_runner`                 | `build --delete-conflicting-outputs` (use after merges)             |
-| `melos run build_runner:fast`            | `build` only, reuses the incremental cache (use when adding fields) |
+| `melos run build_runner`                 | `build`, one package at a time                                      |
+| `melos run build_runner:fast`            | `build`, up to four packages at once                                |
 | `melos run build_runner:watch`           | Watch mode                                                          |
 
 - Reset corrupted dependencies with `melos clean`, then `melos bootstrap`.

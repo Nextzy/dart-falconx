@@ -97,14 +97,14 @@ melos:
     build_runner:
       description: Run build_runner for code generation in all packages.
       exec:
-        command: dart run build_runner build --delete-conflicting-outputs
+        command: dart run build_runner build
         concurrency: 1
         failFast: false
       packageFilters:
         dependsOn: build_runner
 
     build_runner:fast:
-      description: Run build_runner without deleting outputs — reuses incremental cache (use when just adding fields, not after merges).
+      description: Run build_runner in up to four packages at once.
       exec:
         command: dart run build_runner build
         concurrency: 4
@@ -115,7 +115,7 @@ melos:
     build_runner:watch:
       description: Run build_runner watch for code generation.
       exec:
-        command: dart run build_runner watch --delete-conflicting-outputs
+        command: dart run build_runner watch
         concurrency: 1
       packageFilters:
         dependsOn: build_runner
