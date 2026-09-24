@@ -66,6 +66,20 @@ melos:
       packageFilters:
         dirExists: test
 
+    test:platforms:
+      description: Compile dart_falconnect to JavaScript, WebAssembly, and a native executable, then run its browser tests in Chrome.
+      exec:
+        command: >-
+          mkdir -p .dart_tool/platform_gates &&
+          dart compile js test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke.js &&
+          dart compile wasm test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke.wasm &&
+          dart compile exe test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke_exe &&
+          dart test -p chrome test/web/
+        concurrency: 1
+        failFast: true
+      packageFilters:
+        scope: dart_falconnect
+
     build_runner:
       description: Run build_runner for code generation in all packages.
       exec:
