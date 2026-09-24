@@ -26,6 +26,10 @@ class AuthSession {
   Future<bool>? _refreshing;
   String? _failedToken;
 
+  /// Refreshes that succeeded so far. A change across a token read means a
+  /// token newer than the one read is ready.
+  int _refreshed = 0;
+
   /// Whether the caller runs inside this session's `config.refresh()`.
   bool get isInsideRefresh => Zone.current[_zoneKey] == true;
 
@@ -39,12 +43,31 @@ class AuthSession {
   /// Whether [token] is the token whose refresh failed last.
   bool isFailedToken(String token) => token == _failedToken;
 
-  /// Refreshes once for every caller that arrives while a refresh runs.
+  /// Returns true when a token newer than [staleToken] is ready to use.
   ///
-  /// Returns true when the refresh succeeded. On failure, records
-  /// [staleToken] as the last failed token and calls `onAuthFailed` with
-  /// [error] once; callers that joined the refresh do not call it again.
-  Future<bool> refreshFor(String staleToken, DioException error) {
+  /// Reads the current token first. A different token, or a refresh that
+  /// succeeded while the read ran, is newer. A null token, or a read that
+  /// throws, returns false: the app signed out or cannot say. Otherwise
+  /// joins the running refresh, or starts one, so every caller that arrives
+  /// while a refresh runs shares it.
+  ///
+  /// On a failed refresh, records [staleToken] as the last failed token and
+  /// calls `onAuthFailed` with [error] once; callers that joined the refresh
+  /// do not call it again.
+  Future<bool> refreshFor(String staleToken, DioException error) async {
+    final refreshed = _refreshed;
+    final String? current;
+    try {
+      current = await config.accessToken();
+    } on Object {
+      return false;
+    }
+    if (current == null) return false;
+    if (current != staleToken || _refreshed != refreshed) return true;
+    return _joinOrStart(staleToken, error);
+  }
+
+  Future<bool> _joinOrStart(String staleToken, DioException error) {
     final running = _refreshing;
     if (running != null) return running;
     final refresh = _refresh(staleToken, error);
@@ -80,6 +103,7 @@ class AuthSession {
       _log('Refresh threw: $failure');
     }
     if (refreshed) {
+      _refreshed++;
       _log('Refresh succeeded');
       return true;
     }

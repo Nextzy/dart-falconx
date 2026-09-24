@@ -51,7 +51,7 @@ class TokenRefreshInterceptor extends Interceptor {
       handler.next(err);
       return;
     }
-    if (!await _hasNewerToken(token, err)) {
+    if (!await session.refreshFor(token, err)) {
       handler.next(err);
       return;
     }
@@ -74,20 +74,5 @@ class TokenRefreshInterceptor extends Interceptor {
     } on DioException catch (error) {
       handler.reject(error);
     }
-  }
-
-  /// Whether a token newer than [token] is ready: another request already
-  /// refreshed, or this call's refresh succeeded.
-  Future<bool> _hasNewerToken(String token, DioException err) async {
-    final String? current;
-    try {
-      current = await session.config.accessToken();
-    } on Object {
-      return false;
-    }
-    // The app signed out while the request was in flight: pass the 401 on.
-    if (current == null) return false;
-    if (current != token) return true;
-    return session.refreshFor(token, err);
   }
 }
