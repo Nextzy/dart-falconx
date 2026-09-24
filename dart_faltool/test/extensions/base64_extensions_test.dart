@@ -20,18 +20,15 @@ void main() {
       });
 
       test('rejects empty string', () {
-        // Intended: an empty string is not meaningful Base64 data.
+        // An empty string carries no Base64 data.
         expect(''.isBase64(), false);
-      }, skip: 'BUG: empty string is accepted as valid Base64');
+      });
 
-      test(
-        'returns false for unpadded input (raw decoder requires padding)',
-        () {
-          // Characterization: isBase64 uses raw base64Decode, which rejects
-          // unpadded input even though fromBase64* accept it via normalize.
-          expect('SGVsbG8'.isBase64(), false);
-        },
-      );
+      test('accepts unpadded input, as fromBase64ToBytes does', () {
+        expect('SGVsbG8'.isBase64(), true);
+        expect('SGVsbG8'.fromBase64ToString(), 'Hello');
+        expect('wr_Dvw'.isBase64(), true);
+      });
 
       test('accepts padded URL-safe alphabet input', () {
         // Characterization: dart:convert's decoder accepts both the standard

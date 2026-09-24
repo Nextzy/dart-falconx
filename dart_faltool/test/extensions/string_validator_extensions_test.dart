@@ -134,14 +134,13 @@ void main() {
         },
       );
 
-      test(
-        'removeHtmlTags keeps plain prose that contains an ampersand',
-        () {
-          // Intended: prose without HTML should pass through unchanged.
-          expect('Fish & Chips are tasty; really'.removeHtmlTags, isNot(''));
-        },
-        skip: 'BUG: htmlEntities pattern &[^;]+; deletes prose between & and ;',
-      );
+      test('removeHtmlTags keeps plain prose that contains an ampersand', () {
+        expect(
+          'Fish & Chips are tasty; really'.removeHtmlTags,
+          'Fish & Chips are tasty; really',
+        );
+        expect('a&amp;b &#39;c&#x27; d'.removeHtmlTags, 'a b c d');
+      });
 
       test('normalizeWhitespace trims and collapses whitespace', () {
         expect('  hello   world  '.normalizeWhitespace, 'hello world');
@@ -165,9 +164,11 @@ void main() {
       });
 
       test('isUrl accepts a fragment directly after the host', () {
-        // Intended: '#section' is a valid URL fragment position.
         expect('https://example.com#section'.isUrl, true);
-      }, skip: 'BUG: url pattern rejects host-level #fragment (needs a path)');
+        expect('https://example.com:8080#top'.isUrl, true);
+        expect('https://example.com/a?x=1#y'.isUrl, true);
+        expect('https://example.com#with space'.isUrl, false);
+      });
 
       test('isNotUrl is the negation of isUrl', () {
         expect('https://example.com'.isNotUrl, false);
@@ -186,11 +187,13 @@ void main() {
       });
 
       test('isEmail rejects obviously invalid dot placement', () {
-        // Intended: consecutive or leading dots are invalid under RFC 5322.
         expect('user@example..com'.isEmail, false);
         expect('user..name@example.com'.isEmail, false);
         expect('.user@example.com'.isEmail, false);
-      }, skip: 'BUG: email pattern accepts consecutive and leading dots');
+        expect('user.@example.com'.isEmail, false);
+        expect('user@.example.com'.isEmail, false);
+        expect('first.last+tag@sub.example-mail.co'.isEmail, true);
+      });
 
       test('isNotEmail is the negation of isEmail', () {
         expect('user@example.com'.isNotEmail, false);
