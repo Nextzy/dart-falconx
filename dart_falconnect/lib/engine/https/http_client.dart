@@ -3,7 +3,8 @@ import 'package:dart_falconnect/lib.dart';
 /// Base class of every HTTP client in FalconX: one [Dio] configured by one
 /// [HttpClientConfig].
 ///
-/// The client orders the interceptor chain itself: the config's own
+/// The client orders the interceptor chain itself: the request stamp when
+/// `requestId`, `headerProvider`, or `auth` is set, the config's own
 /// `interceptors`, then log, cache, concurrency limit, rate limit, retry,
 /// the cache's offline fallback when its box enables it, and the exception
 /// handler last. [configure] applies a new
@@ -32,6 +33,8 @@ abstract class BaseHttpClient implements RequestApiService {
       DefaultNetworkExceptionHandlerInterceptor();
 
   HttpClientConfig? _config;
+  AuthSession? _session;
+  RequestStampInterceptor? _stamp;
   Interceptor? _log;
   CacheInterceptor? _cache;
   ConcurrencyLimitInterceptor? _concurrency;
@@ -63,6 +66,13 @@ abstract class BaseHttpClient implements RequestApiService {
     // value it rejects throws here, before this client changes.
     config.applyTo(Dio());
     final previous = _config;
+    final session = _keepOrBuild(
+      previous?.auth,
+      config.auth,
+      _session,
+      (box) => AuthSession(box, logPrint: _diagnostic),
+    );
+    final stamp = _buildStamp(previous, config, session);
     final log = _keepOrBuild(previous?.log, config.log, _log, _buildLog);
     final cache = _keepOrBuild(
       previous?.cache,
@@ -97,6 +107,7 @@ abstract class BaseHttpClient implements RequestApiService {
     _dio.interceptors
       ..clear()
       ..addAll([
+        ?stamp,
         ...config.interceptors,
         ?log,
         ?cache,
@@ -107,6 +118,8 @@ abstract class BaseHttpClient implements RequestApiService {
         config.exceptionHandler ?? _defaultExceptionHandler,
       ]);
     _config = config;
+    _session = session;
+    _stamp = stamp;
     _log = log;
     _cache = cache;
     _concurrency = concurrency;
@@ -376,6 +389,33 @@ abstract class BaseHttpClient implements RequestApiService {
     if (after == null) return null;
     if (current != null && before == after) return current;
     return build(after);
+  }
+
+  /// The stamp for [next]: none when it stamps nothing, the current one
+  /// when its inputs are unchanged, else a new one.
+  RequestStampInterceptor? _buildStamp(
+    HttpClientConfig? previous,
+    HttpClientConfig next,
+    AuthSession? session,
+  ) {
+    if (next.requestId == null &&
+        next.headerProvider == null &&
+        session == null) {
+      return null;
+    }
+    final current = _stamp;
+    if (current != null &&
+        previous?.requestId == next.requestId &&
+        previous?.headerProvider == next.headerProvider &&
+        identical(current.auth, session)) {
+      return current;
+    }
+    return RequestStampInterceptor(
+      requestId: next.requestId,
+      headerProvider: next.headerProvider,
+      auth: session,
+      dio: _dio,
+    );
   }
 
   Interceptor _buildLog(LogConfig box) => switch (box) {

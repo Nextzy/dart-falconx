@@ -708,4 +708,20 @@ void main() {
 
     await expectLater(client.dio.get<dynamic>('/x'), completes);
   });
+  group('request stamp and token refresh', () {
+    test('a request ID or a header provider alone builds only the stamp', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(const HttpClientConfig(requestId: RequestIdConfig()));
+      final withId = client.interceptors.map((i) => '${i.runtimeType}');
+      expect(withId, [
+        'ImplyContentTypeInterceptor',
+        'RequestStampInterceptor',
+        'DefaultNetworkExceptionHandlerInterceptor',
+      ]);
+
+      client.configure(HttpClientConfig(headerProvider: (_) => const {}));
+
+      expect(client.interceptors.map((i) => '${i.runtimeType}'), withId);
+    });
+  });
 }
