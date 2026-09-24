@@ -67,18 +67,32 @@ melos:
         dirExists: test
 
     test:platforms:
-      description: Compile dart_falconnect to JavaScript, WebAssembly, and a native executable, then run its browser tests in Chrome.
+      description: Run the compile gates, then every package's tests in Chrome under dart2js and dart2wasm.
+      steps:
+        - test:compile
+        - test:web
+
+    test:compile:
+      description: Compile dart_falconnect's smoke file, which imports all three packages, to JavaScript, WebAssembly, and a native executable.
       exec:
         command: >-
           mkdir -p .dart_tool/platform_gates &&
           dart compile js test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke.js &&
           dart compile wasm test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke.wasm &&
-          dart compile exe test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke_exe &&
-          dart test -p chrome test/web/
+          dart compile exe test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke_exe
         concurrency: 1
         failFast: true
       packageFilters:
         scope: dart_falconnect
+
+    test:web:
+      description: Run every package's tests in Chrome, compiled with dart2js and then with dart2wasm. VM-only tests carry @TestOn('vm').
+      exec:
+        command: dart test -p chrome && dart test -p chrome -c dart2wasm
+        concurrency: 1
+        failFast: true
+      packageFilters:
+        dirExists: test
 
     build_runner:
       description: Run build_runner for code generation in all packages.
