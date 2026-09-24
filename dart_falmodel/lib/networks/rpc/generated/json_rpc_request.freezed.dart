@@ -218,10 +218,9 @@ return $default(_that.jsonrpc,_that.method,_that.params,_that.id);case _:
 @JsonSerializable()
 
 class _JsonRpcRequest extends JsonRpcRequest {
-  const _JsonRpcRequest({@JsonKey(includeFromJson: true, includeToJson: true) required this.jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true) required this.method,  Map<String, dynamic>? params, this.id}): _params = params,super._(jsonrpc: jsonrpc, id: id);
+  const _JsonRpcRequest({@JsonKey(includeFromJson: true, includeToJson: true) required  String jsonrpc, @JsonKey(includeFromJson: true, includeToJson: true) required this.method,  Map<String, dynamic>? params,  int? id}): _params = params,super._(jsonrpc: jsonrpc, id: id);
   factory _JsonRpcRequest.fromJson(Map<String, dynamic> json) => _$JsonRpcRequestFromJson(json);
 
-@override@JsonKey(includeFromJson: true, includeToJson: true) final  String jsonrpc;
 @override@JsonKey(includeFromJson: true, includeToJson: true) final  String method;
  final  Map<String, dynamic>? _params;
 @override Map<String, dynamic>? get params {
@@ -232,7 +231,6 @@ class _JsonRpcRequest extends JsonRpcRequest {
   return EqualUnmodifiableMapView(value);
 }
 
-@override final  int? id;
 
 /// Create a copy of JsonRpcRequest
 /// with the given fields replaced by the non-null parameter values.
