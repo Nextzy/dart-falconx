@@ -4,6 +4,7 @@ export 'dart:math';
 export 'dart:typed_data';
 
 export 'package:big_decimal/big_decimal.dart';
+export 'package:clock/clock.dart' show Clock, clock, withClock;
 export 'package:dartx/dartx.dart'
     hide
         IterableAll,
@@ -29,6 +30,7 @@ export 'package:logger/web.dart'
 export 'package:meta/meta.dart';
 export 'package:numeral/extension.dart';
 export 'package:numeral/numeral.dart';
+export 'package:resilience/resilience.dart' hide Retry, RetryEvent, Timeout;
 export 'package:retry/retry.dart';
 export 'package:rrule/rrule.dart' hide DateTimeRrule;
 export 'package:rxdart/rxdart.dart';

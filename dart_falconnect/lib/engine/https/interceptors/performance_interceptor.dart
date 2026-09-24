@@ -1,9 +1,15 @@
 import 'dart:collection';
 
-import 'package:dart_falconnect/engine/https/config/http_client_config.dart';
+import 'package:dart_falconnect/engine/https/config/performance_config.dart';
+import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
 
 /// Performance metrics for a single request.
+///
+/// Store and read [startTime] and [endTime] in the same clock zone: the
+/// `totalDuration` fallback and `toJson` read `clock.now()` in the
+/// reader's zone, so reading outside the request's zone reports
+/// real-now minus zone-stamped start (a huge or negative duration).
 class RequestMetrics {
   /// Creates a [RequestMetrics] instance for tracking a request identified by
   /// [method], [url], and [startTime].
@@ -63,7 +69,7 @@ class RequestMetrics {
   /// Total request duration.
   Duration get totalDuration => endTime != null
       ? endTime!.difference(startTime)
-      : DateTime.now().difference(startTime);
+      : clock.now().difference(startTime);
 
   /// Request body size in bytes.
   int? requestSize;
@@ -239,20 +245,19 @@ class PerformanceStatistics {
 /// each request and provides aggregated statistics.
 class PerformanceInterceptor extends Interceptor {
   /// Creates a new performance interceptor.
-  new({
-    required this.config,
-    this.maxMetricsHistory = 1000,
-    this.collectDetailedTimings = true,
-  });
+  new({this.config = const PerformanceConfig(), this.logPrint});
 
-  /// Configuration driving monitoring behavior (enable flag, logging).
-  final HttpClientConfig config;
+  /// History size and timing detail.
+  final PerformanceConfig config;
+
+  /// Prints diagnostics; null prints nothing.
+  final void Function(String message)? logPrint;
 
   /// Maximum number of detailed metrics to keep in memory.
-  final int maxMetricsHistory;
+  int get maxMetricsHistory => config.maxMetricsHistory;
 
   /// Whether to collect detailed timing information.
-  final bool collectDetailedTimings;
+  bool get collectDetailedTimings => config.collectDetailedTimings;
 
   /// Recent request metrics.
   final Queue<RequestMetrics> _metricsHistory = Queue<RequestMetrics>();
@@ -265,16 +270,12 @@ class PerformanceInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (!config.enablePerformanceMonitoring) {
-      return handler.next(options);
-    }
-
     // Create metrics for this request
     final metrics =
         RequestMetrics(
             method: options.method,
             url: options.uri.toString(),
-            startTime: DateTime.now(),
+            startTime: clock.now(),
           )
           // Estimate request size
           ..requestSize = _estimateRequestSize(options);
@@ -290,10 +291,6 @@ class PerformanceInterceptor extends Interceptor {
     Response<dynamic> response,
     ResponseInterceptorHandler handler,
   ) {
-    if (!config.enablePerformanceMonitoring) {
-      return handler.next(response);
-    }
-
     // Get metrics from request
     final metrics =
         response.requestOptions.extra['performanceMetrics'] as RequestMetrics?;
@@ -303,7 +300,7 @@ class PerformanceInterceptor extends Interceptor {
 
     // Update metrics
     metrics
-      ..endTime = DateTime.now()
+      ..endTime = clock.now()
       ..statusCode = response.statusCode
       // Estimate response size
       ..responseSize = _estimateResponseSize(response);
@@ -311,27 +308,18 @@ class PerformanceInterceptor extends Interceptor {
     // Add to history and statistics
     _addMetrics(metrics);
 
-    if (config.enableLogging) {
-      // Intentional logging for performance diagnostics.
-      // ignore: avoid_print
-      print(
-        '[PerformanceInterceptor] '
-        '${metrics.method} ${metrics.url} - '
-        '${metrics.totalDuration.inMilliseconds}ms, '
-        'status: ${metrics.statusCode}, '
-        'response: ${metrics.responseSize} bytes',
-      );
-    }
+    _log(
+      '${metrics.method} ${metrics.url} - '
+      '${metrics.totalDuration.inMilliseconds}ms, '
+      'status: ${metrics.statusCode}, '
+      'response: ${metrics.responseSize} bytes',
+    );
 
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (!config.enablePerformanceMonitoring) {
-      return handler.next(err);
-    }
-
     // Get metrics from request
     final metrics =
         err.requestOptions.extra['performanceMetrics'] as RequestMetrics?;
@@ -341,7 +329,7 @@ class PerformanceInterceptor extends Interceptor {
 
     // Update metrics
     metrics
-      ..endTime = DateTime.now()
+      ..endTime = clock.now()
       ..statusCode = err.response?.statusCode
       ..error = err.type.toString();
 
@@ -352,20 +340,18 @@ class PerformanceInterceptor extends Interceptor {
     // Add to history and statistics
     _addMetrics(metrics);
 
-    if (config.enableLogging) {
-      // Intentional logging for performance diagnostics.
-      // ignore: avoid_print
-      print(
-        '[PerformanceInterceptor] '
-        '${metrics.method} ${metrics.url} - '
-        'FAILED: '
-        '${metrics.totalDuration.inMilliseconds}ms, '
-        'error: ${metrics.error}',
-      );
-    }
+    _log(
+      '${metrics.method} ${metrics.url} - '
+      'FAILED: '
+      '${metrics.totalDuration.inMilliseconds}ms, '
+      'error: ${metrics.error}',
+    );
 
     handler.next(err);
   }
+
+  void _log(String message) =>
+      logPrint?.call('[PerformanceInterceptor] $message');
 
   /// Adds metrics to history and updates statistics.
   void _addMetrics(RequestMetrics metrics) {

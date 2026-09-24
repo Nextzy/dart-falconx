@@ -41,6 +41,7 @@ class CreateUserBody extends BaseRequestBody {
 - `BaseResponse<T> extends Response<T>` (Dio): `BaseResponse.success(data:, requestOptions:, headers?)`, `BaseResponse.noContent(requestOptions:)`, `isSuccessful`, `isClientError`, `isServerError`. Typedefs `BoolResponse`, `IntResponse`, `DoubleResponse`, `StringResponse`, `ListResponse<T>`, `MapResponse<K, V>`, `EmptyResponse`.
 - `PaginatedResponse<T>({items, page, pageSize, totalItems, totalPages})`: `hasNextPage`, `hasPreviousPage`, `nextPage`, `previousPage`, `isFirstPage`, `isLastPage`, `itemCount`, `isEmpty`, `isNotEmpty`, `startIndex`, `endIndex`, `copyWith`. `PaginatedResponseWithMetadata<T>` adds `metadata`.
 - `RemoteError({code, message, userMessage, developerMessage})` (Freezed): `fromJson`, `fromData(dynamic)`.
+- `parseRetryAfter(String? value, {DateTime? serverDate})` returns the `Retry-After` delay (delay-seconds or any HTTP-date; past dates give zero; unreadable values give null); `Headers.retryAfter` measures an HTTP-date from the response's `Date` header.
 
 ## `UserFeedback`
 
@@ -50,13 +51,13 @@ Freezed sealed class with variants `Success`, `Warning`, `Failure`, `Information
 
 Static helpers that turn local and remote calls into `Result` streams. Every thrown error becomes `Result.failure(e.toException())`, optionally rewritten by `handleError: (CommonException, StackTrace?) => CommonException`.
 
-| Method | Parameters | Emits |
-|---|---|---|
-| `asLocalResultStream<D>` | `loadFromDbFuture` (required), `handleError`, `log` | one local result |
-| `asLocalResultFuture<D>` | same | first result |
-| `asRemoteResultStream<R, D>` | `callRemoteFuture` (required), `processResponse` (required when `R != D`), `handleError`, `log` | one remote result |
-| `asRemoteResultFuture<R, D>` | `createCallFuture` (required), `processResponse`, `handleError` | first result |
-| `asResultStream<R, D>` | `loadFromDbFuture`, `shouldFetch(D?)`, `callRemoteFuture`, `processResponse`, `handleError`, `log` | local, then remote when `shouldFetch` returns true |
+| Method                       | Parameters                                                                                         | Emits                                              |
+|------------------------------|----------------------------------------------------------------------------------------------------|----------------------------------------------------|
+| `asLocalResultStream<D>`     | `loadFromDbFuture` (required), `handleError`, `log`                                                | one local result                                   |
+| `asLocalResultFuture<D>`     | same                                                                                               | first result                                       |
+| `asRemoteResultStream<R, D>` | `callRemoteFuture` (required), `processResponse` (required when `R != D`), `handleError`, `log`    | one remote result                                  |
+| `asRemoteResultFuture<R, D>` | `createCallFuture` (required), `processResponse`, `handleError`                                    | first result                                       |
+| `asResultStream<R, D>`       | `loadFromDbFuture`, `shouldFetch(D?)`, `callRemoteFuture`, `processResponse`, `handleError`, `log` | local, then remote when `shouldFetch` returns true |
 
 ```dart
 Stream<Result<User>> watchUser(String id) =>

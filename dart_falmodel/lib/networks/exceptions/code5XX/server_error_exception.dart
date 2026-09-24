@@ -67,12 +67,7 @@ class NetworkServerException extends BaseHttpException {
   Duration get recommendedRetryDelay {
     switch (statusCode) {
       case 503: // Service Unavailable might have Retry-After header
-        final retryAfter = response?.headers.value('retry-after');
-        if (retryAfter != null) {
-          final seconds = int.tryParse(retryAfter);
-          if (seconds != null) return Duration(seconds: seconds);
-        }
-        return const Duration(seconds: 30);
+        return response?.headers.retryAfter ?? const Duration(seconds: 30);
       case 502:
       case 504:
         return const Duration(seconds: 10);
