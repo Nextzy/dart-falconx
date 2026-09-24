@@ -26,7 +26,7 @@ extension FalconBase64StringExtension<K, V> on String {
   ///
   /// Example:
   /// ```dart
-  /// 'SGVsbG8='.fromBase64(); // 'Hello'
+  /// 'SGVsbG8='.fromBase64ToString(); // 'Hello'
   /// ```
   String fromBase64ToString() =>
       utf8.decode(base64Decode(base64Url.normalize(this)));

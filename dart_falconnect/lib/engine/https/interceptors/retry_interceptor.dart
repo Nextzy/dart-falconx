@@ -76,9 +76,9 @@ int? _checkAttempts(int? value) {
 /// are never retried.
 ///
 /// A 429 or 503 with `Retry-After` waits that long, and is not retried when
-/// it exceeds `maxRetryDelay`. Other failures wait a random time between
-/// zero and `min(maxRetryDelay, retryDelay * 2^(attempt - 1))`. No retry is
-/// sent when its delay would end past `maxRetryDuration`.
+/// it exceeds `maxDelay`. Other failures wait a random time between
+/// zero and `min(maxDelay, delay * 2^(attempt - 1))`. No retry is
+/// sent when its delay would end past `maxDuration`.
 ///
 /// Error interceptors see the error of every attempt. Placed before this
 /// interceptor, one sees each attempt exactly once, with a distinct
