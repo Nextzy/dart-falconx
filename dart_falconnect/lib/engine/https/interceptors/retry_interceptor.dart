@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dart_falconnect/engine/https/config/retry_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
 import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/retry_attempts.dart';
 import 'package:dart_falmodel/networks/https/retry_after.dart';
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
@@ -76,9 +77,9 @@ int? _checkAttempts(int? value) {
 /// are never retried.
 ///
 /// A 429 or 503 with `Retry-After` waits that long, and is not retried when
-/// it exceeds `maxRetryDelay`. Other failures wait a random time between
-/// zero and `min(maxRetryDelay, retryDelay * 2^(attempt - 1))`. No retry is
-/// sent when its delay would end past `maxRetryDuration`.
+/// it exceeds `maxDelay`. Other failures wait a random time between
+/// zero and `min(maxDelay, delay * 2^(attempt - 1))`. No retry is
+/// sent when its delay would end past `maxDuration`.
 ///
 /// Error interceptors see the error of every attempt. Placed before this
 /// interceptor, one sees each attempt exactly once, with a distinct
@@ -141,7 +142,7 @@ class RetryInterceptor extends Interceptor {
         clock.now().difference(started),
       );
       if (delay == null) {
-        handler.next(current);
+        handler.next(finalRetryError(current));
         return;
       }
       config.onRetry?.call(current, attempt, delay);
@@ -150,7 +151,7 @@ class RetryInterceptor extends Interceptor {
         '${original.method} ${original.uri}',
       );
       if (!await _wait(delay, original.cancelToken)) {
-        handler.next(current);
+        handler.next(finalRetryError(current));
         return;
       }
       final RequestOptions options;
@@ -158,7 +159,7 @@ class RetryInterceptor extends Interceptor {
         options = _attemptOptions(original, attempt);
       } on Object {
         // A FormData whose files cannot be read again.
-        handler.next(current);
+        handler.next(finalRetryError(current));
         return;
       }
       try {

@@ -16,7 +16,8 @@ const _retry = RetryConfig(
 
 Dio _dio(HttpClientAdapter adapter, List<Interceptor> Function(Dio) chain) {
   final dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-    ..httpClientAdapter = adapter;
+    ..httpClientAdapter = adapter
+    ..transformer = FoldingTransformer();
   dio.interceptors.addAll(chain(dio));
   return dio;
 }
@@ -82,6 +83,20 @@ class _ResendOnce extends Interceptor {
     } on DioException catch (error) {
       handler.next(error);
     }
+  }
+}
+
+/// Records every response it sees and passes it on.
+class _ResponseSpy extends Interceptor {
+  final List<Response<dynamic>> responses = [];
+
+  @override
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
+    responses.add(response);
+    handler.next(response);
   }
 }
 
@@ -406,7 +421,9 @@ void main() {
 
   test('a cache hit, with CacheInterceptor first, takes no slot', () {
     fakeAsync((async) {
-      final adapter = ScriptedAdapter([reply(200)]);
+      final adapter = ScriptedAdapter([
+        reply(200, headers: {'cache-control': 'max-age=60'}),
+      ]);
       final limiter = ConcurrencyLimitInterceptor(
         config: const ConcurrencyConfig(perHost: 1),
       );
@@ -422,6 +439,41 @@ void main() {
       expect(adapter.requests, hasLength(1));
       expect(limiter.getStatistics().forwarded, 1);
       expect(limiter.getStatistics().activeByHost, isEmpty);
+    });
+  });
+
+  test('a cache hit passes onResponse without moving a counter or freeing '
+      'a held slot', () {
+    fakeAsync((async) {
+      final adapter = GatedAdapter();
+      final limiter = ConcurrencyLimitInterceptor(
+        config: const ConcurrencyConfig(perHost: 1),
+      );
+      final spy = _ResponseSpy();
+      final dio = _dio(adapter, (_) => [CacheInterceptor(), limiter, spy]);
+      final outcomes = <Object>[];
+
+      _get(dio, '/x', outcomes);
+      _settle(async);
+      adapter.requests.single.respond(
+        200,
+        headers: {'cache-control': 'max-age=60'},
+      );
+      _settle(async);
+      _get(dio, '/y', outcomes);
+      _settle(async);
+      _get(dio, '/x', outcomes);
+      _settle(async);
+      _get(dio, '/z', outcomes);
+      _settle(async);
+
+      expect(spy.responses.map((r) => r.isCacheHit), [false, true]);
+      expect(_urls(adapter.inFlight), ['https://a.test/y']);
+      final stats = limiter.getStatistics();
+      expect(stats.forwarded, 2);
+      expect(stats.rejected, 0);
+      expect(stats.activeByHost, {'a.test': 1});
+      expect(stats.waitingByHost, {'a.test': 1});
     });
   });
 

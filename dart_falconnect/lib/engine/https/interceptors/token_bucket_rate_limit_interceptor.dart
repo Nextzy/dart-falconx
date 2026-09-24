@@ -1,4 +1,5 @@
 import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/models/token_bucket_rate_limit_statistics.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/host_key.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart';
 import 'package:dart_faltool/dart_faltool.dart'
@@ -6,43 +7,8 @@ import 'package:dart_faltool/dart_faltool.dart'
         RateLimitExceededException,
         RateLimiter,
         ResiliencePipeline,
-        TokenBucketPolicy,
-        immutable;
+        TokenBucketPolicy;
 import 'package:dio/dio.dart';
-
-/// Activity counters of a [TokenBucketRateLimitInterceptor].
-@immutable
-class TokenBucketRateLimitStatistics {
-  /// Creates a statistics snapshot.
-  const new({
-    required this.forwarded,
-    required this.rejected,
-    required this.waitingByHost,
-    required this.globalWaiting,
-    required this.heldByHost,
-    required this.pausedUntilByHost,
-  });
-
-  /// Requests passed to the next handler since construction. A request
-  /// cancelled before it was forwarded is not counted.
-  final int forwarded;
-
-  /// Requests rejected with a local 429 since construction, for a full
-  /// queue or a paused host.
-  final int rejected;
-
-  /// Requests waiting in each host's own tiers, keyed by host.
-  final Map<String, int> waitingByHost;
-
-  /// Requests waiting in the global tiers.
-  final int globalWaiting;
-
-  /// Requests held by a pause, keyed by host.
-  final Map<String, int> heldByHost;
-
-  /// End time of each active pause, keyed by host.
-  final Map<String, DateTime> pausedUntilByHost;
-}
 
 /// Limits outgoing requests with token buckets built on `resilience`, and
 /// pauses a host after it answers 429, or 503 with `Retry-After`.

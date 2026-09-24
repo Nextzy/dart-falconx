@@ -1,5 +1,7 @@
 import 'package:dart_falmodel/lib.dart';
 
+part 'generated/paginated_response.g.dart';
+
 /// Generic paginated response for list endpoints.
 ///
 /// Provides a standardized structure for paginated API responses
@@ -31,6 +33,7 @@ import 'package:dart_falmodel/lib.dart';
 ///   }
 /// }
 /// ```
+@JsonSerializable(genericArgumentFactories: true)
 class PaginatedResponse<T> extends BaseRequest {
   /// Creates a paginated response.
   ///
@@ -40,32 +43,50 @@ class PaginatedResponse<T> extends BaseRequest {
   /// [totalItems] is the total number of items across all pages.
   /// [totalPages] is the total number of pages.
   const new({
-    required this.items,
+    this.items = const [],
     required this.page,
     required this.pageSize,
     required this.totalItems,
     required this.totalPages,
   });
 
+  /// Deserializes a [PaginatedResponse] from a JSON map.
+  factory fromJson(Map<String, dynamic> json, T Function(Object?) fromJsonT) =>
+      _$PaginatedResponseFromJson(json, fromJsonT);
+
   /// The items for the current page.
+  ///
+  /// Excluded from JSON: subclasses override `toJson` to serialize items
+  /// under their own key.
+  @JsonKey(includeToJson: false, includeFromJson: false)
   final List<T> items;
 
   /// The current page number (1-indexed).
+  @JsonKey(name: 'page')
   final int page;
 
   /// The number of items per page.
+  @JsonKey(name: 'page_size')
   final int pageSize;
 
   /// The total number of items across all pages.
+  @JsonKey(name: 'total_items')
   final int totalItems;
 
   /// The total number of pages.
+  @JsonKey(name: 'total_pages')
   final int totalPages;
 
   /// Whether there is a next page.
+  @JsonKey(name: 'has_next_page', includeToJson: true, includeFromJson: false)
   bool get hasNextPage => page < totalPages;
 
   /// Whether there is a previous page.
+  @JsonKey(
+    name: 'has_previous_page',
+    includeToJson: true,
+    includeFromJson: false,
+  )
   bool get hasPreviousPage => page > 1;
 
   /// The next page number, or null if on the last page.
@@ -116,14 +137,8 @@ class PaginatedResponse<T> extends BaseRequest {
   ///
   /// Note: This only includes metadata. Subclasses should override
   /// to include the actual items with proper serialization.
-  Map<String, dynamic> toJson() => {
-    'page': page,
-    'page_size': pageSize,
-    'total_items': totalItems,
-    'total_pages': totalPages,
-    'has_next_page': hasNextPage,
-    'has_previous_page': hasPreviousPage,
-  };
+  Map<String, dynamic> toJson() =>
+      _$PaginatedResponseToJson(this, (value) => value);
 
   @override
   List<Object?> get props => [items, page, pageSize, totalItems, totalPages];
@@ -153,16 +168,21 @@ class PaginatedResponse<T> extends BaseRequest {
 ///   String? get searchQuery => metadata['query'] as String?;
 /// }
 /// ```
+@JsonSerializable(genericArgumentFactories: true)
 class PaginatedResponseWithMetadata<T> extends PaginatedResponse<T> {
   /// Creates a paginated response with metadata.
   const new({
-    required super.items,
+    super.items,
     required super.page,
     required super.pageSize,
     required super.totalItems,
     required super.totalPages,
     required this.metadata,
   });
+
+  /// Deserializes a [PaginatedResponseWithMetadata] from a JSON map.
+  factory fromJson(Map<String, dynamic> json, T Function(Object?) fromJsonT) =>
+      _$PaginatedResponseWithMetadataFromJson(json, fromJsonT);
 
   /// Additional metadata returned by the API.
   final Map<String, dynamic> metadata;
@@ -186,6 +206,7 @@ class PaginatedResponseWithMetadata<T> extends PaginatedResponse<T> {
     );
   }
 
+  /// Converts this response to a JSON map with the metadata appended.
   @override
   Map<String, dynamic> toJson() => {...super.toJson(), 'metadata': metadata};
 

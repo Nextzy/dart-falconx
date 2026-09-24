@@ -52,4 +52,39 @@ void main() {
       });
     });
   });
+
+  group('CommonException.toJsonRpcError category', () {
+    test('maps a JsonRpcApiErrorTypeEnum type to API_ERROR', () {
+      const ex = CommonException(
+        type: JsonRpcApiErrorTypeEnum.INTERNAL_SERVER_ERROR,
+      );
+      expect(ex.toJsonRpcError().category, JsonRpcErrorCategory.API_ERROR);
+    });
+
+    test(
+      'maps a JsonRpcExternalApiErrorTypeEnum type to EXTERNAL_API_ERROR',
+      () {
+        const ex = CommonException(
+          type: JsonRpcExternalApiErrorTypeEnum.BAD_REQUEST,
+        );
+        expect(
+          ex.toJsonRpcError().category,
+          JsonRpcErrorCategory.EXTERNAL_API_ERROR,
+        );
+      },
+    );
+
+    test(
+      'maps a JsonRpcRequestErrorTypeEnum type to INVALID_REQUEST_ERROR',
+      () {
+        const ex = CommonException(
+          type: JsonRpcRequestErrorTypeEnum.BAD_REQUEST,
+        );
+        expect(
+          ex.toJsonRpcError().category,
+          JsonRpcErrorCategory.INVALID_REQUEST_ERROR,
+        );
+      },
+    );
+  });
 }

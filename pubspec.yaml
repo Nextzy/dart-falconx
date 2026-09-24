@@ -1,6 +1,6 @@
 name: dart_falconx_core
 description: A dart falcon package.
-version: 2.0.0
+version: 2.1.0
 
 environment:
   sdk: ">=3.13.0 <4.0.0"
@@ -66,20 +66,48 @@ melos:
       packageFilters:
         dirExists: test
 
+    test:platforms:
+      description: Run the compile gates, then every package's tests in Chrome under dart2js and dart2wasm.
+      steps:
+        - test:compile
+        - test:web
+
+    test:compile:
+      description: Compile dart_falconnect's smoke file, which imports all three packages, to JavaScript, WebAssembly, and a native executable.
+      exec:
+        command: >-
+          mkdir -p .dart_tool/platform_gates &&
+          dart compile js test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke.js &&
+          dart compile wasm test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke.wasm &&
+          dart compile exe test/web/compile_smoke.dart -o .dart_tool/platform_gates/smoke_exe
+        concurrency: 1
+        failFast: true
+      packageFilters:
+        scope: dart_falconnect
+
+    test:web:
+      description: Run every package's tests in Chrome, compiled with dart2js and then with dart2wasm. VM-only tests carry @TestOn('vm').
+      exec:
+        command: dart test -p chrome && dart test -p chrome -c dart2wasm
+        concurrency: 1
+        failFast: true
+      packageFilters:
+        dirExists: test
+
     build_runner:
       description: Run build_runner for code generation in all packages.
       exec:
-        command: dart run build_runner build --delete-conflicting-outputs
+        command: dart run build_runner build
         concurrency: 1
         failFast: false
       packageFilters:
         dependsOn: build_runner
 
-    build_runner:fast:
-      description: Run build_runner without deleting outputs — reuses incremental cache (use when just adding fields, not after merges).
+    build_runner:check:
+      description: Fail when any committed generated file differs from what build_runner would write; writes nothing.
       exec:
-        command: dart run build_runner build
-        concurrency: 4
+        command: dart run build_runner build --only-check
+        concurrency: 1
         failFast: false
       packageFilters:
         dependsOn: build_runner
@@ -87,7 +115,7 @@ melos:
     build_runner:watch:
       description: Run build_runner watch for code generation.
       exec:
-        command: dart run build_runner watch --delete-conflicting-outputs
+        command: dart run build_runner watch
         concurrency: 1
       packageFilters:
         dependsOn: build_runner

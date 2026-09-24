@@ -25,16 +25,18 @@ void main() {
 
   // All interceptors
   _sink(CacheInterceptor());
+  _sink(CacheInterceptor().fallback);
   _sink(
     ConcurrencyLimitInterceptor(
       config: const ConcurrencyConfig(global: 16, perHost: 4),
     ),
   );
   _sink(RetryInterceptor(dio: dio));
-  _sink(PerformanceInterceptor());
   _sink(TokenBucketRateLimitInterceptor());
   _sink(RetryAfterPauseInterceptor());
   _sink(HttpLogInterceptor());
+  _sink(HttpJsonLogInterceptor());
+  _sink(const HttpClientConfig(log: LogConfig.json()));
   _sink(DefaultNetworkExceptionHandlerInterceptor());
 
   // JSON-RPC

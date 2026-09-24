@@ -23,7 +23,8 @@ class _Client {
   new(List<Reply> script, {RetryConfig config = _config})
     : adapter = ScriptedAdapter(script) {
     dio = Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = adapter;
+      ..httpClientAdapter = adapter
+      ..transformer = FoldingTransformer();
     dio.interceptors.add(
       RetryInterceptor(
         config: RetryConfig(

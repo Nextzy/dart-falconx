@@ -1,47 +1,14 @@
 import 'dart:async';
 
 import 'package:dart_falconnect/engine/https/config/concurrency_config.dart';
+import 'package:dart_falconnect/engine/https/interceptors/models/concurrency_limit_statistics.dart';
 import 'package:dart_falconnect/src/engine/https/cancel_watch.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/host_key.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/retry_after_pause.dart'
     show localRateLimitRejection;
 import 'package:dart_faltool/dart_faltool.dart'
-    show Bulkhead, BulkheadRejectedException, immutable;
+    show Bulkhead, BulkheadRejectedException;
 import 'package:dio/dio.dart';
-
-/// Activity counters of a [ConcurrencyLimitInterceptor].
-@immutable
-class ConcurrencyLimitStatistics {
-  /// Creates a statistics snapshot.
-  const new({
-    required this.forwarded,
-    required this.rejected,
-    required this.activeByHost,
-    required this.waitingByHost,
-    required this.globalActive,
-    required this.globalWaiting,
-  });
-
-  /// Requests passed to the next handler since construction, retry
-  /// attempts included.
-  final int forwarded;
-
-  /// Requests rejected with a local 429 because a queue was full.
-  final int rejected;
-
-  /// Slots held in each host's own limit, keyed by host. Only hosts with a
-  /// request in flight or queued appear.
-  final Map<String, int> activeByHost;
-
-  /// Requests queued for each host's own limit, keyed by host.
-  final Map<String, int> waitingByHost;
-
-  /// Slots held in the global limit; 0 without one.
-  final int globalActive;
-
-  /// Requests queued for the global limit; 0 without one.
-  final int globalWaiting;
-}
 
 /// Limits how many requests are in flight at once, per host and for all
 /// hosts together, with `resilience` `Bulkhead`s.

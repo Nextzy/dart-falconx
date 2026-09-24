@@ -17,8 +17,13 @@ void main() {
     expect(retry.onRetry, isNull);
 
     const cache = CacheConfig();
-    expect(cache.duration, const Duration(minutes: 15));
+    expect(cache.policy, CachePolicy.request);
+    expect(cache.maxStale, isNull);
     expect(cache.maxSize, 50 * 1024 * 1024);
+    expect(cache.store, isNull);
+    expect(cache.keyHeaders, {'authorization', 'accept', 'accept-language'});
+    expect(cache.hitCacheOnNetworkFailure, isFalse);
+    expect(cache.hitCacheOnErrorCodes, isEmpty);
 
     const pause = PauseConfig();
     expect(pause.maxPauseWait, const Duration(seconds: 10));
@@ -33,11 +38,7 @@ void main() {
     expect(concurrency.maxQueueSize, 50);
     expect(concurrency.maxGlobalQueueSize, 500);
 
-    const performance = PerformanceConfig();
-    expect(performance.maxMetricsHistory, 1000);
-    expect(performance.collectDetailedTimings, isTrue);
-
-    const log = LogConfig();
+    const log = PrettyLogConfig();
     expect(log.responseHeader, isFalse);
     expect(log.logPrint, isNull);
     expect(log.diagnostics, isTrue);

@@ -2,15 +2,17 @@ import 'package:dart_faltool/lib.dart';
 
 /// A collection of pre-compiled regular expressions used for string validation.
 class FormatRegex {
-  /// URL validation pattern that matches http and https URLs.
+  /// URL validation pattern that matches http and https URLs, with an
+  /// optional port, path, query, and `#` fragment.
   static final url = RegExp(
-    r'^https?://[-A-Z0-9.]+(\:[0-9]+)?(/[-A-Z0-9+&@#/%=~_|!:,.;]*)?(\?[A-Z0-9+&@#/%=~_|!:,.;]*)?$',
+    r'^https?://[-A-Z0-9.]+(\:[0-9]+)?(/[-A-Z0-9+&@#/%=~_|!:,.;]*)?(\?[A-Z0-9+&@#/%=~_|!:,.;]*)?(#[-A-Z0-9+&@#/%=~_|!:,.;?]*)?$',
     caseSensitive: false,
   );
 
-  /// Email validation pattern (RFC 5322 simplified).
+  /// Email validation pattern (RFC 5322 simplified). Dots only separate
+  /// non-empty parts: none leads, trails, or repeats.
   static final email = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    r'^[a-zA-Z0-9_%+-]+(\.[a-zA-Z0-9_%+-]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$',
   );
 
   /// HTML tag pattern that matches any `<tag>` element.
@@ -20,8 +22,11 @@ class FormatRegex {
     caseSensitive: false,
   );
 
-  /// HTML entity pattern that matches encoded entities such as `&amp;`.
-  static final RegExp htmlEntities = RegExp('&[^;]+;', multiLine: true);
+  /// HTML entity pattern that matches named (`&amp;`), decimal (`&#39;`),
+  /// and hex (`&#x27;`) entities, and leaves prose such as `a & b; c` alone.
+  static final RegExp htmlEntities = RegExp(
+    '&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);',
+  );
 
   /// E.164 international phone number validation pattern.
   static final e164 = RegExp(r'^\+[1-9]\d{6,14}$');

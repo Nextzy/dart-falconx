@@ -39,7 +39,7 @@ class CreateUserBody extends BaseRequestBody {
 ## Responses
 
 - `BaseResponse<T> extends Response<T>` (Dio): `BaseResponse.success(data:, requestOptions:, headers?)`, `BaseResponse.noContent(requestOptions:)`, `isSuccessful`, `isClientError`, `isServerError`. Typedefs `BoolResponse`, `IntResponse`, `DoubleResponse`, `StringResponse`, `ListResponse<T>`, `MapResponse<K, V>`, `EmptyResponse`.
-- `PaginatedResponse<T>({items, page, pageSize, totalItems, totalPages})`: `hasNextPage`, `hasPreviousPage`, `nextPage`, `previousPage`, `isFirstPage`, `isLastPage`, `itemCount`, `isEmpty`, `isNotEmpty`, `startIndex`, `endIndex`, `copyWith`. `PaginatedResponseWithMetadata<T>` adds `metadata`.
+- `PaginatedResponse<T>({items = const [], page, pageSize, totalItems, totalPages})`: `hasNextPage`, `hasPreviousPage`, `nextPage`, `previousPage`, `isFirstPage`, `isLastPage`, `itemCount`, `isEmpty`, `isNotEmpty`, `startIndex`, `endIndex`, `copyWith`, and generated `fromJson(json, fromJsonT)` / `toJson()` (metadata keys only; `items` are not serialized). `PaginatedResponseWithMetadata<T>` adds `metadata` and its own `fromJson(json, fromJsonT)`.
 - `RemoteError({code, message, userMessage, developerMessage})` (Freezed): `fromJson`, `fromData(dynamic)`.
 - `parseRetryAfter(String? value, {DateTime? serverDate})` returns the `Retry-After` delay (delay-seconds or any HTTP-date; past dates give zero; unreadable values give null); `Headers.retryAfter` measures an HTTP-date from the response's `Date` header.
 

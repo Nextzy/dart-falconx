@@ -4,9 +4,9 @@ import 'package:test/test.dart';
 
 import '_scripted_adapter.dart';
 
-Dio _dio(List<Reply> script) =>
-    Dio(BaseOptions(baseUrl: 'https://a.test'))
-      ..httpClientAdapter = ScriptedAdapter(script);
+Dio _dio(List<Reply> script) => Dio(BaseOptions(baseUrl: 'https://a.test'))
+  ..httpClientAdapter = ScriptedAdapter(script)
+  ..transformer = FoldingTransformer();
 
 void main() {
   test('RetryInterceptor prints through logPrint', () {
@@ -29,18 +29,18 @@ void main() {
     });
   });
 
-  test('CacheInterceptor prints a hit through logPrint', () async {
+  test('CacheInterceptor prints a hit through logPrint, without the '
+      'query', () async {
     final lines = <String>[];
-    final dio = _dio([reply(200)]);
+    final dio = _dio([
+      reply(200, headers: {'cache-control': 'max-age=60'}),
+    ]);
     dio.interceptors.add(CacheInterceptor(logPrint: lines.add));
 
-    await dio.get<dynamic>('/x');
-    await dio.get<dynamic>('/x');
+    await dio.get<dynamic>('/x?token=secret');
+    await dio.get<dynamic>('/x?token=secret');
 
-    expect(
-      lines.where((line) => line.startsWith('[CacheInterceptor] Cache hit')),
-      hasLength(1),
-    );
+    expect(lines, ['[CacheInterceptor] Hit for GET a.test/x']);
   });
 
   test('an interceptor without logPrint prints nothing', () {
@@ -65,7 +65,6 @@ void main() {
     final dio = Dio();
 
     expect(CacheInterceptor().config, const CacheConfig());
-    expect(PerformanceInterceptor().config, const PerformanceConfig());
     expect(RetryInterceptor(dio: dio).config, const RetryConfig());
     expect(ConcurrencyLimitInterceptor().config, const ConcurrencyConfig());
     expect(
