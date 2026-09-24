@@ -7,7 +7,11 @@ import 'interceptors/_scripted_adapter.dart';
 
 class _Client extends BaseHttpClient {
   new(HttpClientAdapter adapter)
-    : super(dio: Dio()..httpClientAdapter = adapter);
+    : super(
+        dio: Dio()
+          ..httpClientAdapter = adapter
+          ..transformer = FoldingTransformer(),
+      );
 }
 
 /// Records every error it sees and passes it on.
@@ -204,17 +208,24 @@ void main() {
       expect(client.interceptors.toList(), before);
     });
 
-    for (final (name, rejected) in [
-      ('a base URL', const HttpClientConfig(baseUrl: 'api.example.com')),
-      (
-        'a timeout',
-        const HttpClientConfig(
-          baseUrl: 'https://b.test',
-          connectTimeout: Duration(seconds: -1),
-        ),
-      ),
-    ]) {
-      test('$name dio rejects throws and changes nothing', () {
+    // dio checks a base URL only off the web, where a relative one is valid.
+    for (final (name, rejected, testOn)
+        in <(String, HttpClientConfig, String?)>[
+          (
+            'a base URL',
+            const HttpClientConfig(baseUrl: 'api.example.com'),
+            'vm',
+          ),
+          (
+            'a timeout',
+            const HttpClientConfig(
+              baseUrl: 'https://b.test',
+              connectTimeout: Duration(seconds: -1),
+            ),
+            null,
+          ),
+        ]) {
+      test('$name dio rejects throws and changes nothing', testOn: testOn, () {
         const headers = HttpClientConfig(headers: {'X-Key': 'k'});
         final client = _Client(ScriptedAdapter([reply(200)]))
           ..configure(headers);
@@ -227,6 +238,13 @@ void main() {
         expect(client.interceptors.toList(), before);
       });
     }
+
+    test('a relative base URL is accepted on web', testOn: 'browser', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(const HttpClientConfig(baseUrl: 'api/'));
+
+      expect(client.baseUrl, 'api/');
+    });
 
     test('keeps a header set on dio.options and drops one the config '
         'stopped setting', () {

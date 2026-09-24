@@ -1,9 +1,48 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
+
+/// Decodes response bodies with `Stream.fold` instead of dio's `await for`.
+///
+/// Under `fakeAsync` on dart2js, a finished `await for` still awaits
+/// `cancel()`, which returns a root-zone future that `fakeAsync` never
+/// flushes, so the response stalls before any interceptor sees it. `fold`
+/// completes inside the test zone on every platform. Set it on every test
+/// Dio that a scripted or gated adapter answers.
+class FoldingTransformer extends Transformer {
+  final Transformer _requests = FusedTransformer();
+
+  @override
+  Future<String> transformRequest(RequestOptions options) =>
+      _requests.transformRequest(options);
+
+  @override
+  Future<Object?> transformResponse(
+    RequestOptions options,
+    ResponseBody responseBody,
+  ) async {
+    if (options.responseType == ResponseType.stream) return responseBody;
+    final bytes = await responseBody.stream.fold<List<int>>(
+      <int>[],
+      (all, chunk) => all..addAll(chunk),
+    );
+    if (options.responseType == ResponseType.bytes) {
+      return Uint8List.fromList(bytes);
+    }
+    final text = utf8.decode(bytes, allowMalformed: true);
+    final contentType = responseBody.headers[Headers.contentTypeHeader]?.first;
+    if (options.responseType == ResponseType.json &&
+        text.isNotEmpty &&
+        Transformer.isJsonMimeType(contentType)) {
+      return jsonDecode(text);
+    }
+    return text;
+  }
+}
 
 /// One scripted server answer: a response body, or a thrown DioException.
 typedef Reply = ResponseBody Function(RequestOptions options);
