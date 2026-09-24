@@ -1,75 +1,34 @@
-# CLAUDE.md
+# dart_faltool
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Entry points
 
-## Package Overview
+- `lib/lib.dart`: internal entry point; re-exports `dart:async`, `dart:convert`, `ansicolor`, `dart_falmodel`, `yaml`, and `dart_faltool.dart`.
+- `lib/dart_faltool.dart`: public entry point; re-exports the third-party packages plus `extensions/extensions.dart`, `type_def.dart`, and `utils/utils.dart`.
+- Import `package:dart_faltool/lib.dart` from source files inside this package; consumers import `dart_faltool.dart`.
 
-`dart_faltool` is a **core utility package** in the dart_falconx monorepo. It provides utility extensions and helper functions consumed by all other packages. It has a **circular dependency** with `dart_falmodel` (each depends on the other, resolved via Dart workspace resolution) and re-exports many third-party packages for convenience.
+## Extensions (`lib/extensions/`)
 
-## Commands
+- Give a type that needs null-safe helpers a nullable-receiver extension beside the non-null one, as `FalconToolStringExtension on String` and `FalconStringNullExtension on String?` do.
+- Export each new extension file from the barrel `lib/extensions/extensions.dart` and add a matching test file in `test/extensions/`.
 
-```bash
-# Run all tests
-dart test
+## Utils and typedefs
 
-# Run a specific test file
-dart test test/extensions/string_extensions_test.dart
-
-# Run tests matching a name pattern
-dart test -n "StringExtension"
-
-# Analyze
-dart analyze
-
-# Format
-dart format .
-```
-
-```bash
-# Code generation (required after modifying @freezed classes, e.g. DecodedTypeId)
-dart run build_runner build -d
-```
-
-## Architecture
-
-### Two Entry Points
-
-- **`lib/lib.dart`** — Internal entry point used within the monorepo. Re-exports `dart_falmodel`, `dart:async`, `dart:convert`, `ansicolor`, `intl`, `yaml`, and `dart_faltool.dart`. Extension source files import this.
-- **`lib/dart_faltool.dart`** — Public entry point for external consumers. Re-exports ~15 third-party packages (fpdart, rxdart, freezed_annotation, equatable, logger, hashlib, etc.) plus all extensions, type_def, and utils.
-
-When writing extension code in this package, import `lib.dart`. Consumers of this package import `dart_faltool.dart`.
-
-### Extensions (`lib/extensions/`)
-
-Each extension file targets one Dart type (or nullable variant). The barrel file `extensions.dart` exports all of them. Every extension file has a corresponding test file in `test/extensions/`.
-
-Extensions provide both non-null and nullable variants (e.g., `FalconToolStringExtension on String` and `FalconStringNullExtension on String?`).
-
-Some extensions deliberately overlap with `dartx` — the `dartx` package is re-exported but certain members are hidden in `dart_faltool.dart` to avoid conflicts (see the `hide` clause on the `dartx` export).
-
-### Utils (`lib/utils/`)
-
-- **`app_info.dart`** — `AppInfo`: Static class that reads app version from `pubspec.yaml`. Call `AppInfo.init()` at startup, then access `AppInfo.version`.
-- **`functions.dart`** — Top-level helpers:
-  - `runCatching`: Execute an async operation and catch exceptions into a `Result<T>` failure (`CommonException` wrapped directly, others via `toException()`).
-  - `nowUtc`: Current time as a UTC `DateTime`.
-  - `constantTimeEquals`: Constant-time string comparison (timing-attack safe).
-  - `randomDelay`: Awaits a secure-random delay in `[minMs, maxMs)` ms (asserts `maxMs > minMs >= 0`).
-- **`uuid_generator.dart`** — `UuidGenerator.getV4()`: Static UUID v4 generation.
-- **`json_serialize.dart`** — JSON serialization helpers.
-- **`typeid/`** — [TypeID](https://github.com/jetify-com/typeid) implementation:
-  - `TypeId`: Static class for generating (`generate`) and decoding (`decode`, `decodeOrNull`, `isValid`) TypeIDs (UUIDv7 + type prefix encoded as base32)
-  - `DecodedTypeId`: Freezed model holding prefix, suffix, and UUID — `toString()` reconstructs the TypeID string
-  - `Base32`: TypeID-specific base32 encoder/decoder (not generic base32)
-  - Prefix validation is strict per spec: `[a-z]` only, max 63 chars, no underscores
-
-### Type Definitions (`lib/type_def.dart`)
-
-Contains shared typedefs like `VoidErrorCallback`.
+- `lib/utils/app_info.dart`: `AppInfo` reads `version` from `pubspec.yaml`; call `AppInfo.init()` at startup, then read `AppInfo.version`. A conditional import picks `_app_info_io.dart` or `_app_info_web.dart`; on web, `init()` does nothing and `version` stays `'1.0.0'`.
+- `lib/utils/functions.dart`: top-level helpers.
+  - `runCatching`: runs an async `Result<T>` operation and turns a throw into `Result.failure`, wrapping a `CommonException` as is and anything else through `toException()`.
+  - `nowUtc`: current time as a UTC `DateTime`.
+  - `constantTimeEquals`: compares two equal-length strings in constant time.
+  - `randomDelay`: awaits a secure-random delay in `[minMs, maxMs)` milliseconds; asserts `maxMs > minMs >= 0`.
+- `lib/utils/json_serialize.dart`: `JsonSerializeUtil`, static converters for Unix seconds, ISO 8601 UTC strings, and `BigInt` strings.
+- `lib/utils/token_bucket_policy.dart`: `TokenBucketPolicy`, a `@freezed` rate-limit policy (`permits` per `per`, optional `burst`) that `dart_falconnect`'s `RateLimitConfig` and `TokenBucketRateLimitInterceptor` consume.
+- `lib/utils/uuid_generator.dart`: `UuidGenerator.getV4()` returns a UUID v4.
+- `lib/utils/typeid/`: [TypeID](https://github.com/jetify-com/typeid) implementation.
+  - `TypeId`: static `generate`, `decode`, `decodeOrNull`, and `isValid` (a UUIDv7 plus a type prefix, base32-encoded).
+  - `DecodedTypeId`: `@freezed` model holding `prefix`, `suffix`, and `uuid`; `toString()` rebuilds the TypeID string.
+  - `Base32`: the TypeID base32 alphabet only, not a generic base32 codec.
+  - Prefixes follow the spec strictly: `[a-z]` only, at most 63 characters, no underscores.
+- `lib/type_def.dart`: shared typedefs such as `VoidErrorCallback`.
 
 ## Gotchas
 
-- When adding a new extension file, add its export to `lib/extensions/extensions.dart` and create a matching test file in `test/extensions/`.
-- The `dartx` re-export hides specific members (`IterableAll`, `IterableAppend`, `MapOrEmpty`, etc.) — if you add an extension that conflicts with `dartx`, add a `hide` entry in `lib/dart_faltool.dart`.
-- Linting uses `very_good_analysis` with `strict-casts` and `strict-inference` enabled — no implicit casts or dynamic inference allowed.
-- `test/unit_test.dart` is a placeholder stub — real tests live in `test/extensions/` and `test/utils/`.
+- `lib/dart_faltool.dart` re-exports `dartx` with a `hide` clause (`IterableAll`, `IterableAppend`, `MapOrEmpty`, and others); when a new extension clashes with a `dartx` member, add that member to the clause.
