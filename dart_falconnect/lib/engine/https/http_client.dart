@@ -4,8 +4,8 @@ import 'package:dart_falconnect/lib.dart';
 /// [HttpClientConfig].
 ///
 /// The client orders the interceptor chain itself: the config's own
-/// `interceptors`, then log, performance, cache, concurrency limit, rate
-/// limit, retry, and the exception handler last. [configure] applies a new
+/// `interceptors`, then log, cache, concurrency limit, rate limit, retry,
+/// and the exception handler last. [configure] applies a new
 /// configuration to requests that start after it returns; requests already
 /// running finish on the configuration they started with. Interceptors
 /// whose box is unchanged are kept, with their state.
@@ -32,7 +32,6 @@ abstract class BaseHttpClient implements RequestApiService {
 
   HttpClientConfig? _config;
   Interceptor? _log;
-  PerformanceInterceptor? _performance;
   CacheInterceptor? _cache;
   ConcurrencyLimitInterceptor? _concurrency;
   Interceptor? _rateLimit;
@@ -64,12 +63,6 @@ abstract class BaseHttpClient implements RequestApiService {
     config.applyTo(Dio());
     final previous = _config;
     final log = _keepOrBuild(previous?.log, config.log, _log, _buildLog);
-    final performance = _keepOrBuild(
-      previous?.performance,
-      config.performance,
-      _performance,
-      (box) => PerformanceInterceptor(config: box, logPrint: _diagnostic),
-    );
     final cache = _keepOrBuild(
       previous?.cache,
       config.cache,
@@ -99,7 +92,6 @@ abstract class BaseHttpClient implements RequestApiService {
       ..addAll([
         ...config.interceptors,
         ?log,
-        ?performance,
         ?cache,
         ?concurrency,
         ?rateLimit,
@@ -108,7 +100,6 @@ abstract class BaseHttpClient implements RequestApiService {
       ]);
     _config = config;
     _log = log;
-    _performance = performance;
     _cache = cache;
     _concurrency = concurrency;
     _rateLimit = rateLimit;

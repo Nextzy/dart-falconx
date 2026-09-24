@@ -16,7 +16,6 @@ void main() {
     expect(config.validateStatus, isNull);
     expect(config.rateLimit, const RateLimitConfig.none());
     expect(config.log, isNull);
-    expect(config.performance, isNull);
     expect(config.cache, isNull);
     expect(config.concurrency, isNull);
     expect(config.retry, isNull);
