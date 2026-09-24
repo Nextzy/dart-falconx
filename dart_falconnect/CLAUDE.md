@@ -84,7 +84,7 @@ When adding new interceptors, add the export to `interceptors/interceptors.dart`
 - **No `dart:io` dependency**: `lib.dart` does not re-export `dart:io`; the package is portable to web. If you need `File`/`Platform`/`HttpClient`, import from `package:universal_io/io.dart` (via `dart_faltool`)
 - **Converter-required API**: Every HTTP method requires a `converter: (Map<String, dynamic>) → T` parameter — there is no raw response API
 - **`BaseRequestBody`**: POST/PUT/PATCH/DELETE data parameter type (from dart_falmodel), requires `.toJson()`
-- **Error propagation**: `catchWhenError` resolves with the error handler's return value; if no handler, errors are rethrown as-is
+- **Error propagation**: `catchWhenError` recovers a `DioException` with the fallback's value; no fallback, a null result, or an error that is not a `DioException` rethrows the original error. A body that is not a JSON object, or a converter that throws, fails with a `DioException` holding `CommonException(type: InputErrorType.invalidFormat)`
 
 ## Gotchas
 
