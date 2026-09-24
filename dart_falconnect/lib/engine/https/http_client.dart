@@ -375,6 +375,8 @@ abstract class BaseHttpClient implements RequestApiService {
       responseHeader: box.responseHeader,
       responseBody: box.responseBody,
       error: box.error,
+      redactHeaders: box.redactHeaders,
+      redactQueryParameters: box.redactQueryParameters,
     );
     final printer = box.logPrint;
     if (printer != null) log.logPrint = printer;
