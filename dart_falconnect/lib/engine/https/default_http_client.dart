@@ -1,27 +1,14 @@
 import 'package:dart_falconnect/lib.dart';
 
-/// A ready-to-use singleton [BaseHttpClient] with JSON content type,
-/// 20-second timeouts, and [DefaultNetworkExceptionHandlerInterceptor].
+/// The shared [BaseHttpClient]. Its default configuration gives JSON
+/// content type, 20-second connect and receive timeouts, and
+/// [DefaultNetworkExceptionHandlerInterceptor]; call [configure] to change
+/// it at any time.
 class DefaultHttpClient extends BaseHttpClient {
   new _singleton({required super.dio});
 
-  /// The shared singleton instance used for all health probe API requests.
+  /// The shared instance.
   static final DefaultHttpClient instance = DefaultHttpClient._singleton(
     dio: Dio(),
   );
-
-  @override
-  void setupOptions(Dio dio, BaseOptions options) {
-    super.setupOptions(dio, options);
-    options
-      ..contentType = Headers.jsonContentType
-      ..connectTimeout = 20.seconds
-      ..receiveTimeout = 20.seconds;
-  }
-
-  @override
-  void setupInterceptors(Dio dio, Interceptors interceptors) {
-    super.setupInterceptors(dio, interceptors);
-    interceptors.addAll([DefaultNetworkExceptionHandlerInterceptor()]);
-  }
 }
