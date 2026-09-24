@@ -1,7 +1,7 @@
-import 'package:dart_faltool/dart_faltool.dart' show clock;
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:dart_faltool/dart_faltool.dart';
 
 part 'generated/request_metrics.freezed.dart';
+part 'generated/request_metrics.g.dart';
 
 /// Performance metrics for a single request.
 ///
@@ -39,26 +39,17 @@ abstract class RequestMetrics with _$RequestMetrics {
     int? responseSize,
   }) = _RequestMetrics;
 
+  /// Deserializes a [RequestMetrics] from a JSON map; `totalDuration` is
+  /// recomputed, not read.
+  factory fromJson(Map<String, dynamic> json) => _$RequestMetricsFromJson(json);
+
   const new _();
 
   /// Total request duration; the elapsed time so far while the request is
   /// still in flight.
+  @DurationMillisecondsConverter()
+  @JsonKey(includeToJson: true, includeFromJson: false)
   Duration get totalDuration => endTime != null
       ? endTime!.difference(startTime)
       : clock.now().difference(startTime);
-
-  /// Serializes this metrics snapshot to a JSON-compatible map.
-  Map<String, dynamic> toJson() {
-    return {
-      'method': method,
-      'url': url,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime?.toIso8601String(),
-      'statusCode': statusCode,
-      'error': error,
-      'totalDuration': totalDuration.inMilliseconds,
-      'requestSize': requestSize,
-      'responseSize': responseSize,
-    };
-  }
 }

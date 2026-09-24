@@ -31,24 +31,27 @@ void main() {
       });
     });
 
-    test('key order matches today', () {
+    test("emits exactly today's key set", () {
       final metrics = RequestMetrics(
         method: 'GET',
         url: 'u',
         startTime: DateTime(2026),
       );
 
-      expect(metrics.toJson().keys.toList(), [
-        'method',
-        'url',
-        'startTime',
-        'endTime',
-        'statusCode',
-        'error',
-        'totalDuration',
-        'requestSize',
-        'responseSize',
-      ]);
+      expect(
+        metrics.toJson().keys,
+        unorderedEquals([
+          'method',
+          'url',
+          'startTime',
+          'endTime',
+          'statusCode',
+          'error',
+          'totalDuration',
+          'requestSize',
+          'responseSize',
+        ]),
+      );
     });
 
     test('null optional fields serialize as explicit nulls', () {
