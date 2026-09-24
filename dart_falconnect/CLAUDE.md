@@ -31,6 +31,7 @@
 - The cache, concurrency, performance, rate-limit, and retry interceptors take their config box plus an optional `logPrint`.
 - Unexported helpers: the pause core in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host-key rule in `lib/src/engine/https/interceptors/host_key.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart`.
 - Export a new interceptor from `interceptors/interceptors.dart`; that barrel also exports `local_rate_limit.dart`, which tells a client-made 429 from a server 429.
+- Interceptor model classes live in `interceptors/models/` as freezed classes (generated output in `models/generated/`); `getStatistics()` and `getUrlStatistics()` return immutable snapshots, never live interceptor state.
 
 ## WebSocket (`engine/sockets/`)
 
@@ -74,6 +75,5 @@ Every `DatasourceBoundState` strategy returns `Result<DsType>`:
 
 ## Web caveats
 
-- `RequestMetrics` breakdown fields (`dnsLookupTime`, `connectionTime`, `tlsHandshakeTime`, `timeToFirstByte`, `downloadTime`) stay `null`: `PerformanceInterceptor` never sets them, and browsers expose no XHR timing breakdown to Dio.
 - `SocketClient` has compile-check coverage only; at runtime `WebSocketChannel.connect()` picks the browser or `dart:io` socket through `package:web_socket`.
 - Leave Dio's `httpClientAdapter` on its auto factory so web resolves `BrowserHttpClientAdapter`; never import `package:dio/io.dart` or set `IOHttpClientAdapter`.
