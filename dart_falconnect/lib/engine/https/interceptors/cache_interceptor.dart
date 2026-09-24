@@ -9,6 +9,7 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 const String _policyKey = 'dart_falconnect.cache.policy';
 const String _forKey = 'dart_falconnect.cache.for';
 const String _fallbackKey = 'dart_falconnect.cache.fallback';
+const String _revalidatingKey = 'dart_falconnect.cache.revalidating';
 
 /// Tells a response answered by [CacheInterceptor] apart from one fetched
 /// from the network.
@@ -287,6 +288,7 @@ class _RevalidatingHandler extends RequestInterceptorHandler {
       final accept = requestOptions.validateStatus;
       requestOptions.validateStatus = (status) =>
           status == 304 || accept(status);
+      requestOptions.extra = {...requestOptions.extra, _revalidatingKey: true};
     }
     _handler.next(requestOptions);
   }
@@ -323,8 +325,25 @@ class _StoringHandler extends ResponseInterceptorHandler {
   final Response<dynamic> _response;
   final void Function(DioException error) onStoreError;
 
+  /// A `304` to a request the cache made conditional turns into the stored
+  /// response; one still here found no entry, for example after
+  /// `clearCache()`, and fails as dio's own `validateStatus` would fail it.
   @override
-  void next(Response<dynamic> response) => _handler.next(response);
+  void next(Response<dynamic> response) {
+    if (response.statusCode == 304 &&
+        response.requestOptions.extra[_revalidatingKey] == true) {
+      _handler.reject(
+        DioException.badResponse(
+          statusCode: 304,
+          requestOptions: response.requestOptions,
+          response: response,
+        ),
+        true,
+      );
+      return;
+    }
+    _handler.next(response);
+  }
 
   @override
   void resolve(Response<dynamic> response) => _handler.resolve(response);
@@ -335,7 +354,7 @@ class _StoringHandler extends ResponseInterceptorHandler {
     bool callFollowingErrorInterceptor = false,
   ]) {
     onStoreError(error);
-    _handler.next(_response);
+    next(_response);
   }
 }
 
