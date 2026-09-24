@@ -409,7 +409,8 @@ abstract class BaseHttpClient implements RequestApiService {
   }
 
   /// Prints an interceptor diagnostic through the current log box, as a
-  /// JSON line when the box is a [JsonLogConfig].
+  /// JSON line when the box is a [JsonLogConfig]. A printer that throws is
+  /// ignored, so a diagnostic never fails a request.
   void _diagnostic(String message) {
     final log = _config?.log;
     if (log == null || !log.diagnostics) return;
@@ -421,13 +422,17 @@ abstract class BaseHttpClient implements RequestApiService {
         'body': message,
       }),
     };
-    final printer = log.logPrint;
-    if (printer != null) {
-      printer(line);
-    } else {
-      // Diagnostics go to the console when the config sets no printer.
-      // ignore: avoid_print
-      print(line);
+    try {
+      final printer = log.logPrint;
+      if (printer != null) {
+        printer(line);
+      } else {
+        // Diagnostics go to the console when the config sets no printer.
+        // ignore: avoid_print
+        print(line);
+      }
+    } on Object {
+      // A broken log sink must not turn a request into a failure.
     }
   }
 }
