@@ -13,7 +13,7 @@
 
 ## Utils and typedefs
 
-- `lib/utils/app_info.dart`: `AppInfo` reads `version` from `pubspec.yaml`; call `AppInfo.init()` at startup, then read `AppInfo.version`. A conditional import picks `_app_info_io.dart` or `_app_info_web.dart`; on web, `init()` does nothing and `version` stays `'1.0.0'`.
+- `lib/utils/app_info.dart`: `AppInfo` reads `version` from `pubspec.yaml`; call `AppInfo.init()` at startup, then read `AppInfo.version`. A conditional import picks `lib/src/utils/app_info_io.dart` or `app_info_web.dart`; on web, `init()` does nothing and `version` stays `'1.0.0'`.
 - `lib/utils/functions.dart`: top-level helpers.
   - `runCatching`: runs an async `Result<T>` operation and turns a throw into `Result.failure`, wrapping a `CommonException` as is and anything else through `toException()`.
   - `nowUtc`: current time as a UTC `DateTime`.
