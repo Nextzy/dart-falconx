@@ -60,7 +60,9 @@ abstract class IoAdapterConfig with _$IoAdapterConfig {
       if (host.isEmpty) {
         throw ArgumentError('pin host "" is empty');
       }
-      if (!isHostKey(host.toLowerCase())) {
+      final key = host.toLowerCase();
+      // A wildcard or a trailing dot never equals a request's host.
+      if (!isHostKey(key) || key.contains('*') || key.endsWith('.')) {
         throw ArgumentError('pin host "$host" must be a bare host name');
       }
       if (hostPins.isEmpty) {

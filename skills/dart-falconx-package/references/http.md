@@ -178,8 +178,8 @@ DefaultHttpClient.instance.configure(
   ```
 
 - The pin follows the server's key, not its certificate. It survives a renewal only when the server keeps its key: `certbot` makes a new key on every renewal unless you pass `--reuse-key`. Ship a backup pin for the next key in every release, or installed apps stop connecting when the key changes.
-- Only the leaf can be pinned; Dart exposes no certificate chain. Hosts match exactly, ignoring case, with no wildcards.
-- `configure` throws `ArgumentError` on a malformed pin or `proxy`, on every platform, the web included.
+- Only the leaf can be pinned; Dart exposes no certificate chain. Hosts match exactly, ignoring case and a trailing dot in the URL, with no wildcards.
+- `configure` throws `ArgumentError` on a malformed pin, a pin host that is not a bare host name (a wildcard or a trailing dot included), or a malformed `proxy`, on every platform, the web included.
 
 **Debugging with Proxyman on Android**
 
