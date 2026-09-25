@@ -1,5 +1,5 @@
-import 'package:dart_falconnect/lib.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Prints each request, response, and error over several console lines,
 /// for a developer watching an app's console.

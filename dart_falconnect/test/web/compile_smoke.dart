@@ -7,7 +7,7 @@
 // Success = exit code 0. No runtime execution.
 // If dart2js fails, dart_falconnect has a VM-only code path.
 import 'package:dart_falconnect/dart_falconnect.dart';
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 import '_stub_http_client.dart';
 

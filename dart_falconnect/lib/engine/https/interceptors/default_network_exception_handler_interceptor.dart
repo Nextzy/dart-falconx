@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Concrete [NetworkExceptionHandlerInterceptor] that rejects every error
 /// without custom recovery — all client, server, and non-standard errors are

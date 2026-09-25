@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Thrown when an inbound socket response does not match any known operation.
 class SocketOperationNotFound extends SocketException {

@@ -3,7 +3,7 @@
 // ignore_for_file: cascade_invocations
 // ignore_for_file: avoid_dynamic_calls
 
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Abstract base class for JSON-RPC 2.0 services communicating over HTTP.
 ///

@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// The shared [BaseHttpClient]. Its default configuration gives JSON
 /// content type, 20-second connect and receive timeouts, and
