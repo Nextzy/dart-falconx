@@ -86,7 +86,7 @@ abstract class IoAdapterConfig with _$IoAdapterConfig {
     if (colon <= 0) return false;
     final host = proxy.substring(0, colon);
     final port = proxy.substring(colon + 1);
-    if (host.contains(':') || !isHostKey(host.toLowerCase())) return false;
+    if (!RegExp(r'^[A-Za-z0-9.-]+$').hasMatch(host)) return false;
     if (!RegExp(r'^\d{1,5}$').hasMatch(port)) return false;
     final number = int.parse(port);
     return number >= 1 && number <= 65535;
