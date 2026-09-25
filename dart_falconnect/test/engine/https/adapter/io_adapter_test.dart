@@ -350,6 +350,23 @@ void main() {
       expect(trustsAnyCertificate(on, assertionsEnabled: false), isFalse);
       expect(trustsAnyCertificate(off, assertionsEnabled: true), isFalse);
     });
+
+    test(
+      'a VM without assertions ignores it, as a release build does',
+      () async {
+        Future<ProcessResult> probe(List<String> flags) => Process.run(
+          Platform.resolvedExecutable,
+          ['run', ...flags, 'test/engine/https/adapter/_trust_probe.dart'],
+        );
+
+        final release = await probe(const []);
+        final debug = await probe(const ['--enable-asserts']);
+
+        expect('${release.stdout}', 'rejected', reason: '${release.stderr}');
+        expect('${debug.stdout}', 'trusted', reason: '${debug.stderr}');
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
   });
 
   group('proxy', () {
