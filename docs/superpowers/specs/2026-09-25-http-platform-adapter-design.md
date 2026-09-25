@@ -399,7 +399,7 @@ Per the skill maintenance rule, in the same change:
 | File | Change |
 |---|---|
 | `skills/dart-falconx-package/references/http.md` | A "Transport options" section: both boxes, the platform each applies to, the pin format and the `openssl` command, backup pins and `certbot --reuse-key`, the Proxyman recipe of section 3, the proxy fallback rule, `perHost` of 6 or less on the web, and `maxConnectionsPerHost` at or above `perHost` |
-| `skills/dart-falconx-package/SKILL.md` | The client-configuration row gains `ioAdapter` and `webAdapter`; the exception list gains `CertificatePinningException` |
+| `skills/dart-falconx-package/SKILL.md` | A "Transport" row names `ioAdapter`, `webAdapter`, and `CertificatePinningException`; a "Certificate pin failures" row in the exception group names the `badCertificate` `DioException` and the `PinFailure` values; a rule forbids building a platform adapter by hand |
 | `dart_falconnect/CLAUDE.md` | The "Web caveats" rule becomes: import `package:dio/io.dart` only in `platform_adapter_io.dart` and `package:dio/browser.dart` only in `platform_adapter_web.dart`; everywhere else, leave `httpClientAdapter` to `configure` |
 
 ## 13. Implementation logistics
