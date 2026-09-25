@@ -108,13 +108,20 @@ String findProxyFor(
   String? proxy,
   Map<String, String>? environment,
 }) {
-  if (pins.containsKey(uri.host.toLowerCase())) {
+  if (pins.containsKey(_pinHost(uri))) {
     if (!uri.isScheme('https')) return 'DIRECT';
     if (proxy != null) return 'PROXY $proxy';
   } else if (proxy != null) {
     return 'PROXY $proxy; DIRECT';
   }
   return HttpClient.findProxyFromEnvironment(uri, environment: environment);
+}
+
+/// The host [uri] is pinned under: lowercase, without the trailing dot
+/// of a fully qualified name, which reaches the same server.
+String _pinHost(Uri uri) {
+  final host = uri.host.toLowerCase();
+  return host.endsWith('.') ? host.substring(0, host.length - 1) : host;
 }
 
 /// [pins] with lowercase hosts and canonical pins; hosts that differ only
@@ -145,7 +152,7 @@ class _PinningConnector {
     String? proxyHost,
     int? proxyPort,
   ) async {
-    final host = uri.host.toLowerCase();
+    final host = _pinHost(uri);
     final expected = pins[host];
     final secure = uri.isScheme('https');
     if (expected == null) {

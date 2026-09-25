@@ -213,6 +213,17 @@ void main() {
       client.dispose();
     });
 
+    test('a host with a trailing dot is matched to its pin', () async {
+      final client = _Client(HttpClientConfig(ioAdapter: pinned({_wrongPin})));
+
+      await expectLater(
+        _get(client, 'https://localhost.:${tls.port}/me'),
+        _pinFailure(PinFailure.mismatch, presented: localhostPin),
+      );
+      expect(tls.requests, isEmpty);
+      client.dispose();
+    });
+
     test('a pinned host through a proxy fails before any connect', () async {
       final proxy = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
       var proxyConnections = 0;
@@ -442,6 +453,14 @@ void main() {
     test('sends a pinned host over http direct, to the factory', () {
       expect(findProxyFor(http, pins, proxy: 'p.test:1'), 'DIRECT');
       expect(findProxyFor(http, pins, environment: environment), 'DIRECT');
+      expect(
+        findProxyFor(
+          Uri.parse('http://localhost./me'),
+          pins,
+          proxy: 'p.test:1',
+        ),
+        'DIRECT',
+      );
     });
 
     test('keeps a pinned https host on its proxy, with no DIRECT', () {

@@ -133,6 +133,20 @@ void main() {
       );
     });
 
+    // Neither can match a request's host, so each would turn pinning off.
+    for (final host in ['*.example.com', 'api.example.com.']) {
+      test('rejects the pin host "$host"', () {
+        expect(
+          () => IoAdapterConfig(
+            pins: {
+              host: {localhostPin},
+            },
+          ).validate(),
+          _argumentError('pin host "$host" must be a bare host name'),
+        );
+      });
+    }
+
     test('rejects a pin host with no pin', () {
       expect(
         () =>
