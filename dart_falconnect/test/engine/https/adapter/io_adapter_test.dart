@@ -593,6 +593,33 @@ void main() {
       expect(adapterDiagnostics(config, adapterBuilt: false), isEmpty);
     });
 
+    test('count one pin written padded and bare as one pin', () {
+      final config = HttpClientConfig(
+        ioAdapter: IoAdapterConfig(
+          pins: {
+            'localhost': {localhostPin, localhostPin.replaceAll('=', '')},
+          },
+        ),
+      );
+
+      expect(adapterDiagnostics(config, adapterBuilt: true), [
+        '[ioAdapter] localhost has one pin: add a backup pin',
+      ]);
+    });
+
+    test('count the pins of hosts that differ only in case together', () {
+      const config = HttpClientConfig(
+        ioAdapter: IoAdapterConfig(
+          pins: {
+            'LocalHost': {localhostPin},
+            'localhost': {_wrongPin},
+          },
+        ),
+      );
+
+      expect(adapterDiagnostics(config, adapterBuilt: true), isEmpty);
+    });
+
     test('print through the log box when configure builds', () {
       final lines = <String>[];
       final client = _Client(
