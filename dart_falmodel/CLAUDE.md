@@ -2,9 +2,9 @@
 
 ## Entry points
 
-- `lib/lib.dart` is the internal prelude: it re-exports `dart:async`, `dart:convert`, `dart_faltool`, `dio`, `freezed_annotation`, `json_annotation`, and `dart_falmodel.dart`. Import it from files inside this package.
+- `lib/src/src.dart` is the internal prelude: it re-exports `dart:async`, `dart:convert`, `dart_faltool`, `dio`, `freezed_annotation`, `json_annotation`, and `dart_falmodel.dart`. Import it from files inside this package.
 - `lib/dart_falmodel.dart` is the public barrel: it exports `exceptions/`, `extensions/`, `feedbacks/`, `models/`, and `networks/`.
-- Point consumers at `dart_falmodel.dart`, never at `lib.dart`.
+- Point consumers at `dart_falmodel.dart`, never at `src/src.dart`.
 
 ## Exceptions
 

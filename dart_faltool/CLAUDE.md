@@ -2,9 +2,9 @@
 
 ## Entry points
 
-- `lib/lib.dart`: internal entry point; re-exports `dart:async`, `dart:convert`, `ansicolor`, `dart_falmodel`, `yaml`, and `dart_faltool.dart`.
+- `lib/src/src.dart`: internal entry point; re-exports `dart:async`, `dart:convert`, `ansicolor`, `dart_falmodel`, `yaml`, and `dart_faltool.dart`.
 - `lib/dart_faltool.dart`: public entry point; re-exports the third-party packages plus `extensions/extensions.dart`, `type_def.dart`, and `utils/utils.dart`.
-- Import `package:dart_faltool/lib.dart` from source files inside this package; consumers import `dart_faltool.dart`.
+- Import `package:dart_faltool/src/src.dart` from source files inside this package; consumers import `dart_faltool.dart`.
 
 ## Extensions (`lib/extensions/`)
 

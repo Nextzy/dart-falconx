@@ -18,6 +18,7 @@ dart_falconnect (top layer: network implementations)
 ```
 
 - Leave the `dart_faltool` ↔ `dart_falmodel` cycle in place: Dart workspace resolution resolves it, and it breaks no layering rule.
+- Put a file that no app imports under `lib/src/`, in the folder it would have outside `lib/src/`, and export from a barrel only what apps use. Each package's internal prelude is `lib/src/src.dart`; files inside the package import it, and consumers import the barrel.
 
 ## Platform support
 
