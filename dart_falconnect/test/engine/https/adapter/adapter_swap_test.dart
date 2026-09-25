@@ -79,6 +79,26 @@ void main() {
     expect(app.closes, 0);
   });
 
+  test('a changed box sets over an adapter the app swapped in', () async {
+    final client = _Client(
+      Dio(),
+      const HttpClientConfig(ioAdapter: IoAdapterConfig()),
+    );
+    final built = client.dio.httpClientAdapter;
+    final app = _AppAdapter();
+    client.dio.httpClientAdapter = app;
+
+    client.configure(
+      const HttpClientConfig(ioAdapter: IoAdapterConfig(proxy: 'p.test:1')),
+    );
+
+    expect(client.dio.httpClientAdapter, isA<PinningIoAdapter>());
+    expect(client.dio.httpClientAdapter, isNot(same(built)));
+    expect(app.closes, 0);
+    await _expectClosed(built);
+    client.dispose();
+  });
+
   test('an equal box keeps the adapter', () {
     final client = _Client(
       Dio(),
