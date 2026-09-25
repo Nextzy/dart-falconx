@@ -100,6 +100,9 @@ void main() {
       '[::1]:8080',
       '::1:8080',
       'p:8080/path',
+      'a;b:8080',
+      'DIRECT;x:8080',
+      'a%20b:8080',
     ]) {
       test('rejects the proxy "$proxy"', () {
         expect(
