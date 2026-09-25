@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Converts a decoded JSON object into `T`.
 typedef JsonResponseConverter<T> = FutureOr<T> Function(

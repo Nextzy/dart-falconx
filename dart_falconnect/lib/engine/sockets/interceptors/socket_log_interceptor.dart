@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// [SocketInterceptor] that logs socket requests, responses, and errors.
 ///

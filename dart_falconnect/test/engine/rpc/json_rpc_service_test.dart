@@ -4,7 +4,7 @@ library;
 
 import 'dart:io';
 
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 import 'package:test/test.dart';
 
 /// Minimal result model for the loopback round trips below.

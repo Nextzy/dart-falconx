@@ -1,7 +1,7 @@
-import 'package:dart_falconnect/lib.dart';
 import 'package:dart_falconnect/src/engine/https/adapter/platform_adapter.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart'
     show matchesName;
+import 'package:dart_falconnect/src/src.dart';
 
 /// Base class of every HTTP client in FalconX: one [Dio] configured by one
 /// [HttpClientConfig].
