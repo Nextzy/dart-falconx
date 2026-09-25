@@ -152,6 +152,10 @@ class _PinningConnector {
     String? proxyHost,
     int? proxyPort,
   ) async {
+    // HttpClient checks the scheme only while no factory is set.
+    if (!uri.isScheme('http') && !uri.isScheme('https')) {
+      throw ArgumentError("Unsupported scheme '${uri.scheme}' in URI $uri");
+    }
     final host = _pinHost(uri);
     final expected = pins[host];
     final secure = uri.isScheme('https');

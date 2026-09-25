@@ -262,6 +262,36 @@ void main() {
       client.dispose();
     });
 
+    // dart:io checks the scheme only while no connection factory is set.
+    for (final scheme in ['ftp', 'wss']) {
+      test('a pinning client refuses a $scheme URL, as dart:io does', () async {
+        final plain = await _Server.http();
+        addTearDown(plain.close);
+        final client = _Client(
+          const HttpClientConfig(
+            ioAdapter: IoAdapterConfig(
+              pins: {
+                'pinned.example': {localhostPin},
+              },
+            ),
+          ),
+        );
+
+        await expectLater(
+          _get(client, '$scheme://127.0.0.1:${plain.port}/me'),
+          throwsA(
+            isA<DioException>().having(
+              (e) => e.error,
+              'error',
+              isA<ArgumentError>(),
+            ),
+          ),
+        );
+        expect(plain.requests, isEmpty);
+        client.dispose();
+      });
+    }
+
     test('RetryInterceptor makes one attempt on a pin failure', () async {
       final counter = _AttemptCounter();
       final client = _Client(
