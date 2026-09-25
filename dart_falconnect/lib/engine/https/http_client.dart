@@ -63,11 +63,14 @@ abstract class BaseHttpClient implements RequestApiService {
   /// Applies [config] to requests that start after this call returns.
   ///
   /// Throws, and keeps the current configuration, when an interceptor
-  /// cannot be built from [config] or dio rejects one of its options.
+  /// cannot be built from [config], dio rejects one of its options, or
+  /// its `ioAdapter` box is malformed.
   void configure(HttpClientConfig config) {
     // A dry run on a scratch Dio: dio checks options in its setters, so a
     // value it rejects throws here, before this client changes.
     config.applyTo(Dio());
+    // Checked on every platform, so a web build reports a bad pin too.
+    config.ioAdapter?.validate();
     final previous = _config;
     final session = _keepOrBuild(
       previous?.auth,
