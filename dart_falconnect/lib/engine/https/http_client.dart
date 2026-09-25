@@ -1,4 +1,5 @@
 import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/engine/https/adapter/platform_adapter.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart'
     show matchesName;
 
@@ -14,6 +15,13 @@ import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart
 /// running finish on the configuration they started with. Interceptors
 /// whose box is unchanged are kept, with their state.
 ///
+/// The config's `ioAdapter` box, on dart:io, or `webAdapter` box, on the
+/// web, replaces [dio]'s adapter while it is set; a null box leaves the
+/// adapter alone, and a box that returns to null restores the adapter
+/// [dio] had before. [configure] closes an adapter it replaces with
+/// `force: false`, so requests already running on it finish, and never
+/// closes an adapter it did not build.
+///
 /// A subclass passes its configuration to the super constructor. An
 /// interceptor that needs [dio] is built in the subclass constructor body,
 /// which then calls [configure].
@@ -22,7 +30,8 @@ abstract class BaseHttpClient implements RequestApiService {
   ///
   /// [config] owns the base URL, timeouts, content type, redirects,
   /// `validateStatus`, and its header keys, so values set on [dio] for
-  /// those are replaced; the adapter and every other option stay.
+  /// those are replaced; every other option stays, and so does the adapter
+  /// unless the platform's adapter box is set.
   new({required Dio dio, HttpClientConfig config = const HttpClientConfig()})
     : _dio = dio,
       _defaultValidateStatus = BaseOptions().validateStatus {
@@ -43,6 +52,8 @@ abstract class BaseHttpClient implements RequestApiService {
   ConcurrencyLimitInterceptor? _concurrency;
   Interceptor? _rateLimit;
   RetryInterceptor? _retry;
+  HttpClientAdapter? _builtAdapter;
+  HttpClientAdapter? _originalAdapter;
 
   /// The underlying Dio instance, for Retrofit and advanced use.
   Dio get dio => _dio;
@@ -119,6 +130,17 @@ abstract class BaseHttpClient implements RequestApiService {
       _retry,
       (box) => RetryInterceptor(config: box, dio: _dio, logPrint: _diagnostic),
     );
+    final adapterBox = platformAdapterBox(config);
+    final adapterBuilt =
+        adapterBox != null &&
+        (_builtAdapter == null ||
+            previous == null ||
+            platformAdapterBox(previous) != adapterBox);
+    final adapter = adapterBuilt
+        ? buildPlatformAdapter(adapterBox)
+        : adapterBox == null
+        ? null
+        : _builtAdapter;
 
     _applyOptions(previous, config);
     _dio.interceptors
@@ -135,6 +157,7 @@ abstract class BaseHttpClient implements RequestApiService {
         ?cacheFallback,
         config.exceptionHandler ?? _defaultExceptionHandler,
       ]);
+    _swapAdapter(adapter);
     _config = config;
     _session = session;
     _stamp = stamp;
@@ -144,6 +167,13 @@ abstract class BaseHttpClient implements RequestApiService {
     _concurrency = concurrency;
     _rateLimit = rateLimit;
     _retry = retry;
+    if (adapterBox != null &&
+        (adapterBuilt || previous?.concurrency != config.concurrency)) {
+      adapterDiagnostics(
+        config,
+        adapterBuilt: adapterBuilt,
+      ).forEach(_diagnostic);
+    }
   }
 
   /// Sets the base URL of the current configuration.
@@ -161,10 +191,13 @@ abstract class BaseHttpClient implements RequestApiService {
     );
   }
 
-  /// Disposes the stateful interceptors of the current configuration.
+  /// Disposes the stateful interceptors of the current configuration, and
+  /// closes the adapter this client built with `force: false`, restoring
+  /// the adapter [dio] had before.
   ///
   /// Needed at the end of a test or a CLI; a Flutter app never calls it.
-  /// A later [configure] builds new limiters instead of keeping these.
+  /// A later [configure] builds new limiters and a new adapter instead of
+  /// keeping these.
   void dispose() {
     final rateLimit = _rateLimit;
     if (rateLimit is TokenBucketRateLimitInterceptor) {
@@ -175,6 +208,7 @@ abstract class BaseHttpClient implements RequestApiService {
     _concurrency?.dispose();
     _rateLimit = null;
     _concurrency = null;
+    _swapAdapter(null);
   }
 
   @override
@@ -379,6 +413,19 @@ abstract class BaseHttpClient implements RequestApiService {
         )
         .mapJson(converter)
         .catchWhenError(catchError);
+  }
+
+  /// Puts [next] on [dio], or the adapter [dio] had before this client
+  /// built one when [next] is null, and closes the adapter this client
+  /// built before, letting its running requests finish.
+  void _swapAdapter(HttpClientAdapter? next) {
+    final built = _builtAdapter;
+    if (identical(next, built)) return;
+    if (built == null) _originalAdapter = _dio.httpClientAdapter;
+    _dio.httpClientAdapter = next ?? _originalAdapter!;
+    built?.close();
+    _builtAdapter = next;
+    if (next == null) _originalAdapter = null;
   }
 
   /// [box], carrying the current cache's memory store when only settings
