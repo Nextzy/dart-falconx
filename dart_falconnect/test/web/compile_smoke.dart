@@ -37,6 +37,30 @@ void main() {
   _sink(HttpLogInterceptor());
   _sink(HttpJsonLogInterceptor());
   _sink(const HttpClientConfig(log: LogConfig.json()));
+  _sink(
+    StubHttpClient(dio: dio)..configure(
+      const HttpClientConfig(
+        ioAdapter: IoAdapterConfig(
+          maxConnectionsPerHost: 4,
+          proxy: 'localhost:9090',
+          pins: {
+            'example.test': {
+              'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+            },
+          },
+          debugTrustAnyCertificate: true,
+        ),
+        webAdapter: WebAdapterConfig(withCredentials: true),
+      ),
+    ),
+  );
+  _sink(
+    const CertificatePinningException(
+      host: 'example.test',
+      failure: PinFailure.mismatch,
+      expected: {},
+    ),
+  );
   _sink(DefaultNetworkExceptionHandlerInterceptor());
 
   // JSON-RPC
