@@ -10,7 +10,7 @@
 
 The config core removed three fields that nothing read (`maxConnectionsPerHost`, `idleConnectionTimeout`, and `validateCertificates`) and left transport options to this phase. `BaseHttpClient.configure` writes only the options its config owns and never touches `dio.httpClientAdapter`. Today an app that needs a connection limit, a proxy, or certificate pinning builds its own `IOHttpClientAdapter`. That code imports `dart:io` and `package:dio/io.dart`, so the app must also write a conditional import, or its web build stops compiling.
 
-Seven facts from the dio 5.11.1 and Dart 3.13 sources shape this design:
+Nine facts from the dio 5.11.1 and Dart 3.13 sources shape this design:
 
 1. dio's `IOHttpClientAdapter.validateCertificate` runs after `request.close()` returns the response (`io_adapter.dart`). The request line, the headers, including `Authorization`, and the body have left the device before the check runs. A pin checked there does not keep the token from a man in the middle.
 2. dio reads `httpClientAdapter` in `_dispatchRequest` (`dio_mixin.dart`, line 607), after every `onRequest` handler has run. A request that waits in a limiter, and every retry, goes out through the adapter that is current when it is dispatched.
@@ -19,6 +19,8 @@ Seven facts from the dio 5.11.1 and Dart 3.13 sources shape this design:
 5. `HttpClient.findProxy` defaults to `findProxyFromEnvironment`, which reads `HTTPS_PROXY`. When a proxy entry fails to connect, `_getConnection` tries the next entry, so `PROXY host:port; DIRECT` falls back to a direct connection.
 6. `HttpClient` queues requests past `maxConnectionsPerHost` in `_pending`, inside `openUrl`, and dio's `connectTimeout` wraps `openUrl`, so time in that queue counts toward the connect timeout. dio's own `HttpClient` sets `idleTimeout` to 3 seconds; the dart:io default is 15.
 7. `dart_falconnect/CLAUDE.md` forbids importing `package:dio/io.dart`. This spec replaces that rule with a narrower one (section 12).
+8. `HttpClient` pools connections by where the socket goes. A proxied `http` connection is filed under the proxy's host and port, and `_ConnectionTarget.connect` reuses an idle connection before it calls the connection factory. A check that lives only in the factory therefore misses every request that finds a warm connection.
+9. `HttpClient._openUrl` rejects a scheme other than `http` and `https` only while no connection factory is set.
 
 ## 2. Goals and non-goals
 
@@ -146,7 +148,7 @@ DefaultHttpClient.instance.configure(HttpClientConfig(
 | Field | Rule | Error message example |
 |---|---|---|
 | `proxy` | A host name or IPv4 address, a colon, and a port from 1 to 65535; no scheme, no path | `proxy "http://p:8080" must be host:port` |
-| `pins` key | A non-empty bare host name, lowercased before the check (no port, brackets, or spaces); compared without regard to case | `pin host "" is empty`, `pin host "api.example.com:443" must be a bare host name` |
+| `pins` key | A non-empty bare host name, lowercased before the check (no port, brackets, spaces, wildcard, or trailing dot); compared without regard to case | `pin host "" is empty`, `pin host "api.example.com:443" must be a bare host name`, `pin host "*.example.com" must be a bare host name` |
 | `pins` value | A non-empty set; each pin is `sha256/` plus base64, padded or not, that decodes to 32 bytes | `pin host "api.example.com" has no pin`, `pin "AAAA" for api.example.com must be "sha256/" followed by base64 of 32 bytes` |
 | `maxConnectionsPerHost` | Null or at least 1 | `maxConnectionsPerHost must be at least 1` |
 | `idleTimeout` | Not negative | `idleTimeout must not be negative` |
@@ -198,7 +200,7 @@ List<String> adapterDiagnostics(
 |---|---|
 | `idleTimeout` | `idleTimeout` |
 | `maxConnectionsPerHost` | `maxConnectionsPerHost` |
-| `findProxy` | Section 5.3, when `proxy` is set; otherwise the dart:io default |
+| `findProxy` | Section 5.3, when `proxy` is set or `pins` is not empty; otherwise the dart:io default |
 | `badCertificateCallback` | Accepts every certificate when the debug switch is in effect (section 5.4); otherwise null |
 | `connectionFactory` | Section 5.2, when `pins` is not empty; otherwise null |
 
@@ -206,13 +208,13 @@ List<String> adapterDiagnostics(
 
 ### 5.2 Connection factory
 
-The factory receives the request URI and, for a proxied connection, the proxy host and port. It lowercases the URI host and looks it up in `pins`.
+The factory receives the request URI and, for a proxied connection, the proxy host and port. It first rejects a scheme other than `http` and `https` with the `ArgumentError` that dart:io throws when no factory is set (fact 9). It then lowercases the URI host, drops one trailing dot, and looks the host up in `pins`.
 
 | Request | Factory action |
 |---|---|
 | Pinned host, `https`, direct | `SecureSocket.startConnect(host, port, onBadCertificate: ...)`, then the pin check below |
-| Pinned host, any proxy (the app's or `HTTPS_PROXY`) | Throws `CertificatePinningException` with `PinFailure.proxied`, before any connection opens |
-| Pinned host, `http` | Throws `CertificatePinningException` with `PinFailure.plainHttp`, before any connection opens |
+| Pinned host, `https`, any proxy (the app's or `HTTPS_PROXY`) | Throws `CertificatePinningException` with `PinFailure.proxied`, before any connection opens |
+| Pinned host, `http`, always direct (section 5.3) | Throws `CertificatePinningException` with `PinFailure.plainHttp`, before any connection opens |
 | Other host, `https`, direct | `SecureSocket.startConnect(host, port, onBadCertificate: ...)` |
 | Other host, `http`, direct | `Socket.startConnect(host, port)` |
 | Other host, any proxy | `Socket.startConnect(proxyHost, proxyPort)`; `HttpClient` runs the tunnel and its TLS as it does today |
@@ -225,12 +227,18 @@ The pin check waits for the handshake, reads `peerCertificate`, and computes its
 
 ### 5.3 Proxy
 
-When `proxy` is `host:port`, `findProxy` returns:
+`findProxy` is set when `proxy` is set or `pins` is not empty. It looks the host up as section 5.2 does and returns:
 
-- `PROXY host:port; DIRECT` for a host missing from `pins`, so a closed Proxyman falls back to a direct connection;
-- `PROXY host:port` for a pinned host, so the request fails with `PinFailure.proxied` instead of going direct unseen by the proxy.
+| Request | `proxy` set | `proxy` null |
+|---|---|---|
+| Pinned host, `http` | `DIRECT` | `DIRECT` |
+| Pinned host, `https` | `PROXY host:port` | the environment's answer |
+| Other host | `PROXY host:port; DIRECT` | the environment's answer |
 
-When `proxy` is null, `findProxy` stays `HttpClient.findProxyFromEnvironment`, and a pinned host that the environment sends through a proxy fails with `PinFailure.proxied`.
+- A pinned host over `http` goes `DIRECT`, so the factory refuses it with `PinFailure.plainHttp`. Through a proxy it would land in the pool for the proxy's address, where an idle connection left by any unpinned `http` request is reused without calling the factory (fact 8), and the request and its token would reach the proxy in cleartext.
+- A pinned `https` host gets no `DIRECT` entry, so it fails with `PinFailure.proxied` instead of going direct unseen by the proxy. Its pool is the one for direct `https` connections to the proxy's own address, which holds a connection only when the app calls that address itself, so in practice the request reaches the factory.
+- Another host keeps `DIRECT` as a fallback, so a closed Proxyman falls back to a direct connection.
+- The environment's answer is `HttpClient.findProxyFromEnvironment`, the dart:io default, which reads `https_proxy`, `http_proxy`, and `no_proxy`. A pinned `https` host that the environment sends through a proxy fails with `PinFailure.proxied`.
 
 ### 5.4 Debug switch
 
@@ -321,11 +329,12 @@ openssl s_client -connect api.example.com:443 -servername api.example.com </dev/
 | Situation | Error | Retried |
 |---|---|---|
 | The leaf does not match any pin | `DioException`, type `badCertificate`, `error` a `CertificatePinningException` with `PinFailure.mismatch` | No |
-| A pinned host is reached through a proxy | The same, with `PinFailure.proxied` | No |
-| A pinned host is called over `http` | The same, with `PinFailure.plainHttp` | No |
+| A pinned `https` host is reached through a proxy | The same, with `PinFailure.proxied` | No |
+| A pinned host is called over `http`, with or without a proxy | The same, with `PinFailure.plainHttp` | No |
 | The certificate cannot be read | The same, with `PinFailure.unreadableCertificate` | No |
 | The chain fails platform validation | Unchanged from today | Unchanged |
 | A malformed `proxy` or pin | `configure` throws `ArgumentError` | Not applicable |
+| A URL whose scheme is not `http` or `https`, on a client with pins | A `DioException` whose `error` is an `ArgumentError`, as on a client without pins | Unchanged from today |
 
 The exception handler at the end of the chain receives the `badCertificate` error as it receives any other `DioException`.
 
@@ -357,8 +366,11 @@ The fixture is self-signed, so platform validation rejects it. Every pin test se
 
 - A matching pin succeeds; a backup pin succeeds.
 - A wrong pin fails with `badCertificate`, the error names the presented pin, and the server received 0 requests. The request carries an `Authorization` header, so this proves the token never left.
-- A pinned host with `proxy` set fails with `PinFailure.proxied`, and neither the proxy nor the server received a request.
-- A pinned host over `http` fails with `PinFailure.plainHttp`.
+- A pinned `https` host with `proxy` set fails with `PinFailure.proxied`, and neither the proxy nor the server received a request.
+- A pinned host over `http` fails with `PinFailure.plainHttp`, also after an unpinned request has left an idle connection to the proxy; the proxy sees only that first request. The same holds for an environment proxy, which the test simulates with `HttpOverrides.runZoned`.
+- A request URL with a trailing dot is checked against its host's pin.
+- A pinning client refuses `ftp` and `wss` URLs with `ArgumentError`, and the server receives nothing.
+- `findProxyFor` returns the table of section 5.3 for an app proxy and for an environment map.
 - A host without a pin goes through `proxy`, which a loopback server records; with the proxy port closed, the same request reaches the origin directly.
 - The debug switch: under `dart test`, assertions are on, so a client with the switch reaches the self-signed server and a client without it gets a handshake error. The `trustAny` rule is a function of the switch and an `assertionsEnabled` flag, unit-tested with the flag false.
 - `maxConnectionsPerHost: 1` with two gated concurrent requests: the server never sees more than one open connection.
@@ -375,7 +387,7 @@ The fixture is self-signed, so platform validation rejects it. Every pin test se
 
 **Compile gate:** `test/web/compile_smoke.dart` builds a config with both boxes and a `CertificatePinningException`, so `melos run test:compile` covers them under dart2js, dart2wasm, and the native compiler.
 
-**Mutation checks**, each of which must fail a named test: return the socket without the pin check; add `DIRECT` for a pinned host; drop the `assertionsEnabled` condition; close the original adapter; close with `force: true`; skip the `configure` dry-run validation.
+**Mutation checks**, each of which must fail a named test: return the socket without the pin check; add `DIRECT` for a pinned host; drop the `assertionsEnabled` condition; close the original adapter; close with `force: true`; skip the `configure` dry-run validation; send a pinned `http` host through the proxy; install `findProxy` only when `proxy` is set; look a host up with its trailing dot; drop the scheme check.
 
 **Device check before release**, run by the owner, since `SecureSocket.peerCertificate` on iOS and Android cannot be tested on macOS: on one iOS device and one Android device, a debug build with the real host's pins succeeds, a build with one wrong pin fails with `PinFailure.mismatch`, and a debug build with the switch and `proxy` set to Proxyman shows traffic for a host without pins.
 
@@ -414,7 +426,7 @@ Per the skill maintenance rule, in the same change:
 | `peerCertificate` behaves differently on iOS or Android | The device check of section 11 before release |
 | A server renews its certificate with a new key, and every installed app stops connecting | Backup pins, the single-pin diagnostic, and the `certbot --reuse-key` note in the docs |
 | The debug switch ships in a release build | It depends on assertions, which release builds and `dart compile exe` disable; a unit test covers the flag-false path |
-| A pinned request goes around the configured proxy unseen | A pinned host gets no `DIRECT` entry and fails instead |
+| A pinned request goes around the configured proxy unseen, or rides a pooled proxy connection past the factory | A pinned `https` host gets no `DIRECT` entry and fails; a pinned `http` host goes `DIRECT` to the factory, which refuses it |
 | A hidden `HttpClient` queue turns into `connectionTimeout` errors | The diagnostic of section 10 and the docs |
 | A swap closes a connection that a request still uses | `force: false` and the gated swap test |
 | The library closes an adapter the app owns | The ownership rule of section 8 and its test |
@@ -436,15 +448,19 @@ Per the skill maintenance rule, in the same change:
 The brainstorm settled scope, shape, pin mechanism and format, the debug switch, the proxy API, swap semantics, the test certificate, the approach, and the four design sections. These points were chosen while writing and are open to change at review.
 
 1. `idleTimeout` defaults to 3 seconds, the value dio uses today, so a box set only for pins changes nothing else.
-2. Pin hosts match exactly, without regard to case, with no wildcards.
+2. Pin hosts match exactly, without regard to case or a trailing dot in the URL, with no wildcards; `validate` rejects a wildcard or trailing-dot key.
 3. `configure` validates `ioAdapter` on every platform, including the web.
 4. One pin per host is accepted, with a diagnostic.
 5. `CertificatePinningException` is a plain exception class, like `CommonException`, not a freezed model, and it lives in `dart_falconnect`, not `dart_falmodel`, because it belongs to the transport.
 6. Pins still apply while the debug switch is in effect.
 7. A pinned host over plain `http` fails.
-8. A pinned host gets `PROXY host:port` with no `DIRECT` fallback.
+8. A pinned `https` host gets `PROXY host:port` with no `DIRECT` fallback; a pinned `http` host goes `DIRECT` and fails with `plainHttp`.
 9. While a box is set, the client owns `dio.httpClientAdapter`; `dispose` closes the built adapter and restores the original.
 10. `proxy` accepts a host name or an IPv4 address; IPv6 literals are out.
 11. The DER reader accepts at most 3 length bytes, which covers certificates up to 16 MB.
 12. The three diagnostics print when an adapter is built, not per request.
 13. The private files live in `lib/src/engine/https/adapter/`, and the public exception in `lib/engine/https/certificate_pinning_exception.dart`.
+14. `findProxy` is installed whenever `pins` is not empty, wrapping the environment proxy, so the `http` rule of item 8 also holds on a server behind `HTTP_PROXY`.
+15. The connection factory restores dart:io's `http`/`https` scheme check (fact 9).
+
+Items 14 and 15, facts 8 and 9, and the amendments to items 2 and 8 came from the final code review of the implementation.
