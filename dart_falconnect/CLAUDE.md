@@ -4,7 +4,7 @@
 
 - `dart_falconnect.dart`: public API; re-exports Dio, Retrofit, `web_socket_channel`, `dio_cache_interceptor`, and `engine/engine.dart`.
 - `lib/src/src.dart`: internal prelude; re-exports `dart:async`, `dart:convert`, `ansicolor`, `dart_falmodel`, `dart_faltool`, `freezed_annotation`, and `dart_falconnect.dart`.
-- Import `package:dart_falconnect/src/src.dart` in a new file, except beside files that import each dependency by path: everything under `engine/https/config/` and `lib/src/`, and most of `engine/https/interceptors/`.
+- Import `package:dart_falconnect/src/src.dart` in a new file, except beside files that import each dependency by path: everything under `engine/https/config/` and `lib/src/` other than `src.dart` itself, and most of `engine/https/interceptors/`.
 
 ## HTTP (`engine/https/`)
 
