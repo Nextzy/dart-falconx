@@ -78,10 +78,12 @@ client.setupBaseUrl('https://staging.api.example.com');
 | `RetryConfig`                                                    | `RetryInterceptor`                                                                                 | 3 attempts, 1 s base delay, 30 s cap, 60 s deadline                                                                                                                                  |
 | `RequestIdConfig`                                                | the ID step of `RequestStampInterceptor` (see "Auth and request headers")                         | `X-Request-ID`, UUID v7                                                                                                                                                              |
 | `AuthConfig`                                                     | the token step of `RequestStampInterceptor`, plus `TokenRefreshInterceptor`                        | `Authorization: Bearer <token>`                                                                                                                                                      |
+| `IoAdapterConfig`                                                | a dart:io adapter in place of `dio.httpClientAdapter` (see "Transport options"); the web ignores it | no connection limit, 3 s idle timeout, environment proxy, no pins                                                                                                                    |
+| `WebAdapterConfig`                                               | a browser adapter in place of `dio.httpClientAdapter`; dart:io ignores it                          | `withCredentials: false`                                                                                                                                                             |
 
 - `LogConfig` is a sealed union of `PrettyLogConfig` (`LogConfig(...)`) and `JsonLogConfig` (`LogConfig.json(...)`). `request`, `requestHeader`, `responseHeader`, and `error` exist only on the pretty variant, so match it before reading or copying them: `if (config.log case final PrettyLogConfig log) client.configure(config.copyWith(log: log.copyWith(responseHeader: true)));`.
 - The client orders the chain: `RequestStampInterceptor` when `requestId`, `headerProvider`, or `auth` is set, your `interceptors`, log, cache, concurrency limit, rate limit, `TokenRefreshInterceptor` when `auth` is set, retry, the cache's offline fallback when its box enables it, then `exceptionHandler` (null means `DefaultNetworkExceptionHandlerInterceptor`).
-- `configure` owns `baseUrl`, the three timeouts, `contentType`, redirects, `validateStatus` (null means dio's default, 2xx only), and the header keys of `headers` and `userAgent`. Other `dio.options` fields, and headers you set by hand, survive it.
+- `configure` owns `baseUrl`, the three timeouts, `contentType`, redirects, `validateStatus` (null means dio's default, 2xx only), and the header keys of `headers` and `userAgent`. Other `dio.options` fields, and headers you set by hand, survive it. So does `dio.httpClientAdapter`, unless the platform's adapter box is set.
 - Add interceptors with `addInterceptors` or the config, never with `dio.interceptors.add(...)`: `configure` rebuilds the list.
 - When the client switches base URLs, give Retrofit APIs no absolute `baseUrl`, neither as the factory argument nor in `@RestApi(baseUrl:)`. An absolute one wins over `dio.options.baseUrl`.
 - A box holding an inline lambda (`logPrint`, `onRetry`, `validateStatus`) is unequal on every `configure`, so its interceptor is rebuilt. Pass top-level functions.
@@ -127,6 +129,67 @@ Future<List<NewsDto>> feed(@Extras() Map<String, dynamic> extras);
 ```
 
 - `AuthConfig` holds functions, which compare by identity. `copyWith` keeps them, so an unrelated `configure` keeps the running refresh; a config built with new closures builds a new `AuthSession` and forgets the failed token. A new session does not join a refresh already running, so a `configure` with new closures during a refresh can start a second one; pass tear-offs, as the example does.
+
+## Transport options
+
+Two boxes set what the platform's HTTP adapter does. Both fit in one config: dart:io platforms (Android, iOS, macOS, Windows, Linux, servers) read only `ioAdapter`, and the web reads only `webAdapter`, so the app never imports `dart:io` or `package:dio/io.dart`.
+
+```dart
+DefaultHttpClient.instance.configure(
+  HttpClientConfig(
+    baseUrl: 'https://api.example.com',
+    ioAdapter: IoAdapterConfig(
+      maxConnectionsPerHost: 6,
+      proxy: kDebugMode ? '192.168.1.10:9090' : null,
+      pins: kDebugMode
+          ? const {}
+          : const {
+              'api.example.com': {
+                'sha256/AAAA...=', // current key
+                'sha256/BBBB...=', // backup key
+              },
+            },
+      debugTrustAnyCertificate: true,
+    ),
+    webAdapter: const WebAdapterConfig(withCredentials: true),
+  ),
+);
+```
+
+| `IoAdapterConfig` field | Effect | Default |
+|---|---|---|
+| `maxConnectionsPerHost` | most open connections to one host; requests past it wait inside `HttpClient`, and the wait counts toward `connectTimeout` | no limit |
+| `idleTimeout` | how long an idle connection stays open for reuse | 3 s, as dio uses |
+| `proxy` | `host:port` for every request; a request that cannot reach the proxy goes direct, except to a pinned host | the `https_proxy`, `http_proxy`, and `no_proxy` environment variables |
+| `pins` | certificate pins per host, `sha256/<base64>` of the leaf's SubjectPublicKeyInfo | none |
+| `debugTrustAnyCertificate` | trusts every certificate chain while assertions are enabled (Flutter debug, `dart test`, `dart run --enable-asserts`); release builds and `dart compile exe` ignore it | off |
+
+**Certificate pinning**
+
+- The leaf certificate is checked during the TLS handshake, before any byte of the request, token included, leaves. A mismatch fails with a `DioException` of type `badCertificate` whose `error` is a `CertificatePinningException`; `RetryInterceptor` never retries it.
+- `CertificatePinningException.failure` says why: `mismatch`, `proxied` (a pinned host through any proxy, the environment's included, since no pin can be checked there), `plainHttp` (a pinned host over `http`), or `unreadableCertificate`. On a mismatch, `presented` holds the pin the server sent.
+- Get a host's pin:
+
+  ```bash
+  openssl s_client -connect api.example.com:443 -servername api.example.com </dev/null \
+    | openssl x509 -pubkey -noout \
+    | openssl pkey -pubin -outform der \
+    | openssl dgst -sha256 -binary | base64
+  ```
+
+- The pin follows the server's key, not its certificate. It survives a renewal only when the server keeps its key: `certbot` makes a new key on every renewal unless you pass `--reuse-key`. Ship a backup pin for the next key in every release, or installed apps stop connecting when the key changes.
+- Only the leaf can be pinned; Dart exposes no certificate chain. Hosts match exactly, ignoring case, with no wildcards.
+- `configure` throws `ArgumentError` on a malformed pin or `proxy`, on every platform, the web included.
+
+**Debugging with Proxyman on Android**
+
+Set `proxy` to the Mac's address and `debugTrustAnyCertificate: true`, and drop the pins in debug builds, as the example above does: pins still apply with the switch on, so a pinned host rejects Proxyman's certificate. Hosts without a pin show in Proxyman, and fall back to direct when Proxyman is closed.
+
+**Swapping and ownership**
+
+- A box builds a new adapter when it changes; an equal box keeps the adapter. The replaced adapter closes with `force: false`, so requests already running on it finish. Requests still waiting in a limiter, and retries, go out through the new adapter.
+- While a box is set, the client owns `dio.httpClientAdapter`. A box that returns to null, and `dispose()`, put back the adapter `dio` had before, which the client never closes.
+- `withCredentials` on the web makes cross-site requests send cookies and authorization headers; a request's `extra['withCredentials']` overrides it.
 
 ## Custom client: subclass `BaseHttpClient`
 
@@ -387,7 +450,7 @@ DefaultHttpClient.instance.configure(
 **Web**
 
 - A browser hides every cross-origin response header outside the CORS safelist, including `Retry-After` and `Date`. Have the server send `Access-Control-Expose-Headers: Retry-After, Date`. Without it, a 429 pauses for `defaultPause`, a 503 does not pause, `RetryInterceptor` uses backoff instead of `Retry-After`, and the pause runs on the client clock. Tests with a fake adapter cannot catch this.
-- Chrome opens at most 6 connections per host over HTTP/1.1, so a `perHost` above 6 changes nothing on the web.
+- Chrome opens at most 6 connections per host over HTTP/1.1 and queues the rest itself. That queue time counts toward `connectTimeout`, so keep `perHost` at 6 or less on the web, and the queue stays in `ConcurrencyLimitInterceptor`, where you can see and cancel it.
 
 **Apps**
 
@@ -399,6 +462,7 @@ DefaultHttpClient.instance.configure(
 - Limits are keyed by host. When a partner limits per API key and you use one key per tenant, build one client per key; otherwise one tenant's 429 pauses every tenant.
 - Queued requests outlive the incoming request that started them. Give each incoming request a `CancelToken` that cancels at its deadline; it bounds the concurrency queue, the token wait, the pause hold, retry backoff, and the request in flight together.
 - Build the client once per process (see "Refill timers and `dispose()`").
+- Keep `IoAdapterConfig.maxConnectionsPerHost` at or above every per-host limit of `ConcurrencyConfig`; the client prints a diagnostic when it is lower.
 - For an open-ended set of hosts, prefer named `hosts` keys over `perHost` in `TokenBucketRateLimitInterceptor`: its per-host buckets are never freed. `ConcurrencyLimitInterceptor` forgets idle hosts itself.
 
 ## Retry
