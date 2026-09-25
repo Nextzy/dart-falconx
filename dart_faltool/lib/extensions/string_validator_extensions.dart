@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 
 /// A collection of pre-compiled regular expressions used for string validation.
 class FormatRegex {

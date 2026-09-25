@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 
 /// Extension methods for Future type with enhanced functionality.
 ///

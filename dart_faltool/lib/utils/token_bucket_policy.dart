@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 
 part 'generated/token_bucket_policy.freezed.dart';
 

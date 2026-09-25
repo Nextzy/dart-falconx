@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 
 /// Converts a [Duration] to and from its whole milliseconds as an `int`.
 ///

@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 /// Extension methods for DateTime manipulation and formatting.

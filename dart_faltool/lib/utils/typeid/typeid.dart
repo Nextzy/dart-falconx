@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 import 'package:hashlib/random.dart' as hl;
 
 export 'base32.dart';
