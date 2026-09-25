@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 part 'generated/batch_rpc_request.g.dart';
 

@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// General-purpose JSON-RPC exception not tied to a specific application layer.
 ///

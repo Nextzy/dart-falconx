@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 import 'package:test/test.dart';
 
 final _now = DateTime.utc(2026, 9, 23, 12);

@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// Extensions on `Pair<Failure?, DATA>` for convenient failure/data access.
 extension FalconPairDataAndFailureExtensions<F extends Failure?, DATA>

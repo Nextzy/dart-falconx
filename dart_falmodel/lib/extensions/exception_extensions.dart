@@ -1,6 +1,6 @@
-import 'package:dart_falmodel/extensions/_io_stubs.dart'
-    if (dart.library.io) '_io_real.dart';
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/extensions/io_stubs.dart'
+    if (dart.library.io) 'package:dart_falmodel/src/extensions/io_real.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// Extensions on a nullable [Exception] for convenient
 /// [CommonException] access.

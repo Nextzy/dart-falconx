@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// A single item in a batch JSON-RPC response — either a success or a failure.
 sealed class BatchJsonRpcItem<RESULT extends JsonRpcResult> {
