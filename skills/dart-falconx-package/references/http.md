@@ -167,7 +167,7 @@ DefaultHttpClient.instance.configure(
 **Certificate pinning**
 
 - The leaf certificate is checked during the TLS handshake, before any byte of the request, token included, leaves. A mismatch fails with a `DioException` of type `badCertificate` whose `error` is a `CertificatePinningException`; `RetryInterceptor` never retries it.
-- `CertificatePinningException.failure` says why: `mismatch`, `proxied` (a pinned host through any proxy, the environment's included, since no pin can be checked there), `plainHttp` (a pinned host over `http`), or `unreadableCertificate`. On a mismatch, `presented` holds the pin the server sent.
+- `CertificatePinningException.failure` says why: `mismatch`, `proxied` (a pinned `https` host through any proxy, the environment's included, since no pin can be checked there), `plainHttp` (a pinned host over `http`, which never goes through a proxy, so it cannot ride a pooled proxy connection), or `unreadableCertificate`. On a mismatch, `presented` holds the pin the server sent.
 - Get a host's pin:
 
   ```bash

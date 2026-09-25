@@ -78,12 +78,8 @@ HttpClient createIoHttpClient(IoAdapterConfig box, {required bool trustAny}) {
     ..idleTimeout = box.idleTimeout
     ..maxConnectionsPerHost = box.maxConnectionsPerHost;
   final proxy = box.proxy;
-  if (proxy != null) {
-    // A pinned host gets no DIRECT entry, so it fails instead of going
-    // around the proxy unseen.
-    client.findProxy = (uri) => pins.containsKey(uri.host.toLowerCase())
-        ? 'PROXY $proxy'
-        : 'PROXY $proxy; DIRECT';
+  if (proxy != null || pins.isNotEmpty) {
+    client.findProxy = (uri) => findProxyFor(uri, pins, proxy: proxy);
   }
   if (trustAny) {
     client.badCertificateCallback = (certificate, host, port) => true;
@@ -95,6 +91,30 @@ HttpClient createIoHttpClient(IoAdapterConfig box, {required bool trustAny}) {
     ).connect;
   }
   return client;
+}
+
+/// The `HttpClient.findProxy` answer for [uri] under [pins], which have
+/// lowercase hosts. A null [proxy] defers to [environment], or to the
+/// process environment when that is null too, as dart:io does.
+///
+/// A pinned host over plain `http` goes DIRECT, so the connection factory
+/// refuses it: through a proxy it would reuse an idle proxy connection,
+/// which dart:io takes without calling the factory. A pinned `https` host
+/// gets no DIRECT entry, so it fails instead of going around the proxy
+/// unseen.
+String findProxyFor(
+  Uri uri,
+  Map<String, Set<String>> pins, {
+  String? proxy,
+  Map<String, String>? environment,
+}) {
+  if (pins.containsKey(uri.host.toLowerCase())) {
+    if (!uri.isScheme('https')) return 'DIRECT';
+    if (proxy != null) return 'PROXY $proxy';
+  } else if (proxy != null) {
+    return 'PROXY $proxy; DIRECT';
+  }
+  return HttpClient.findProxyFromEnvironment(uri, environment: environment);
 }
 
 /// [pins] with lowercase hosts and canonical pins; hosts that differ only
