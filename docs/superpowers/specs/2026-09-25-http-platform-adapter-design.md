@@ -102,7 +102,8 @@ abstract class IoAdapterConfig with _$IoAdapterConfig {
 
   /// Throws [ArgumentError] when a field breaks a rule of section 3.1.
   void validate() {
-    // Applies the rules of section 3.1 in table order.
+    // Throws at the first rule of section 3.1 that a field breaks; the
+    // order of the checks is not part of the contract.
   }
 }
 ```
