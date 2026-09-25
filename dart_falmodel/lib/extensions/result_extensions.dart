@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// Extensions on `Future<DATA>` that wrap the result in a [Result] type.
 extension FalconFutureResultDataExtensions<DATA> on Future<DATA> {

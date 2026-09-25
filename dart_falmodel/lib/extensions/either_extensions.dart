@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// Extensions on `Either<Failure, DATA>` for ergonomic failure/data access.
 extension FalconEitherDataAndFailueExtensions<F extends Failure, DATA>
