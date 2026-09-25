@@ -50,7 +50,9 @@ List<String> adapterDiagnostics(
       'certificate chain is trusted',
     );
   }
-  for (final MapEntry(key: host, value: pins) in box.pins.entries) {
+  // Counted after merging case variants and padded or bare copies of a pin.
+  final canonical = _canonicalPins(box.pins);
+  for (final MapEntry(key: host, value: pins) in canonical.entries) {
     if (pins.length == 1) {
       messages.add('[ioAdapter] $host has one pin: add a backup pin');
     }
