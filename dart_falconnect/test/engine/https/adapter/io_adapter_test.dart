@@ -374,6 +374,96 @@ void main() {
         client.dispose();
       });
     }
+
+    test('a pinned host over http skips a warm proxy connection', () async {
+      final client = _Client(
+        HttpClientConfig(
+          ioAdapter: IoAdapterConfig(
+            proxy: '127.0.0.1:${proxy.port}',
+            pins: {
+              'localhost': {localhostPin},
+            },
+          ),
+        ),
+      );
+      // An unpinned request leaves an idle connection to the proxy, which
+      // dart:io reuses without calling the connection factory.
+      await _get(client, 'http://127.0.0.1:${origin.port}/warm');
+
+      await expectLater(
+        _get(client, 'http://localhost:${origin.port}/secret'),
+        _pinFailure(PinFailure.plainHttp),
+      );
+      expect(proxy.requests.map((uri) => uri.path), ['/warm']);
+      expect(origin.requests, isEmpty);
+      client.dispose();
+    });
+
+    test('a pinned host over http skips a warm environment proxy', () async {
+      // Stands in for http_proxy in the environment, which a test cannot set.
+      await HttpOverrides.runZoned(
+        () async {
+          final client = _Client(
+            const HttpClientConfig(
+              ioAdapter: IoAdapterConfig(
+                pins: {
+                  'localhost': {localhostPin},
+                },
+              ),
+            ),
+          );
+          await _get(client, 'http://127.0.0.1:${origin.port}/warm');
+
+          await expectLater(
+            _get(client, 'http://localhost:${origin.port}/secret'),
+            _pinFailure(PinFailure.plainHttp),
+          );
+          expect(proxy.requests.map((uri) => uri.path), ['/warm']);
+          expect(origin.requests, isEmpty);
+          client.dispose();
+        },
+        findProxyFromEnvironment: (uri, environment) =>
+            'PROXY 127.0.0.1:${proxy.port}',
+      );
+    });
+  });
+
+  group('findProxyFor', () {
+    const pins = {
+      'localhost': {localhostPin},
+    };
+    const environment = {
+      'http_proxy': 'env.proxy:3128',
+      'https_proxy': 'env.proxy:3128',
+    };
+    final http = Uri.parse('http://localhost/me');
+    final https = Uri.parse('https://localhost/me');
+
+    test('sends a pinned host over http direct, to the factory', () {
+      expect(findProxyFor(http, pins, proxy: 'p.test:1'), 'DIRECT');
+      expect(findProxyFor(http, pins, environment: environment), 'DIRECT');
+    });
+
+    test('keeps a pinned https host on its proxy, with no DIRECT', () {
+      expect(findProxyFor(https, pins, proxy: 'p.test:1'), 'PROXY p.test:1');
+      expect(
+        findProxyFor(https, pins, environment: environment),
+        'PROXY env.proxy:3128',
+      );
+    });
+
+    test('lets an unpinned host fall back to direct', () {
+      final other = Uri.parse('http://other.test/me');
+
+      expect(
+        findProxyFor(other, pins, proxy: 'p.test:1'),
+        'PROXY p.test:1; DIRECT',
+      );
+      expect(
+        findProxyFor(other, pins, environment: environment),
+        HttpClient.findProxyFromEnvironment(other, environment: environment),
+      );
+    });
   });
 
   group('HttpClient', () {
