@@ -33,7 +33,15 @@ mixin _$HttpClientConfig {
  RetryConfig? get retry;/// The app's own interceptors, placed first in the chain.
  List<Interceptor> get interceptors;/// Last interceptor of the chain; null means
 /// `DefaultNetworkExceptionHandlerInterceptor`.
- NetworkExceptionHandlerInterceptor? get exceptionHandler;
+ NetworkExceptionHandlerInterceptor? get exceptionHandler;/// Headers computed for each request; null turns them off. They
+/// override [headers] and lose to the request's own headers.
+ HeaderProvider? get headerProvider;/// Request ID header; null turns it off.
+ RequestIdConfig? get requestId;/// Access token and 401 refresh; null turns them off.
+ AuthConfig? get auth;/// Transport settings on dart:io platforms; null leaves the adapter
+/// alone. The web ignores this box.
+ IoAdapterConfig? get ioAdapter;/// Transport settings on the web; null leaves the adapter alone.
+/// dart:io platforms ignore this box.
+ WebAdapterConfig? get webAdapter;
 /// Create a copy of HttpClientConfig
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -45,20 +53,20 @@ $HttpClientConfigCopyWith<HttpClientConfig> get copyWith => _$HttpClientConfigCo
 @override
 bool operator ==(Object other) {
   final _this = this as HttpClientConfig;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HttpClientConfig&&(identical(other.baseUrl, _this.baseUrl) || other.baseUrl == _this.baseUrl)&&(identical(other.connectTimeout, _this.connectTimeout) || other.connectTimeout == _this.connectTimeout)&&(identical(other.receiveTimeout, _this.receiveTimeout) || other.receiveTimeout == _this.receiveTimeout)&&(identical(other.sendTimeout, _this.sendTimeout) || other.sendTimeout == _this.sendTimeout)&&(identical(other.contentType, _this.contentType) || other.contentType == _this.contentType)&&const DeepCollectionEquality().equals(other.headers, _this.headers)&&(identical(other.userAgent, _this.userAgent) || other.userAgent == _this.userAgent)&&(identical(other.followRedirects, _this.followRedirects) || other.followRedirects == _this.followRedirects)&&(identical(other.maxRedirects, _this.maxRedirects) || other.maxRedirects == _this.maxRedirects)&&(identical(other.validateStatus, _this.validateStatus) || other.validateStatus == _this.validateStatus)&&(identical(other.log, _this.log) || other.log == _this.log)&&(identical(other.cache, _this.cache) || other.cache == _this.cache)&&(identical(other.concurrency, _this.concurrency) || other.concurrency == _this.concurrency)&&(identical(other.rateLimit, _this.rateLimit) || other.rateLimit == _this.rateLimit)&&(identical(other.retry, _this.retry) || other.retry == _this.retry)&&const DeepCollectionEquality().equals(other.interceptors, _this.interceptors)&&(identical(other.exceptionHandler, _this.exceptionHandler) || other.exceptionHandler == _this.exceptionHandler));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HttpClientConfig&&(identical(other.baseUrl, _this.baseUrl) || other.baseUrl == _this.baseUrl)&&(identical(other.connectTimeout, _this.connectTimeout) || other.connectTimeout == _this.connectTimeout)&&(identical(other.receiveTimeout, _this.receiveTimeout) || other.receiveTimeout == _this.receiveTimeout)&&(identical(other.sendTimeout, _this.sendTimeout) || other.sendTimeout == _this.sendTimeout)&&(identical(other.contentType, _this.contentType) || other.contentType == _this.contentType)&&const DeepCollectionEquality().equals(other.headers, _this.headers)&&(identical(other.userAgent, _this.userAgent) || other.userAgent == _this.userAgent)&&(identical(other.followRedirects, _this.followRedirects) || other.followRedirects == _this.followRedirects)&&(identical(other.maxRedirects, _this.maxRedirects) || other.maxRedirects == _this.maxRedirects)&&(identical(other.validateStatus, _this.validateStatus) || other.validateStatus == _this.validateStatus)&&(identical(other.log, _this.log) || other.log == _this.log)&&(identical(other.cache, _this.cache) || other.cache == _this.cache)&&(identical(other.concurrency, _this.concurrency) || other.concurrency == _this.concurrency)&&(identical(other.rateLimit, _this.rateLimit) || other.rateLimit == _this.rateLimit)&&(identical(other.retry, _this.retry) || other.retry == _this.retry)&&const DeepCollectionEquality().equals(other.interceptors, _this.interceptors)&&(identical(other.exceptionHandler, _this.exceptionHandler) || other.exceptionHandler == _this.exceptionHandler)&&(identical(other.headerProvider, _this.headerProvider) || other.headerProvider == _this.headerProvider)&&(identical(other.requestId, _this.requestId) || other.requestId == _this.requestId)&&(identical(other.auth, _this.auth) || other.auth == _this.auth)&&(identical(other.ioAdapter, _this.ioAdapter) || other.ioAdapter == _this.ioAdapter)&&(identical(other.webAdapter, _this.webAdapter) || other.webAdapter == _this.webAdapter));
 }
 
 
 @override
 int get hashCode {
   final _this = this as HttpClientConfig;
-  return Object.hash(runtimeType,_this.baseUrl,_this.connectTimeout,_this.receiveTimeout,_this.sendTimeout,_this.contentType,const DeepCollectionEquality().hash(_this.headers),_this.userAgent,_this.followRedirects,_this.maxRedirects,_this.validateStatus,_this.log,_this.cache,_this.concurrency,_this.rateLimit,_this.retry,const DeepCollectionEquality().hash(_this.interceptors),_this.exceptionHandler);
+  return Object.hashAll([runtimeType,_this.baseUrl,_this.connectTimeout,_this.receiveTimeout,_this.sendTimeout,_this.contentType,const DeepCollectionEquality().hash(_this.headers),_this.userAgent,_this.followRedirects,_this.maxRedirects,_this.validateStatus,_this.log,_this.cache,_this.concurrency,_this.rateLimit,_this.retry,const DeepCollectionEquality().hash(_this.interceptors),_this.exceptionHandler,_this.headerProvider,_this.requestId,_this.auth,_this.ioAdapter,_this.webAdapter]);
 }
 
 @override
 String toString() {
   final _this = this as HttpClientConfig;
-  return 'HttpClientConfig(baseUrl: ${_this.baseUrl}, connectTimeout: ${_this.connectTimeout}, receiveTimeout: ${_this.receiveTimeout}, sendTimeout: ${_this.sendTimeout}, contentType: ${_this.contentType}, headers: ${_this.headers}, userAgent: ${_this.userAgent}, followRedirects: ${_this.followRedirects}, maxRedirects: ${_this.maxRedirects}, validateStatus: ${_this.validateStatus}, log: ${_this.log}, cache: ${_this.cache}, concurrency: ${_this.concurrency}, rateLimit: ${_this.rateLimit}, retry: ${_this.retry}, interceptors: ${_this.interceptors}, exceptionHandler: ${_this.exceptionHandler})';
+  return 'HttpClientConfig(baseUrl: ${_this.baseUrl}, connectTimeout: ${_this.connectTimeout}, receiveTimeout: ${_this.receiveTimeout}, sendTimeout: ${_this.sendTimeout}, contentType: ${_this.contentType}, headers: ${_this.headers}, userAgent: ${_this.userAgent}, followRedirects: ${_this.followRedirects}, maxRedirects: ${_this.maxRedirects}, validateStatus: ${_this.validateStatus}, log: ${_this.log}, cache: ${_this.cache}, concurrency: ${_this.concurrency}, rateLimit: ${_this.rateLimit}, retry: ${_this.retry}, interceptors: ${_this.interceptors}, exceptionHandler: ${_this.exceptionHandler}, headerProvider: ${_this.headerProvider}, requestId: ${_this.requestId}, auth: ${_this.auth}, ioAdapter: ${_this.ioAdapter}, webAdapter: ${_this.webAdapter})';
 }
 
 
@@ -69,11 +77,11 @@ abstract mixin class $HttpClientConfigCopyWith<$Res>  {
   factory $HttpClientConfigCopyWith(HttpClientConfig value, $Res Function(HttpClientConfig) _then) = _$HttpClientConfigCopyWithImpl;
 @useResult
 $Res call({
- String baseUrl, Duration connectTimeout, Duration receiveTimeout, Duration? sendTimeout, String contentType, Map<String, String> headers, String? userAgent, bool followRedirects, int maxRedirects, ValidateStatus? validateStatus, LogConfig? log, CacheConfig? cache, ConcurrencyConfig? concurrency, RateLimitConfig rateLimit, RetryConfig? retry, List<Interceptor> interceptors, NetworkExceptionHandlerInterceptor? exceptionHandler
+ String baseUrl, Duration connectTimeout, Duration receiveTimeout, Duration? sendTimeout, String contentType, Map<String, String> headers, String? userAgent, bool followRedirects, int maxRedirects, ValidateStatus? validateStatus, LogConfig? log, CacheConfig? cache, ConcurrencyConfig? concurrency, RateLimitConfig rateLimit, RetryConfig? retry, List<Interceptor> interceptors, NetworkExceptionHandlerInterceptor? exceptionHandler, HeaderProvider? headerProvider, RequestIdConfig? requestId, AuthConfig? auth, IoAdapterConfig? ioAdapter, WebAdapterConfig? webAdapter
 });
 
 
-$LogConfigCopyWith<$Res>? get log;$CacheConfigCopyWith<$Res>? get cache;$ConcurrencyConfigCopyWith<$Res>? get concurrency;$RateLimitConfigCopyWith<$Res> get rateLimit;$RetryConfigCopyWith<$Res>? get retry;
+$LogConfigCopyWith<$Res>? get log;$CacheConfigCopyWith<$Res>? get cache;$ConcurrencyConfigCopyWith<$Res>? get concurrency;$RateLimitConfigCopyWith<$Res> get rateLimit;$RetryConfigCopyWith<$Res>? get retry;$RequestIdConfigCopyWith<$Res>? get requestId;$AuthConfigCopyWith<$Res>? get auth;$IoAdapterConfigCopyWith<$Res>? get ioAdapter;$WebAdapterConfigCopyWith<$Res>? get webAdapter;
 
 }
 /// @nodoc
@@ -86,7 +94,7 @@ class _$HttpClientConfigCopyWithImpl<$Res>
 
 /// Create a copy of HttpClientConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? baseUrl = null,Object? connectTimeout = null,Object? receiveTimeout = null,Object? sendTimeout = freezed,Object? contentType = null,Object? headers = null,Object? userAgent = freezed,Object? followRedirects = null,Object? maxRedirects = null,Object? validateStatus = freezed,Object? log = freezed,Object? cache = freezed,Object? concurrency = freezed,Object? rateLimit = null,Object? retry = freezed,Object? interceptors = null,Object? exceptionHandler = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? baseUrl = null,Object? connectTimeout = null,Object? receiveTimeout = null,Object? sendTimeout = freezed,Object? contentType = null,Object? headers = null,Object? userAgent = freezed,Object? followRedirects = null,Object? maxRedirects = null,Object? validateStatus = freezed,Object? log = freezed,Object? cache = freezed,Object? concurrency = freezed,Object? rateLimit = null,Object? retry = freezed,Object? interceptors = null,Object? exceptionHandler = freezed,Object? headerProvider = freezed,Object? requestId = freezed,Object? auth = freezed,Object? ioAdapter = freezed,Object? webAdapter = freezed,}) {
   return _then(HttpClientConfig(
 baseUrl: null == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
 as String,connectTimeout: null == connectTimeout ? _self.connectTimeout : connectTimeout // ignore: cast_nullable_to_non_nullable
@@ -105,7 +113,12 @@ as ConcurrencyConfig?,rateLimit: null == rateLimit ? _self.rateLimit : rateLimit
 as RateLimitConfig,retry: freezed == retry ? _self.retry : retry // ignore: cast_nullable_to_non_nullable
 as RetryConfig?,interceptors: null == interceptors ? _self.interceptors : interceptors // ignore: cast_nullable_to_non_nullable
 as List<Interceptor>,exceptionHandler: freezed == exceptionHandler ? _self.exceptionHandler : exceptionHandler // ignore: cast_nullable_to_non_nullable
-as NetworkExceptionHandlerInterceptor?,
+as NetworkExceptionHandlerInterceptor?,headerProvider: freezed == headerProvider ? _self.headerProvider : headerProvider // ignore: cast_nullable_to_non_nullable
+as HeaderProvider?,requestId: freezed == requestId ? _self.requestId : requestId // ignore: cast_nullable_to_non_nullable
+as RequestIdConfig?,auth: freezed == auth ? _self.auth : auth // ignore: cast_nullable_to_non_nullable
+as AuthConfig?,ioAdapter: freezed == ioAdapter ? _self.ioAdapter : ioAdapter // ignore: cast_nullable_to_non_nullable
+as IoAdapterConfig?,webAdapter: freezed == webAdapter ? _self.webAdapter : webAdapter // ignore: cast_nullable_to_non_nullable
+as WebAdapterConfig?,
   ));
 }
 /// Create a copy of HttpClientConfig
@@ -164,6 +177,54 @@ $RetryConfigCopyWith<$Res>? get retry {
 
   return $RetryConfigCopyWith<$Res>(_self.retry!, (value) {
     return _then(_self.copyWith(retry: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$RequestIdConfigCopyWith<$Res>? get requestId {
+    if (_self.requestId == null) {
+    return null;
+  }
+
+  return $RequestIdConfigCopyWith<$Res>(_self.requestId!, (value) {
+    return _then(_self.copyWith(requestId: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AuthConfigCopyWith<$Res>? get auth {
+    if (_self.auth == null) {
+    return null;
+  }
+
+  return $AuthConfigCopyWith<$Res>(_self.auth!, (value) {
+    return _then(_self.copyWith(auth: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$IoAdapterConfigCopyWith<$Res>? get ioAdapter {
+    if (_self.ioAdapter == null) {
+    return null;
+  }
+
+  return $IoAdapterConfigCopyWith<$Res>(_self.ioAdapter!, (value) {
+    return _then(_self.copyWith(ioAdapter: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WebAdapterConfigCopyWith<$Res>? get webAdapter {
+    if (_self.webAdapter == null) {
+    return null;
+  }
+
+  return $WebAdapterConfigCopyWith<$Res>(_self.webAdapter!, (value) {
+    return _then(_self.copyWith(webAdapter: value));
   });
 }
 }
@@ -247,10 +308,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String baseUrl,  Duration connectTimeout,  Duration receiveTimeout,  Duration? sendTimeout,  String contentType,  Map<String, String> headers,  String? userAgent,  bool followRedirects,  int maxRedirects,  ValidateStatus? validateStatus,  LogConfig? log,  CacheConfig? cache,  ConcurrencyConfig? concurrency,  RateLimitConfig rateLimit,  RetryConfig? retry,  List<Interceptor> interceptors,  NetworkExceptionHandlerInterceptor? exceptionHandler)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String baseUrl,  Duration connectTimeout,  Duration receiveTimeout,  Duration? sendTimeout,  String contentType,  Map<String, String> headers,  String? userAgent,  bool followRedirects,  int maxRedirects,  ValidateStatus? validateStatus,  LogConfig? log,  CacheConfig? cache,  ConcurrencyConfig? concurrency,  RateLimitConfig rateLimit,  RetryConfig? retry,  List<Interceptor> interceptors,  NetworkExceptionHandlerInterceptor? exceptionHandler,  HeaderProvider? headerProvider,  RequestIdConfig? requestId,  AuthConfig? auth,  IoAdapterConfig? ioAdapter,  WebAdapterConfig? webAdapter)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HttpClientConfig() when $default != null:
-return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.sendTimeout,_that.contentType,_that.headers,_that.userAgent,_that.followRedirects,_that.maxRedirects,_that.validateStatus,_that.log,_that.cache,_that.concurrency,_that.rateLimit,_that.retry,_that.interceptors,_that.exceptionHandler);case _:
+return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.sendTimeout,_that.contentType,_that.headers,_that.userAgent,_that.followRedirects,_that.maxRedirects,_that.validateStatus,_that.log,_that.cache,_that.concurrency,_that.rateLimit,_that.retry,_that.interceptors,_that.exceptionHandler,_that.headerProvider,_that.requestId,_that.auth,_that.ioAdapter,_that.webAdapter);case _:
   return orElse();
 
 }
@@ -268,10 +329,10 @@ return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.se
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String baseUrl,  Duration connectTimeout,  Duration receiveTimeout,  Duration? sendTimeout,  String contentType,  Map<String, String> headers,  String? userAgent,  bool followRedirects,  int maxRedirects,  ValidateStatus? validateStatus,  LogConfig? log,  CacheConfig? cache,  ConcurrencyConfig? concurrency,  RateLimitConfig rateLimit,  RetryConfig? retry,  List<Interceptor> interceptors,  NetworkExceptionHandlerInterceptor? exceptionHandler)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String baseUrl,  Duration connectTimeout,  Duration receiveTimeout,  Duration? sendTimeout,  String contentType,  Map<String, String> headers,  String? userAgent,  bool followRedirects,  int maxRedirects,  ValidateStatus? validateStatus,  LogConfig? log,  CacheConfig? cache,  ConcurrencyConfig? concurrency,  RateLimitConfig rateLimit,  RetryConfig? retry,  List<Interceptor> interceptors,  NetworkExceptionHandlerInterceptor? exceptionHandler,  HeaderProvider? headerProvider,  RequestIdConfig? requestId,  AuthConfig? auth,  IoAdapterConfig? ioAdapter,  WebAdapterConfig? webAdapter)  $default,) {final _that = this;
 switch (_that) {
 case _HttpClientConfig():
-return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.sendTimeout,_that.contentType,_that.headers,_that.userAgent,_that.followRedirects,_that.maxRedirects,_that.validateStatus,_that.log,_that.cache,_that.concurrency,_that.rateLimit,_that.retry,_that.interceptors,_that.exceptionHandler);case _:
+return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.sendTimeout,_that.contentType,_that.headers,_that.userAgent,_that.followRedirects,_that.maxRedirects,_that.validateStatus,_that.log,_that.cache,_that.concurrency,_that.rateLimit,_that.retry,_that.interceptors,_that.exceptionHandler,_that.headerProvider,_that.requestId,_that.auth,_that.ioAdapter,_that.webAdapter);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -288,10 +349,10 @@ return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.se
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String baseUrl,  Duration connectTimeout,  Duration receiveTimeout,  Duration? sendTimeout,  String contentType,  Map<String, String> headers,  String? userAgent,  bool followRedirects,  int maxRedirects,  ValidateStatus? validateStatus,  LogConfig? log,  CacheConfig? cache,  ConcurrencyConfig? concurrency,  RateLimitConfig rateLimit,  RetryConfig? retry,  List<Interceptor> interceptors,  NetworkExceptionHandlerInterceptor? exceptionHandler)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String baseUrl,  Duration connectTimeout,  Duration receiveTimeout,  Duration? sendTimeout,  String contentType,  Map<String, String> headers,  String? userAgent,  bool followRedirects,  int maxRedirects,  ValidateStatus? validateStatus,  LogConfig? log,  CacheConfig? cache,  ConcurrencyConfig? concurrency,  RateLimitConfig rateLimit,  RetryConfig? retry,  List<Interceptor> interceptors,  NetworkExceptionHandlerInterceptor? exceptionHandler,  HeaderProvider? headerProvider,  RequestIdConfig? requestId,  AuthConfig? auth,  IoAdapterConfig? ioAdapter,  WebAdapterConfig? webAdapter)?  $default,) {final _that = this;
 switch (_that) {
 case _HttpClientConfig() when $default != null:
-return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.sendTimeout,_that.contentType,_that.headers,_that.userAgent,_that.followRedirects,_that.maxRedirects,_that.validateStatus,_that.log,_that.cache,_that.concurrency,_that.rateLimit,_that.retry,_that.interceptors,_that.exceptionHandler);case _:
+return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.sendTimeout,_that.contentType,_that.headers,_that.userAgent,_that.followRedirects,_that.maxRedirects,_that.validateStatus,_that.log,_that.cache,_that.concurrency,_that.rateLimit,_that.retry,_that.interceptors,_that.exceptionHandler,_that.headerProvider,_that.requestId,_that.auth,_that.ioAdapter,_that.webAdapter);case _:
   return null;
 
 }
@@ -303,7 +364,7 @@ return $default(_that.baseUrl,_that.connectTimeout,_that.receiveTimeout,_that.se
 
 
 class _HttpClientConfig extends HttpClientConfig {
-  const _HttpClientConfig({this.baseUrl = '', this.connectTimeout = const Duration(seconds: 20), this.receiveTimeout = const Duration(seconds: 20), this.sendTimeout, this.contentType = Headers.jsonContentType,  Map<String, String> headers = const <String, String>{}, this.userAgent, this.followRedirects = true, this.maxRedirects = 5, this.validateStatus, this.log, this.cache, this.concurrency, this.rateLimit = const RateLimitConfig.none(), this.retry,  List<Interceptor> interceptors = const <Interceptor>[], this.exceptionHandler}): _headers = headers,_interceptors = interceptors,super._();
+  const _HttpClientConfig({this.baseUrl = '', this.connectTimeout = const Duration(seconds: 20), this.receiveTimeout = const Duration(seconds: 20), this.sendTimeout, this.contentType = Headers.jsonContentType,  Map<String, String> headers = const <String, String>{}, this.userAgent, this.followRedirects = true, this.maxRedirects = 5, this.validateStatus, this.log, this.cache, this.concurrency, this.rateLimit = const RateLimitConfig.none(), this.retry,  List<Interceptor> interceptors = const <Interceptor>[], this.exceptionHandler, this.headerProvider, this.requestId, this.auth, this.ioAdapter, this.webAdapter}): _headers = headers,_interceptors = interceptors,super._();
   
 
 /// Base URL of every request.
@@ -355,6 +416,19 @@ class _HttpClientConfig extends HttpClientConfig {
 /// Last interceptor of the chain; null means
 /// `DefaultNetworkExceptionHandlerInterceptor`.
 @override final  NetworkExceptionHandlerInterceptor? exceptionHandler;
+/// Headers computed for each request; null turns them off. They
+/// override [headers] and lose to the request's own headers.
+@override final  HeaderProvider? headerProvider;
+/// Request ID header; null turns it off.
+@override final  RequestIdConfig? requestId;
+/// Access token and 401 refresh; null turns them off.
+@override final  AuthConfig? auth;
+/// Transport settings on dart:io platforms; null leaves the adapter
+/// alone. The web ignores this box.
+@override final  IoAdapterConfig? ioAdapter;
+/// Transport settings on the web; null leaves the adapter alone.
+/// dart:io platforms ignore this box.
+@override final  WebAdapterConfig? webAdapter;
 
 /// Create a copy of HttpClientConfig
 /// with the given fields replaced by the non-null parameter values.
@@ -366,18 +440,18 @@ _$HttpClientConfigCopyWith<_HttpClientConfig> get copyWith => __$HttpClientConfi
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _HttpClientConfig&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.connectTimeout, connectTimeout) || other.connectTimeout == connectTimeout)&&(identical(other.receiveTimeout, receiveTimeout) || other.receiveTimeout == receiveTimeout)&&(identical(other.sendTimeout, sendTimeout) || other.sendTimeout == sendTimeout)&&(identical(other.contentType, contentType) || other.contentType == contentType)&&const DeepCollectionEquality().equals(other.headers, _headers)&&(identical(other.userAgent, userAgent) || other.userAgent == userAgent)&&(identical(other.followRedirects, followRedirects) || other.followRedirects == followRedirects)&&(identical(other.maxRedirects, maxRedirects) || other.maxRedirects == maxRedirects)&&(identical(other.validateStatus, validateStatus) || other.validateStatus == validateStatus)&&(identical(other.log, log) || other.log == log)&&(identical(other.cache, cache) || other.cache == cache)&&(identical(other.concurrency, concurrency) || other.concurrency == concurrency)&&(identical(other.rateLimit, rateLimit) || other.rateLimit == rateLimit)&&(identical(other.retry, retry) || other.retry == retry)&&const DeepCollectionEquality().equals(other.interceptors, _interceptors)&&(identical(other.exceptionHandler, exceptionHandler) || other.exceptionHandler == exceptionHandler));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _HttpClientConfig&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.connectTimeout, connectTimeout) || other.connectTimeout == connectTimeout)&&(identical(other.receiveTimeout, receiveTimeout) || other.receiveTimeout == receiveTimeout)&&(identical(other.sendTimeout, sendTimeout) || other.sendTimeout == sendTimeout)&&(identical(other.contentType, contentType) || other.contentType == contentType)&&const DeepCollectionEquality().equals(other.headers, _headers)&&(identical(other.userAgent, userAgent) || other.userAgent == userAgent)&&(identical(other.followRedirects, followRedirects) || other.followRedirects == followRedirects)&&(identical(other.maxRedirects, maxRedirects) || other.maxRedirects == maxRedirects)&&(identical(other.validateStatus, validateStatus) || other.validateStatus == validateStatus)&&(identical(other.log, log) || other.log == log)&&(identical(other.cache, cache) || other.cache == cache)&&(identical(other.concurrency, concurrency) || other.concurrency == concurrency)&&(identical(other.rateLimit, rateLimit) || other.rateLimit == rateLimit)&&(identical(other.retry, retry) || other.retry == retry)&&const DeepCollectionEquality().equals(other.interceptors, _interceptors)&&(identical(other.exceptionHandler, exceptionHandler) || other.exceptionHandler == exceptionHandler)&&(identical(other.headerProvider, headerProvider) || other.headerProvider == headerProvider)&&(identical(other.requestId, requestId) || other.requestId == requestId)&&(identical(other.auth, auth) || other.auth == auth)&&(identical(other.ioAdapter, ioAdapter) || other.ioAdapter == ioAdapter)&&(identical(other.webAdapter, webAdapter) || other.webAdapter == webAdapter));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,baseUrl,connectTimeout,receiveTimeout,sendTimeout,contentType,const DeepCollectionEquality().hash(_headers),userAgent,followRedirects,maxRedirects,validateStatus,log,cache,concurrency,rateLimit,retry,const DeepCollectionEquality().hash(_interceptors),exceptionHandler);
+    return Object.hashAll([runtimeType,baseUrl,connectTimeout,receiveTimeout,sendTimeout,contentType,const DeepCollectionEquality().hash(_headers),userAgent,followRedirects,maxRedirects,validateStatus,log,cache,concurrency,rateLimit,retry,const DeepCollectionEquality().hash(_interceptors),exceptionHandler,headerProvider,requestId,auth,ioAdapter,webAdapter]);
 }
 
 @override
 String toString() {
-    return 'HttpClientConfig(baseUrl: $baseUrl, connectTimeout: $connectTimeout, receiveTimeout: $receiveTimeout, sendTimeout: $sendTimeout, contentType: $contentType, headers: $headers, userAgent: $userAgent, followRedirects: $followRedirects, maxRedirects: $maxRedirects, validateStatus: $validateStatus, log: $log, cache: $cache, concurrency: $concurrency, rateLimit: $rateLimit, retry: $retry, interceptors: $interceptors, exceptionHandler: $exceptionHandler)';
+    return 'HttpClientConfig(baseUrl: $baseUrl, connectTimeout: $connectTimeout, receiveTimeout: $receiveTimeout, sendTimeout: $sendTimeout, contentType: $contentType, headers: $headers, userAgent: $userAgent, followRedirects: $followRedirects, maxRedirects: $maxRedirects, validateStatus: $validateStatus, log: $log, cache: $cache, concurrency: $concurrency, rateLimit: $rateLimit, retry: $retry, interceptors: $interceptors, exceptionHandler: $exceptionHandler, headerProvider: $headerProvider, requestId: $requestId, auth: $auth, ioAdapter: $ioAdapter, webAdapter: $webAdapter)';
 }
 
 
@@ -388,11 +462,11 @@ abstract mixin class _$HttpClientConfigCopyWith<$Res> implements $HttpClientConf
   factory _$HttpClientConfigCopyWith(_HttpClientConfig value, $Res Function(_HttpClientConfig) _then) = __$HttpClientConfigCopyWithImpl;
 @override @useResult
 $Res call({
- String baseUrl, Duration connectTimeout, Duration receiveTimeout, Duration? sendTimeout, String contentType, Map<String, String> headers, String? userAgent, bool followRedirects, int maxRedirects, ValidateStatus? validateStatus, LogConfig? log, CacheConfig? cache, ConcurrencyConfig? concurrency, RateLimitConfig rateLimit, RetryConfig? retry, List<Interceptor> interceptors, NetworkExceptionHandlerInterceptor? exceptionHandler
+ String baseUrl, Duration connectTimeout, Duration receiveTimeout, Duration? sendTimeout, String contentType, Map<String, String> headers, String? userAgent, bool followRedirects, int maxRedirects, ValidateStatus? validateStatus, LogConfig? log, CacheConfig? cache, ConcurrencyConfig? concurrency, RateLimitConfig rateLimit, RetryConfig? retry, List<Interceptor> interceptors, NetworkExceptionHandlerInterceptor? exceptionHandler, HeaderProvider? headerProvider, RequestIdConfig? requestId, AuthConfig? auth, IoAdapterConfig? ioAdapter, WebAdapterConfig? webAdapter
 });
 
 
-@override $LogConfigCopyWith<$Res>? get log;@override $CacheConfigCopyWith<$Res>? get cache;@override $ConcurrencyConfigCopyWith<$Res>? get concurrency;@override $RateLimitConfigCopyWith<$Res> get rateLimit;@override $RetryConfigCopyWith<$Res>? get retry;
+@override $LogConfigCopyWith<$Res>? get log;@override $CacheConfigCopyWith<$Res>? get cache;@override $ConcurrencyConfigCopyWith<$Res>? get concurrency;@override $RateLimitConfigCopyWith<$Res> get rateLimit;@override $RetryConfigCopyWith<$Res>? get retry;@override $RequestIdConfigCopyWith<$Res>? get requestId;@override $AuthConfigCopyWith<$Res>? get auth;@override $IoAdapterConfigCopyWith<$Res>? get ioAdapter;@override $WebAdapterConfigCopyWith<$Res>? get webAdapter;
 
 }
 /// @nodoc
@@ -405,7 +479,7 @@ class __$HttpClientConfigCopyWithImpl<$Res>
 
 /// Create a copy of HttpClientConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? baseUrl = null,Object? connectTimeout = null,Object? receiveTimeout = null,Object? sendTimeout = freezed,Object? contentType = null,Object? headers = null,Object? userAgent = freezed,Object? followRedirects = null,Object? maxRedirects = null,Object? validateStatus = freezed,Object? log = freezed,Object? cache = freezed,Object? concurrency = freezed,Object? rateLimit = null,Object? retry = freezed,Object? interceptors = null,Object? exceptionHandler = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? baseUrl = null,Object? connectTimeout = null,Object? receiveTimeout = null,Object? sendTimeout = freezed,Object? contentType = null,Object? headers = null,Object? userAgent = freezed,Object? followRedirects = null,Object? maxRedirects = null,Object? validateStatus = freezed,Object? log = freezed,Object? cache = freezed,Object? concurrency = freezed,Object? rateLimit = null,Object? retry = freezed,Object? interceptors = null,Object? exceptionHandler = freezed,Object? headerProvider = freezed,Object? requestId = freezed,Object? auth = freezed,Object? ioAdapter = freezed,Object? webAdapter = freezed,}) {
   return _then(_HttpClientConfig(
 baseUrl: null == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
 as String,connectTimeout: null == connectTimeout ? _self.connectTimeout : connectTimeout // ignore: cast_nullable_to_non_nullable
@@ -424,7 +498,12 @@ as ConcurrencyConfig?,rateLimit: null == rateLimit ? _self.rateLimit : rateLimit
 as RateLimitConfig,retry: freezed == retry ? _self.retry : retry // ignore: cast_nullable_to_non_nullable
 as RetryConfig?,interceptors: null == interceptors ? _self._interceptors : interceptors // ignore: cast_nullable_to_non_nullable
 as List<Interceptor>,exceptionHandler: freezed == exceptionHandler ? _self.exceptionHandler : exceptionHandler // ignore: cast_nullable_to_non_nullable
-as NetworkExceptionHandlerInterceptor?,
+as NetworkExceptionHandlerInterceptor?,headerProvider: freezed == headerProvider ? _self.headerProvider : headerProvider // ignore: cast_nullable_to_non_nullable
+as HeaderProvider?,requestId: freezed == requestId ? _self.requestId : requestId // ignore: cast_nullable_to_non_nullable
+as RequestIdConfig?,auth: freezed == auth ? _self.auth : auth // ignore: cast_nullable_to_non_nullable
+as AuthConfig?,ioAdapter: freezed == ioAdapter ? _self.ioAdapter : ioAdapter // ignore: cast_nullable_to_non_nullable
+as IoAdapterConfig?,webAdapter: freezed == webAdapter ? _self.webAdapter : webAdapter // ignore: cast_nullable_to_non_nullable
+as WebAdapterConfig?,
   ));
 }
 
@@ -484,6 +563,54 @@ $RetryConfigCopyWith<$Res>? get retry {
 
   return $RetryConfigCopyWith<$Res>(_self.retry!, (value) {
     return _then(_self.copyWith(retry: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$RequestIdConfigCopyWith<$Res>? get requestId {
+    if (_self.requestId == null) {
+    return null;
+  }
+
+  return $RequestIdConfigCopyWith<$Res>(_self.requestId!, (value) {
+    return _then(_self.copyWith(requestId: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AuthConfigCopyWith<$Res>? get auth {
+    if (_self.auth == null) {
+    return null;
+  }
+
+  return $AuthConfigCopyWith<$Res>(_self.auth!, (value) {
+    return _then(_self.copyWith(auth: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$IoAdapterConfigCopyWith<$Res>? get ioAdapter {
+    if (_self.ioAdapter == null) {
+    return null;
+  }
+
+  return $IoAdapterConfigCopyWith<$Res>(_self.ioAdapter!, (value) {
+    return _then(_self.copyWith(ioAdapter: value));
+  });
+}/// Create a copy of HttpClientConfig
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WebAdapterConfigCopyWith<$Res>? get webAdapter {
+    if (_self.webAdapter == null) {
+    return null;
+  }
+
+  return $WebAdapterConfigCopyWith<$Res>(_self.webAdapter!, (value) {
+    return _then(_self.copyWith(webAdapter: value));
   });
 }
 }

@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// JSON-RPC exception that originates in the domain layer
 /// (use cases, business logic).

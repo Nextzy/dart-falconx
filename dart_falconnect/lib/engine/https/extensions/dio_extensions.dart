@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Extensions on [RequestOptions] for common authorization header operations.
 extension DartFalconnectRequestOptionExtensions on RequestOptions {

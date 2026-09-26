@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Transforms a WebSocket stream into a `Result`-typed entity stream with
 /// optional local persistence.

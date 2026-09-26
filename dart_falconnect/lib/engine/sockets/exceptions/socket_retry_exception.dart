@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Thrown each time the socket client attempts to reconnect after an error.
 ///

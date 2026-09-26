@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Extensions on `Future<Response<dynamic>>` for JSON mapping.
 extension DartFalconnectHttpFutureDynamicExtensions

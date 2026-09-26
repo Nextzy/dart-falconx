@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 
 /// Extension methods for List type with enhanced functionality.
 ///

@@ -1,5 +1,5 @@
-import 'package:dart_faltool/utils/_app_info_web.dart'
-    if (dart.library.io) '_app_info_io.dart'
+import 'package:dart_faltool/src/utils/app_info_web.dart'
+    if (dart.library.io) 'package:dart_faltool/src/utils/app_info_io.dart'
     as impl;
 
 /// Provides access to application metadata read from `pubspec.yaml`.

@@ -1,13 +1,24 @@
+import 'dart:async';
+
+import 'package:dart_falconnect/engine/https/config/auth_config.dart';
 import 'package:dart_falconnect/engine/https/config/cache_config.dart';
 import 'package:dart_falconnect/engine/https/config/concurrency_config.dart';
+import 'package:dart_falconnect/engine/https/config/io_adapter_config.dart';
 import 'package:dart_falconnect/engine/https/config/log_config.dart';
 import 'package:dart_falconnect/engine/https/config/rate_limit_config.dart';
+import 'package:dart_falconnect/engine/https/config/request_id_config.dart';
 import 'package:dart_falconnect/engine/https/config/retry_config.dart';
+import 'package:dart_falconnect/engine/https/config/web_adapter_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/network_exception_handler_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'generated/http_client_config.freezed.dart';
+
+/// Returns headers for one request.
+typedef HeaderProvider = FutureOr<Map<String, String>> Function(
+  RequestOptions options,
+);
 
 /// Configuration of a `BaseHttpClient`: the dio options it owns and one box
 /// per feature. A null box turns its feature off.
@@ -67,6 +78,24 @@ abstract class HttpClientConfig with _$HttpClientConfig {
     /// Last interceptor of the chain; null means
     /// `DefaultNetworkExceptionHandlerInterceptor`.
     NetworkExceptionHandlerInterceptor? exceptionHandler,
+
+    /// Headers computed for each request; null turns them off. They
+    /// override [headers] and lose to the request's own headers.
+    HeaderProvider? headerProvider,
+
+    /// Request ID header; null turns it off.
+    RequestIdConfig? requestId,
+
+    /// Access token and 401 refresh; null turns them off.
+    AuthConfig? auth,
+
+    /// Transport settings on dart:io platforms; null leaves the adapter
+    /// alone. The web ignores this box.
+    IoAdapterConfig? ioAdapter,
+
+    /// Transport settings on the web; null leaves the adapter alone.
+    /// dart:io platforms ignore this box.
+    WebAdapterConfig? webAdapter,
   }) = _HttpClientConfig;
 
   const new _();

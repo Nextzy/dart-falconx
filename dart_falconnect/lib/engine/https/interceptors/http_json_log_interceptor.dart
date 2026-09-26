@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:dart_falconnect/engine/https/config/log_config.dart';
 import 'package:dart_falconnect/engine/https/interceptors/cache_interceptor.dart';
 import 'package:dart_falconnect/engine/https/interceptors/local_rate_limit.dart';
+import 'package:dart_falconnect/engine/https/interceptors/request_stamp_interceptor.dart';
 import 'package:dart_falconnect/engine/https/interceptors/retry_interceptor.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/auth_extra.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart';
 import 'package:dart_faltool/dart_faltool.dart' show clock;
 import 'package:dio/dio.dart';
@@ -129,6 +131,8 @@ class HttpJsonLogInterceptor extends Interceptor {
       'error.type': ?outcome.errorType,
       'http.client.request.duration': seconds,
       if (resendCount > 0) 'http.request.resend_count': resendCount,
+      'falconx.request.id': ?options.requestId,
+      if (options.isAuthResend) 'falconx.auth.resent': true,
       if (cacheHit) 'falconx.cache.hit': true,
       if (response?.isLocalRateLimit ?? false) 'falconx.rate_limit.local': true,
       if (config.requestHeaders) ..._headers('request', options.headers),

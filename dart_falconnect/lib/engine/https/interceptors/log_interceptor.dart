@@ -1,5 +1,5 @@
-import 'package:dart_falconnect/lib.dart';
 import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Prints each request, response, and error over several console lines,
 /// for a developer watching an app's console.
@@ -80,7 +80,8 @@ class HttpLogInterceptor extends Interceptor {
     // A new map: extra may be const.
     options.extra = {...options.extra, logStartKey: clock.now()};
     if (enabled) {
-      logPrint(_title('*** Request ***'));
+      final id = options.requestId;
+      logPrint(_title(id == null ? '*** Request ***' : '*** Request $id ***'));
       _printKV('URL', _url(options.uri));
 
       if (request) {

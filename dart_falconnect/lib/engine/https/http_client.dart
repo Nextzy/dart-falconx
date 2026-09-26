@@ -1,15 +1,26 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/engine/https/adapter/platform_adapter.dart';
+import 'package:dart_falconnect/src/engine/https/interceptors/log_redaction.dart'
+    show matchesName;
+import 'package:dart_falconnect/src/src.dart';
 
 /// Base class of every HTTP client in FalconX: one [Dio] configured by one
 /// [HttpClientConfig].
 ///
-/// The client orders the interceptor chain itself: the config's own
-/// `interceptors`, then log, cache, concurrency limit, rate limit, retry,
-/// the cache's offline fallback when its box enables it, and the exception
-/// handler last. [configure] applies a new
+/// The client orders the interceptor chain itself: the request stamp when
+/// `requestId`, `headerProvider`, or `auth` is set, the config's own
+/// `interceptors`, then log, cache, concurrency limit, rate limit, token
+/// refresh, retry, the cache's offline fallback when its box enables it,
+/// and the exception handler last. [configure] applies a new
 /// configuration to requests that start after it returns; requests already
 /// running finish on the configuration they started with. Interceptors
 /// whose box is unchanged are kept, with their state.
+///
+/// The config's `ioAdapter` box, on dart:io, or `webAdapter` box, on the
+/// web, replaces [dio]'s adapter while it is set; a null box leaves the
+/// adapter alone, and a box that returns to null restores the adapter
+/// [dio] had before. [configure] closes an adapter it replaces with
+/// `force: false`, so requests already running on it finish, and never
+/// closes an adapter it did not build.
 ///
 /// A subclass passes its configuration to the super constructor. An
 /// interceptor that needs [dio] is built in the subclass constructor body,
@@ -19,7 +30,8 @@ abstract class BaseHttpClient implements RequestApiService {
   ///
   /// [config] owns the base URL, timeouts, content type, redirects,
   /// `validateStatus`, and its header keys, so values set on [dio] for
-  /// those are replaced; the adapter and every other option stay.
+  /// those are replaced; every other option stays, and so does the adapter
+  /// unless the platform's adapter box is set.
   new({required Dio dio, HttpClientConfig config = const HttpClientConfig()})
     : _dio = dio,
       _defaultValidateStatus = BaseOptions().validateStatus {
@@ -32,11 +44,16 @@ abstract class BaseHttpClient implements RequestApiService {
       DefaultNetworkExceptionHandlerInterceptor();
 
   HttpClientConfig? _config;
+  AuthSession? _session;
+  RequestStampInterceptor? _stamp;
+  TokenRefreshInterceptor? _refresh;
   Interceptor? _log;
   CacheInterceptor? _cache;
   ConcurrencyLimitInterceptor? _concurrency;
   Interceptor? _rateLimit;
   RetryInterceptor? _retry;
+  HttpClientAdapter? _builtAdapter;
+  HttpClientAdapter? _originalAdapter;
 
   /// The underlying Dio instance, for Retrofit and advanced use.
   Dio get dio => _dio;
@@ -57,19 +74,40 @@ abstract class BaseHttpClient implements RequestApiService {
   /// Applies [config] to requests that start after this call returns.
   ///
   /// Throws, and keeps the current configuration, when an interceptor
-  /// cannot be built from [config] or dio rejects one of its options.
+  /// cannot be built from [config], dio rejects one of its options, or
+  /// its `ioAdapter` box is malformed.
   void configure(HttpClientConfig config) {
     // A dry run on a scratch Dio: dio checks options in its setters, so a
     // value it rejects throws here, before this client changes.
     config.applyTo(Dio());
+    // Checked on every platform, so a web build reports a bad pin too.
+    config.ioAdapter?.validate();
     final previous = _config;
-    final log = _keepOrBuild(previous?.log, config.log, _log, _buildLog);
+    final session = _keepOrBuild(
+      previous?.auth,
+      config.auth,
+      _session,
+      (box) => AuthSession(box, logPrint: _diagnostic),
+    );
+    final stamp = _buildStamp(previous, config, session);
+    final refresh = session == null
+        ? null
+        : identical(session, _session) && _refresh != null
+        ? _refresh
+        : TokenRefreshInterceptor(session: session, dio: _dio);
+    final log = _keepOrBuild(
+      _logFor(previous?.log, previous?.auth),
+      _logFor(config.log, config.auth),
+      _log,
+      _buildLog,
+    );
+    final previousCache = _cacheFor(previous?.cache, previous?.auth);
     final cache = _keepOrBuild(
-      previous?.cache,
-      config.cache,
+      previousCache,
+      _cacheFor(config.cache, config.auth),
       _cache,
       (box) => CacheInterceptor(
-        config: _keepStore(box, previous?.cache),
+        config: _keepStore(box, previousCache),
         logPrint: _diagnostic,
       ),
     );
@@ -92,26 +130,50 @@ abstract class BaseHttpClient implements RequestApiService {
       _retry,
       (box) => RetryInterceptor(config: box, dio: _dio, logPrint: _diagnostic),
     );
+    final adapterBox = platformAdapterBox(config);
+    final adapterBuilt =
+        adapterBox != null &&
+        (_builtAdapter == null ||
+            previous == null ||
+            platformAdapterBox(previous) != adapterBox);
+    final adapter = adapterBuilt
+        ? buildPlatformAdapter(adapterBox)
+        : adapterBox == null
+        ? null
+        : _builtAdapter;
 
     _applyOptions(previous, config);
     _dio.interceptors
       ..clear()
       ..addAll([
+        ?stamp,
         ...config.interceptors,
         ?log,
         ?cache,
         ?concurrency,
         ?rateLimit,
+        ?refresh,
         ?retry,
         ?cacheFallback,
         config.exceptionHandler ?? _defaultExceptionHandler,
       ]);
+    _swapAdapter(adapter);
     _config = config;
+    _session = session;
+    _stamp = stamp;
+    _refresh = refresh;
     _log = log;
     _cache = cache;
     _concurrency = concurrency;
     _rateLimit = rateLimit;
     _retry = retry;
+    if (adapterBox != null &&
+        (adapterBuilt || previous?.concurrency != config.concurrency)) {
+      adapterDiagnostics(
+        config,
+        adapterBuilt: adapterBuilt,
+      ).forEach(_diagnostic);
+    }
   }
 
   /// Sets the base URL of the current configuration.
@@ -129,10 +191,13 @@ abstract class BaseHttpClient implements RequestApiService {
     );
   }
 
-  /// Disposes the stateful interceptors of the current configuration.
+  /// Disposes the stateful interceptors of the current configuration, and
+  /// closes the adapter this client built with `force: false`, restoring
+  /// the adapter [dio] had before.
   ///
   /// Needed at the end of a test or a CLI; a Flutter app never calls it.
-  /// A later [configure] builds new limiters instead of keeping these.
+  /// A later [configure] builds new limiters and a new adapter instead of
+  /// keeping these.
   void dispose() {
     final rateLimit = _rateLimit;
     if (rateLimit is TokenBucketRateLimitInterceptor) {
@@ -143,6 +208,7 @@ abstract class BaseHttpClient implements RequestApiService {
     _concurrency?.dispose();
     _rateLimit = null;
     _concurrency = null;
+    _swapAdapter(null);
   }
 
   @override
@@ -349,6 +415,19 @@ abstract class BaseHttpClient implements RequestApiService {
         .catchWhenError(catchError);
   }
 
+  /// Puts [next] on [dio], or the adapter [dio] had before this client
+  /// built one when [next] is null, and closes the adapter this client
+  /// built before, letting its running requests finish.
+  void _swapAdapter(HttpClientAdapter? next) {
+    final built = _builtAdapter;
+    if (identical(next, built)) return;
+    if (built == null) _originalAdapter = _dio.httpClientAdapter;
+    _dio.httpClientAdapter = next ?? _originalAdapter!;
+    built?.close();
+    _builtAdapter = next;
+    if (next == null) _originalAdapter = null;
+  }
+
   /// [box], carrying the current cache's memory store when only settings
   /// that leave the stored entries valid changed since [before].
   CacheConfig _keepStore(CacheConfig box, CacheConfig? before) {
@@ -361,6 +440,40 @@ abstract class BaseHttpClient implements RequestApiService {
       return box;
     }
     return box.copyWith(store: current.store);
+  }
+
+  /// [box] with the token header of [auth] added to `redactHeaders` when
+  /// that set redacts `authorization`, so a custom header name is redacted
+  /// exactly as `Authorization` is.
+  static LogConfig? _logFor(LogConfig? box, AuthConfig? auth) {
+    if (box == null) return null;
+    final names = _withTokenHeader(box.redactHeaders, auth);
+    return identical(names, box.redactHeaders)
+        ? box
+        : box.copyWith(redactHeaders: names);
+  }
+
+  /// [box] with the token header of [auth] added to `keyHeaders` when that
+  /// set keys by `authorization`, so a custom header name splits entries
+  /// per token exactly as `Authorization` does.
+  static CacheConfig? _cacheFor(CacheConfig? box, AuthConfig? auth) {
+    if (box == null) return null;
+    final names = _withTokenHeader(box.keyHeaders, auth);
+    return identical(names, box.keyHeaders)
+        ? box
+        : box.copyWith(keyHeaders: names);
+  }
+
+  /// [names] plus the token header of [auth], lowercased, when [names]
+  /// holds `authorization` and not that header; otherwise [names] itself.
+  static Set<String> _withTokenHeader(Set<String> names, AuthConfig? auth) {
+    final header = auth?.headerName.toLowerCase();
+    if (header == null ||
+        matchesName(header, names) ||
+        !matchesName('authorization', names)) {
+      return names;
+    }
+    return {...names, header};
   }
 
   static bool _hasFallback(CacheConfig box) =>
@@ -376,6 +489,33 @@ abstract class BaseHttpClient implements RequestApiService {
     if (after == null) return null;
     if (current != null && before == after) return current;
     return build(after);
+  }
+
+  /// The stamp for [next]: none when it stamps nothing, the current one
+  /// when its inputs are unchanged, else a new one.
+  RequestStampInterceptor? _buildStamp(
+    HttpClientConfig? previous,
+    HttpClientConfig next,
+    AuthSession? session,
+  ) {
+    if (next.requestId == null &&
+        next.headerProvider == null &&
+        session == null) {
+      return null;
+    }
+    final current = _stamp;
+    if (current != null &&
+        previous?.requestId == next.requestId &&
+        previous?.headerProvider == next.headerProvider &&
+        identical(current.auth, session)) {
+      return current;
+    }
+    return RequestStampInterceptor(
+      requestId: next.requestId,
+      headerProvider: next.headerProvider,
+      auth: session,
+      dio: _dio,
+    );
   }
 
   Interceptor _buildLog(LogConfig box) => switch (box) {

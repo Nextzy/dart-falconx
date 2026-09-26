@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:test/test.dart';
 
