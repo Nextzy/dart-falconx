@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 
 final _hhmmssPattern = RegExp(r'^(\d{1,2}):(\d{2}):(\d{2})$');
 

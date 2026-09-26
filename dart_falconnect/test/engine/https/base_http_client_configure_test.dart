@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dart_falconnect/dart_falconnect.dart';
@@ -707,5 +708,138 @@ void main() {
     addTearDown(client.dispose);
 
     await expectLater(client.dio.get<dynamic>('/x'), completes);
+  });
+  group('request stamp and token refresh', () {
+    AuthConfig auth() =>
+        AuthConfig(accessToken: () => 't', refresh: () async => true);
+
+    test('the stamp comes first and the refresh after the rate limiter', () {
+      final custom = _ErrorSpy();
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(
+          HttpClientConfig(
+            interceptors: [custom],
+            log: const LogConfig(),
+            cache: const CacheConfig(),
+            concurrency: const ConcurrencyConfig(global: 4),
+            rateLimit: const RateLimitConfig.pauseOnly(),
+            retry: const RetryConfig(),
+            requestId: const RequestIdConfig(),
+            auth: auth(),
+          ),
+        );
+      addTearDown(client.dispose);
+
+      expect(client.interceptors.map((i) => '${i.runtimeType}'), [
+        'ImplyContentTypeInterceptor',
+        'RequestStampInterceptor',
+        '_ErrorSpy',
+        'HttpLogInterceptor',
+        'CacheInterceptor',
+        'ConcurrencyLimitInterceptor',
+        'RetryAfterPauseInterceptor',
+        'TokenRefreshInterceptor',
+        'RetryInterceptor',
+        'DefaultNetworkExceptionHandlerInterceptor',
+      ]);
+    });
+
+    test('every combination of request ID, header provider, and auth builds '
+        'the stamp, and auth alone adds the refresh', () {
+      for (final withId in [false, true]) {
+        for (final withProvider in [false, true]) {
+          for (final withAuth in [false, true]) {
+            final client = _Client(ScriptedAdapter([reply(200)]))
+              ..configure(
+                HttpClientConfig(
+                  requestId: withId ? const RequestIdConfig() : null,
+                  headerProvider: withProvider ? (_) => const {} : null,
+                  auth: withAuth ? auth() : null,
+                ),
+              );
+
+            expect(
+              client.interceptors.map((i) => '${i.runtimeType}'),
+              [
+                'ImplyContentTypeInterceptor',
+                if (withId || withProvider || withAuth)
+                  'RequestStampInterceptor',
+                if (withAuth) 'TokenRefreshInterceptor',
+                'DefaultNetworkExceptionHandlerInterceptor',
+              ],
+              reason:
+                  'requestId: $withId, headerProvider: $withProvider, '
+                  'auth: $withAuth',
+            );
+          }
+        }
+      }
+    });
+
+    test('an unchanged auth box keeps its session; new closures build a new '
+        'one', () {
+      final client = _Client(ScriptedAdapter([reply(200)]))
+        ..configure(HttpClientConfig(auth: auth()));
+      RequestStampInterceptor stamp() =>
+          client.interceptors.whereType<RequestStampInterceptor>().single;
+      TokenRefreshInterceptor refresh() =>
+          client.interceptors.whereType<TokenRefreshInterceptor>().single;
+      final firstStamp = stamp();
+      final firstRefresh = refresh();
+
+      client.configure(client.currentConfig.copyWith(log: const LogConfig()));
+      expect(stamp(), same(firstStamp));
+
+      client.configure(
+        client.currentConfig.copyWith(requestId: const RequestIdConfig()),
+      );
+      expect(stamp(), isNot(same(firstStamp)));
+      expect(stamp().auth, same(firstRefresh.session));
+      expect(refresh(), same(firstRefresh));
+
+      client.configure(client.currentConfig.copyWith(auth: auth()));
+      expect(refresh(), isNot(same(firstRefresh)));
+      expect(refresh().session, isNot(same(firstRefresh.session)));
+      expect(stamp().auth, same(refresh().session));
+    });
+
+    test('a refresh that runs across a configure finishes once, and its '
+        're-send passes the new chain', () async {
+      var token = 'old';
+      var refreshes = 0;
+      final started = Completer<void>();
+      final gate = Completer<void>();
+      final adapter = ScriptedAdapter([reply(401), reply(200)]);
+      final client = _Client(adapter)
+        ..configure(
+          HttpClientConfig(
+            auth: AuthConfig(
+              accessToken: () => token,
+              refresh: () async {
+                refreshes++;
+                started.complete();
+                await gate.future;
+                token = 'new';
+                return true;
+              },
+            ),
+          ),
+        );
+
+      final request = client.dio.get<dynamic>('/x');
+      await started.future;
+      client.configure(
+        client.currentConfig.copyWith(
+          requestId: RequestIdConfig(generate: () => 'id-1'),
+        ),
+      );
+      gate.complete();
+      final response = await request;
+
+      expect(response.statusCode, 200);
+      expect(refreshes, 1);
+      expect(adapter.requests[1].headers['authorization'], 'Bearer new');
+      expect(adapter.requests[1].headers['x-request-id'], 'id-1');
+    });
   });
 }

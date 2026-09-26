@@ -1,4 +1,4 @@
-import 'package:dart_faltool/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 import 'package:test/test.dart';
 
 // Test class for object extensions

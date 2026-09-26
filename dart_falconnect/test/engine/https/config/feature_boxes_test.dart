@@ -44,6 +44,29 @@ void main() {
     expect(log.diagnostics, isTrue);
   });
 
+  test('request ID and auth boxes default to the documented values', () {
+    const id = RequestIdConfig();
+    expect(id.headerName, 'X-Request-ID');
+    expect(id.generate, isNull);
+
+    final auth = AuthConfig(accessToken: () => null, refresh: () async => true);
+    expect(auth.headerName, 'Authorization');
+    expect(auth.scheme, 'Bearer');
+    expect(auth.onAuthFailed, isNull);
+
+    const config = HttpClientConfig();
+    expect(config.headerProvider, isNull);
+    expect(config.requestId, isNull);
+    expect(config.auth, isNull);
+  });
+
+  test('noToken carries useTokenExtraKey set to false', () {
+    expect(useTokenExtraKey, 'dart_falconnect.auth.useToken');
+    expect(noToken.data, {useTokenExtraKey: false});
+    expect((RequestOptions()..extra = {...noToken.data}).useToken, isFalse);
+    expect(RequestOptions().useToken, isTrue);
+  });
+
   test('boxes compare by value', () {
     expect(_retry(2), const RetryConfig(maxAttempts: 2));
     expect(_retry(2).hashCode, const RetryConfig(maxAttempts: 2).hashCode);

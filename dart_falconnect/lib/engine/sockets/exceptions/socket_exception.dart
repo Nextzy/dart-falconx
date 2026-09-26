@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 import 'package:dart_falmodel/dart_falmodel.dart';
 
 /// Base exception for WebSocket failures.

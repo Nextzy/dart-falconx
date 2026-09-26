@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_falmodel/src/src.dart';
 
 /// Exception representing HTTP 506 Variant Also Negotiates responses.
 ///

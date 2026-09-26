@@ -18,6 +18,7 @@ dart_falconnect (top layer: network implementations)
 ```
 
 - Leave the `dart_faltool` ↔ `dart_falmodel` cycle in place: Dart workspace resolution resolves it, and it breaks no layering rule.
+- Put a file that no app imports under `lib/src/`, in the folder it would have outside `lib/src/`, and export from a barrel only what apps use. Each package's internal prelude is `lib/src/src.dart`; files inside the package import it, and consumers import the barrel.
 
 ## Platform support
 
@@ -74,7 +75,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 
 ### Code generation
 
-- Generated files land in `lib/{{path}}/generated/{{file}}.g.dart` or `.freezed.dart`, per each package's `build.yaml`.
+- Generated files land in `lib/{{path}}/generated/{{file}}.g.dart` or `.freezed.dart`, per each package's `build.yaml`. `dart_falconnect` also generates Retrofit test fixtures into `test/{{path}}/generated/{{file}}.g.dart`.
 - Run `melos run build_runner` after editing a `@freezed` or `@JsonSerializable` class, and `melos run build_runner:check` before committing.
 
 ## Gotchas

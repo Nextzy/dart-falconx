@@ -3,21 +3,23 @@
 ## Entry points
 
 - `dart_falconnect.dart`: public API; re-exports Dio, Retrofit, `web_socket_channel`, `dio_cache_interceptor`, and `engine/engine.dart`.
-- `lib.dart`: internal import; re-exports `dart:async`, `dart:convert`, `ansicolor`, `dart_falmodel`, `dart_faltool`, `freezed_annotation`, and `dart_falconnect.dart`.
-- Import `package:dart_falconnect/lib.dart` in a new file, except beside files that import each dependency by path: everything under `engine/https/config/` and `lib/src/`, and most of `engine/https/interceptors/`.
+- `lib/src/src.dart`: internal prelude; re-exports `dart:async`, `dart:convert`, `ansicolor`, `dart_falmodel`, `dart_faltool`, `freezed_annotation`, and `dart_falconnect.dart`.
+- Import `package:dart_falconnect/src/src.dart` in a new file, except beside files that import each dependency by path: everything under `engine/https/config/` and `lib/src/` other than `src.dart` itself, and most of `engine/https/interceptors/`.
 
 ## HTTP (`engine/https/`)
 
 - `BaseHttpClient` implements `RequestApiService`. `configure()` keeps each interceptor whose config box is unchanged, with its state, and rebuilds the rest. Every request method funnels into one private `_request()` that chains `.mapJson(converter).catchWhenError(catchError)`.
-- `HttpClientConfig` (freezed) holds the Dio options it owns plus one box per feature, with no presets. A null `log`, `cache`, `concurrency`, or `retry` box turns that feature off. `rateLimit` defaults to `RateLimitConfig.none()`; its `pauseOnly` variant builds `RetryAfterPauseInterceptor`, and `tokenBucket` builds `TokenBucketRateLimitInterceptor`. A `LogConfig()` box builds `HttpLogInterceptor`; a `LogConfig.json()` box builds `HttpJsonLogInterceptor`.
+- `HttpClientConfig` (freezed) holds the Dio options it owns plus one box per feature, with no presets. A null `log`, `cache`, `concurrency`, or `retry` box turns that feature off. `rateLimit` defaults to `RateLimitConfig.none()`; its `pauseOnly` variant builds `RetryAfterPauseInterceptor`, and `tokenBucket` builds `TokenBucketRateLimitInterceptor`. A `LogConfig()` box builds `HttpLogInterceptor`; a `LogConfig.json()` box builds `HttpJsonLogInterceptor`. A `requestId` box, a `headerProvider` function, or an `auth` box builds `RequestStampInterceptor`; an `auth` box also builds an `AuthSession`, kept while the box is equal, and `TokenRefreshInterceptor`. An `ioAdapter` box on dart:io, or a `webAdapter` box on the web, replaces `dio.httpClientAdapter`; `configure` closes an adapter it replaces with `force: false`, never closes one it did not build, and restores the original when the box returns to null.
 - `extensions/response_extensions.dart` provides `mapJson()`, `unwrapResponse()`, and `catchWhenError()` on response futures, plus `copyWith()` and `transformData()` on `Response<dynamic>?`.
 
 ## Interceptor chain
 
-`BaseHttpClient.configure` assembles the chain in this order: the config's `interceptors` → `HttpLogInterceptor` or `HttpJsonLogInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `RetryInterceptor` → the cache fallback, when its box enables it → exception handler.
+`BaseHttpClient.configure` assembles the chain in this order: `RequestStampInterceptor` → the config's `interceptors` → `HttpLogInterceptor` or `HttpJsonLogInterceptor` → `CacheInterceptor` → `ConcurrencyLimitInterceptor` → rate limiter → `TokenRefreshInterceptor` → `RetryInterceptor` → the cache fallback, when its box enables it → exception handler.
 
 | Interceptor                                 | Role                                                                                                                                    |
 |---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| `RequestStampInterceptor`                   | stamps the request ID, the header provider's headers, and the access token on every attempt                                             |
+| `TokenRefreshInterceptor`                   | on a 401, one refresh shared through `AuthSession`, then a re-send through the whole chain                                              |
 | `HttpLogInterceptor`                        | ANSI-colored multi-line log; redacts listed headers and query values                                                                    |
 | `HttpJsonLogInterceptor`                    | one JSON line per attempt with OpenTelemetry field names, for servers                                                                   |
 | `CacheInterceptor`                          | wraps `dio_cache_interceptor`: HTTP caching by server headers, keyed by URL and `keyHeaders`; `fallback` answers failures after retries |
@@ -29,7 +31,7 @@
 | `DefaultNetworkExceptionHandlerInterceptor` | rejects every error unchanged                                                                                                           |
 
 - The cache, concurrency, rate-limit, and retry interceptors take their config box plus an optional `logPrint`.
-- Unexported helpers: the pause core in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host-key rule in `lib/src/engine/https/interceptors/host_key.dart`, the log redaction helpers and the log start key in `lib/src/engine/https/interceptors/log_redaction.dart`, the retry loop's final-error marker in `lib/src/engine/https/interceptors/retry_attempts.dart`, and `watchCancel` in `lib/src/engine/https/cancel_watch.dart`.
+- Unexported helpers: the pause core in `lib/src/engine/https/interceptors/retry_after_pause.dart`, the host-key rule in `lib/src/engine/https/interceptors/host_key.dart`, the log redaction helpers and the log start key in `lib/src/engine/https/interceptors/log_redaction.dart`, the retry loop's final-error marker in `lib/src/engine/https/interceptors/retry_attempts.dart`, the auth bookkeeping in `extra` in `lib/src/engine/https/interceptors/auth_extra.dart`, `watchCancel` in `lib/src/engine/https/cancel_watch.dart`, and the platform adapters, the pinning connector, and the SPKI reader in `lib/src/engine/https/adapter/`.
 - Export a new interceptor from `interceptors/interceptors.dart`; that barrel also exports `local_rate_limit.dart`, which tells a client-made 429 from a server 429.
 - Interceptor model classes live in `interceptors/models/` as freezed classes (generated output in `models/generated/`); `getStatistics()` returns immutable snapshots, never live interceptor state.
 
@@ -78,4 +80,5 @@ Every `DatasourceBoundState` strategy returns `Result<DsType>`:
 ## Web caveats
 
 - `SocketClient` has compile-check coverage only; at runtime `WebSocketChannel.connect()` picks the browser or `dart:io` socket through `package:web_socket`.
-- Leave Dio's `httpClientAdapter` on its auto factory so web resolves `BrowserHttpClientAdapter`; never import `package:dio/io.dart` or set `IOHttpClientAdapter`.
+- Import `package:dio/io.dart` only in `lib/src/engine/https/adapter/platform_adapter_io.dart` and `package:dio/browser.dart` only in `platform_adapter_web.dart`, both behind the conditional export of `platform_adapter.dart`; everywhere else, leave `httpClientAdapter` to `configure`.
+- `dio_web_adapter` counts the time a request waits in the browser's own connection queue toward `connectTimeout`.

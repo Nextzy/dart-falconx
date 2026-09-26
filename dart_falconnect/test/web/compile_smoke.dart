@@ -7,7 +7,7 @@
 // Success = exit code 0. No runtime execution.
 // If dart2js fails, dart_falconnect has a VM-only code path.
 import 'package:dart_falconnect/dart_falconnect.dart';
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 import '_stub_http_client.dart';
 
@@ -37,6 +37,30 @@ void main() {
   _sink(HttpLogInterceptor());
   _sink(HttpJsonLogInterceptor());
   _sink(const HttpClientConfig(log: LogConfig.json()));
+  _sink(
+    StubHttpClient(dio: dio)..configure(
+      const HttpClientConfig(
+        ioAdapter: IoAdapterConfig(
+          maxConnectionsPerHost: 4,
+          proxy: 'localhost:9090',
+          pins: {
+            'example.test': {
+              'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+            },
+          },
+          debugTrustAnyCertificate: true,
+        ),
+        webAdapter: WebAdapterConfig(withCredentials: true),
+      ),
+    ),
+  );
+  _sink(
+    const CertificatePinningException(
+      host: 'example.test',
+      failure: PinFailure.mismatch,
+      expected: {},
+    ),
+  );
   _sink(DefaultNetworkExceptionHandlerInterceptor());
 
   // JSON-RPC

@@ -1,4 +1,4 @@
-import 'package:dart_falmodel/lib.dart';
+import 'package:dart_faltool/src/src.dart';
 
 /// Extension methods for Base64 encoding and decoding on [String].
 extension FalconBase64StringExtension<K, V> on String {

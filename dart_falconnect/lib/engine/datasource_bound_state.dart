@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Utility class providing static repository-pattern helpers that convert
 /// asynchronous local and remote operations into typed [Result] streams.

@@ -1,4 +1,4 @@
-import 'package:dart_falconnect/lib.dart';
+import 'package:dart_falconnect/src/src.dart';
 
 /// Abstract WebSocket client with automatic retry, interceptor support, and
 /// reactive response streaming.

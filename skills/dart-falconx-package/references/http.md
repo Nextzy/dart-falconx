@@ -46,7 +46,11 @@ final prod = HttpClientConfig(
     perHost: [TokenBucketPolicy(permits: 100, per: const Duration(minutes: 1))],
   ),
   retry: const RetryConfig(),
-  interceptors: [AuthInterceptor(tokenStore)],
+  auth: AuthConfig(
+    accessToken: tokenStore.read,
+    refresh: tokenStore.refresh,
+    onAuthFailed: (_) => router.go('/login'),
+  ),
 );
 
 void main() {
@@ -72,15 +76,120 @@ client.setupBaseUrl('https://staging.api.example.com');
 | `ConcurrencyConfig`                                              | `ConcurrencyLimitInterceptor`                                                                      | every scope unlimited                                                                                                                                                                |
 | `RateLimitConfig.none()`, `.pauseOnly(...)`, `.tokenBucket(...)` | nothing, `RetryAfterPauseInterceptor`, or `TokenBucketRateLimitInterceptor`; never both limiters   | `none()`                                                                                                                                                                             |
 | `RetryConfig`                                                    | `RetryInterceptor`                                                                                 | 3 attempts, 1 s base delay, 30 s cap, 60 s deadline                                                                                                                                  |
+| `RequestIdConfig`                                                | the ID step of `RequestStampInterceptor` (see "Auth and request headers")                         | `X-Request-ID`, UUID v7                                                                                                                                                              |
+| `AuthConfig`                                                     | the token step of `RequestStampInterceptor`, plus `TokenRefreshInterceptor`                        | `Authorization: Bearer <token>`                                                                                                                                                      |
+| `IoAdapterConfig`                                                | a dart:io adapter in place of `dio.httpClientAdapter` (see "Transport options"); the web ignores it | no connection limit, 3 s idle timeout, environment proxy, no pins                                                                                                                    |
+| `WebAdapterConfig`                                               | a browser adapter in place of `dio.httpClientAdapter`; dart:io ignores it                          | `withCredentials: false`                                                                                                                                                             |
 
 - `LogConfig` is a sealed union of `PrettyLogConfig` (`LogConfig(...)`) and `JsonLogConfig` (`LogConfig.json(...)`). `request`, `requestHeader`, `responseHeader`, and `error` exist only on the pretty variant, so match it before reading or copying them: `if (config.log case final PrettyLogConfig log) client.configure(config.copyWith(log: log.copyWith(responseHeader: true)));`.
-- The client orders the chain: your `interceptors`, log, cache, concurrency limit, rate limit, retry, the cache's offline fallback when its box enables it, then `exceptionHandler` (null means `DefaultNetworkExceptionHandlerInterceptor`).
-- `configure` owns `baseUrl`, the three timeouts, `contentType`, redirects, `validateStatus` (null means dio's default, 2xx only), and the header keys of `headers` and `userAgent`. Other `dio.options` fields, and headers you set by hand, survive it.
+- The client orders the chain: `RequestStampInterceptor` when `requestId`, `headerProvider`, or `auth` is set, your `interceptors`, log, cache, concurrency limit, rate limit, `TokenRefreshInterceptor` when `auth` is set, retry, the cache's offline fallback when its box enables it, then `exceptionHandler` (null means `DefaultNetworkExceptionHandlerInterceptor`).
+- `configure` owns `baseUrl`, the three timeouts, `contentType`, redirects, `validateStatus` (null means dio's default, 2xx only), and the header keys of `headers` and `userAgent`. Other `dio.options` fields, and headers you set by hand, survive it. So does `dio.httpClientAdapter`, unless the platform's adapter box is set.
 - Add interceptors with `addInterceptors` or the config, never with `dio.interceptors.add(...)`: `configure` rebuilds the list.
 - When the client switches base URLs, give Retrofit APIs no absolute `baseUrl`, neither as the factory argument nor in `@RestApi(baseUrl:)`. An absolute one wins over `dio.options.baseUrl`.
 - A box holding an inline lambda (`logPrint`, `onRetry`, `validateStatus`) is unequal on every `configure`, so its interceptor is rebuilt. Pass top-level functions.
 - The next attempt of a request that was retrying across a `configure` passes the new chain, with its old retry settings.
 - Call `dispose()` at the end of a test or a CLI. A Flutter app never needs it.
+
+## Auth and request headers
+
+Three `HttpClientConfig` fields stamp headers on every attempt, in this order, before your `interceptors` run. Each is null, and off, by default.
+
+```dart
+DefaultHttpClient.instance.configure(
+  HttpClientConfig(
+    baseUrl: Env.apiBaseUrl,
+    headerProvider: (options) => {'Accept-Language': locale.current},
+    requestId: const RequestIdConfig(),
+    auth: AuthConfig(
+      accessToken: tokenStore.accessToken,         // FutureOr<String?> Function()
+      refresh: tokenStore.refresh,                 // Future<bool>
+      onAuthFailed: (error) => router.go('/login'),
+    ),
+  ),
+);
+```
+
+- `requestId` stamps one ID per request under `headerName` (default `X-Request-ID`): a UUID v7, or `generate()`. Every retry attempt and the re-send after a refresh keep the first attempt's ID; a request that sets the header keeps its own value. Read it with `requestOptions.requestId`. On the web, a custom header makes the browser send a CORS preflight, so the server must list it in `Access-Control-Allow-Headers`. Never add it to `CacheConfig.keyHeaders`, or every request misses the cache.
+- `headerProvider` runs for every attempt and may be async. Its headers override `headers` and lose to headers the request sets itself; on a retry it runs again and overwrites the values it wrote before.
+- `auth` writes `Authorization: Bearer <accessToken()>` (`headerName` and `scheme` change it; `scheme: ''` sends the bare token). It overwrites any `Authorization` the request set; to send your own, pass `isUseToken: false`. A null token sends no header, and a 401 that arrives after `accessToken()` turns null passes on without a refresh. The app owns the token: refresh before expiry inside `accessToken()` if you want it. The token header is redacted in both logs and keys the cache exactly as `Authorization` does: wherever `redactHeaders` or `keyHeaders` holds `authorization`, the client adds a custom `headerName` too. A chain you build by hand adds it to both sets itself.
+- On a 401 to a request that carried a token, `TokenRefreshInterceptor` calls `refresh()` once for every request failing at the same time, then sends each again with the new token. A request whose token is already older than the current one is sent again without a refresh, and a request that starts during a refresh waits for it.
+- When `refresh()` returns false or throws, `onAuthFailed` runs once and every waiting request fails with its 401, mapped as any 401. A re-send that gets a 401 again also calls `onAuthFailed`. Later 401s with the same failed token neither refresh nor call it again. `onAuthFailed` is not awaited.
+- Requests sent from inside `refresh()` never wait for the refresh and never refresh, so calling your refresh endpoint through the same client does not deadlock. Still send it with `isUseToken: false` or a separate `Dio`.
+- A `Stream` body refreshes but is not sent again. A `FormData` body is cloned for the re-send.
+- Retrofit requests get all of this through the client's `dio`. Turn the token off on an endpoint with `@noToken`, or per call with `@Extras()`:
+
+```dart
+@GET('/public/news')
+@noToken
+Future<List<NewsDto>> news();
+
+@GET('/feed')
+Future<List<NewsDto>> feed(@Extras() Map<String, dynamic> extras);
+// api.feed({useTokenExtraKey: false});
+```
+
+- `AuthConfig` holds functions, which compare by identity. `copyWith` keeps them, so an unrelated `configure` keeps the running refresh; a config built with new closures builds a new `AuthSession` and forgets the failed token. A new session does not join a refresh already running, so a `configure` with new closures during a refresh can start a second one; pass tear-offs, as the example does.
+
+## Transport options
+
+Two boxes set what the platform's HTTP adapter does. Both fit in one config: dart:io platforms (Android, iOS, macOS, Windows, Linux, servers) read only `ioAdapter`, and the web reads only `webAdapter`, so the app never imports `dart:io` or `package:dio/io.dart`.
+
+```dart
+DefaultHttpClient.instance.configure(
+  HttpClientConfig(
+    baseUrl: 'https://api.example.com',
+    ioAdapter: IoAdapterConfig(
+      maxConnectionsPerHost: 6,
+      proxy: kDebugMode ? '192.168.1.10:9090' : null,
+      pins: kDebugMode
+          ? const {}
+          : const {
+              'api.example.com': {
+                'sha256/AAAA...=', // current key
+                'sha256/BBBB...=', // backup key
+              },
+            },
+      debugTrustAnyCertificate: true,
+    ),
+    webAdapter: const WebAdapterConfig(withCredentials: true),
+  ),
+);
+```
+
+| `IoAdapterConfig` field | Effect | Default |
+|---|---|---|
+| `maxConnectionsPerHost` | most open connections to one host; requests past it wait inside `HttpClient`, and the wait counts toward `connectTimeout` | no limit |
+| `idleTimeout` | how long an idle connection stays open for reuse | 3 s, as dio uses |
+| `proxy` | `host:port` for every request; a request that cannot reach the proxy goes direct, except to a pinned host | the `https_proxy`, `http_proxy`, and `no_proxy` environment variables |
+| `pins` | certificate pins per host, `sha256/<base64>` of the leaf's SubjectPublicKeyInfo | none |
+| `debugTrustAnyCertificate` | trusts every certificate chain while assertions are enabled (Flutter debug, `dart test`, `dart run --enable-asserts`); release builds and `dart compile exe` ignore it | off |
+
+**Certificate pinning**
+
+- The leaf certificate is checked right after the TLS handshake, before `HttpClient` writes any byte of the request, token included. A server behind a wrong pin therefore logs a completed handshake with no request after it. A mismatch fails with a `DioException` of type `badCertificate` whose `error` is a `CertificatePinningException`; `RetryInterceptor` never retries it.
+- `CertificatePinningException.failure` says why: `mismatch`, `proxied` (a pinned `https` host through any proxy, the environment's included, since no pin can be checked there), `plainHttp` (a pinned host over `http`, which never goes through a proxy, so it cannot ride a pooled proxy connection), or `unreadableCertificate`. On a mismatch, `presented` holds the pin the server sent.
+- Get a host's pin:
+
+  ```bash
+  openssl s_client -connect api.example.com:443 -servername api.example.com </dev/null \
+    | openssl x509 -pubkey -noout \
+    | openssl pkey -pubin -outform der \
+    | openssl dgst -sha256 -binary | base64
+  ```
+
+- The pin follows the server's key, not its certificate. It survives a renewal only when the server keeps its key: `certbot` makes a new key on every renewal unless you pass `--reuse-key`. Ship a backup pin for the next key in every release, or installed apps stop connecting when the key changes.
+- Only the leaf can be pinned; Dart exposes no certificate chain. Hosts match exactly, ignoring case and a trailing dot in the URL, with no wildcards.
+- `configure` throws `ArgumentError` on a malformed pin, a pin host that is not a bare host name (a wildcard or a trailing dot included), or a malformed `proxy`, on every platform, the web included.
+
+**Debugging with Proxyman on Android**
+
+Set `proxy` to the Mac's address and `debugTrustAnyCertificate: true`, and drop the pins in debug builds, as the example above does: pins still apply with the switch on, so a pinned host rejects Proxyman's certificate. Hosts without a pin show in Proxyman, and fall back to direct when Proxyman is closed.
+
+**Swapping and ownership**
+
+- A box builds a new adapter when it changes; an equal box keeps the adapter. The replaced adapter closes with `force: false`, so requests already running on it finish. Requests still waiting in a limiter, and retries, go out through the new adapter.
+- While a box is set, the client owns `dio.httpClientAdapter`. A box that returns to null, and `dispose()`, put back the adapter `dio` had before, which the client never closes.
+- `withCredentials` on the web makes cross-site requests send cookies and authorization headers; a request's `extra['withCredentials']` overrides it.
 
 ## Custom client: subclass `BaseHttpClient`
 
@@ -130,7 +239,7 @@ Every method takes `converter: (Map<String, dynamic> json) => T` and returns `Fu
 | `postFormData<T>`, `putFormData<T>`   | `data: FormData?`                                       | same                                                                                         |
 | `delete<T>`                           | `data: BaseRequestBody?`                                | `queryParameters`, `cancelToken`                                                             |
 
-Every method accepts a converter that may be async. `catchError: (DioException e, StackTrace? st) => T?` returns a fallback value, and returning `null` rethrows the original error; a failure with no response, such as a timeout or a lost connection, recovers too. A body that is not a JSON object, or a converter that throws, fails with a `DioException` whose `error` is `CommonException(type: InputErrorType.invalidFormat)`, and `catchError` sees it. `isUseToken: false` sets `requestOptions.useToken` to false for your auth interceptor; `useToken` reads true when unset, Retrofit requests included.
+Every method accepts a converter that may be async. `catchError: (DioException e, StackTrace? st) => T?` returns a fallback value, and returning `null` rethrows the original error; a failure with no response, such as a timeout or a lost connection, recovers too. A body that is not a JSON object, or a converter that throws, fails with a `DioException` whose `error` is `CommonException(type: InputErrorType.invalidFormat)`, and `catchError` sees it. `isUseToken: false` sets `requestOptions.useToken` to false, so the auth interceptors neither stamp nor refresh a token; `useToken` reads true when unset, Retrofit requests included, and `@noToken` turns it off there.
 
 ```dart
 final res = await client.get<UserDto>('/users/$id', converter: UserDto.fromJson);
@@ -141,9 +250,12 @@ final user = res.data;
 
 | Class                                       | Constructor                                                                                                                                                                                                         | Behaviour                                                                                                                                                                                                                                                                                                                                                                         |
 |---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `RequestStampInterceptor`                   | `(requestId:, headerProvider:, auth:, dio:)` | stamps the request ID, the provider's headers, and the token on every attempt; a throwing callback fails the request with a `DioException` of type `unknown` naming the callback |
+| `TokenRefreshInterceptor`                   | `(session:, dio:)` | on a 401 to a request that carried a token: one refresh for all concurrent 401s, then a re-send through the whole chain; resolves with the re-send's response or rejects with its error |
+| `AuthSession`                               | `(config, logPrint:)` | not an interceptor: the refresh state both auth interceptors share; pass one session to both in a hand-built chain. `isInsideRefresh`, `waitForRefresh()`, `refreshFor(token, error)`, `isFailedToken(token)`, and `fail(token, error)` are the contract those two use; an app never calls them |
 | `RetryInterceptor`                          | `(config: RetryConfig(maxAttempts: 3, delay: 1 s, maxDelay: 30 s, maxDuration: 60 s, onRetry:), dio:, logPrint:, random:)`                                                                                          | loops up to `retryAttempts ?? config.maxAttempts`; 429 and `connectionTimeout` for every method; timeouts, connection errors, 408/409/5xx only for idempotent methods unless `retryNonIdempotent`; `Retry-After` on 429/503 (not retried above `maxDelay`), else full jitter; stops at `config.maxDuration`; never retries cancels, local 429s, `Stream` bodies, bad certificates |
 | `CacheInterceptor`                          | `(config: CacheConfig(policy: CachePolicy.request, maxStale:, maxSize: 50 MB, store:, keyHeaders: {authorization, accept, accept-language}, hitCacheOnNetworkFailure: false, hitCacheOnErrorCodes: {}), logPrint:)` | `dio_cache_interceptor` underneath; follows `Cache-Control`, `Expires`, `ETag`, and `Last-Modified`; a hit is decoded fresh from stored bytes, bound to the current request, passes every response interceptor, and reads `response.isCacheHit`; `store`, `clearCache()`, `fallback` (see "Caching")                                                                              |
-| `ConcurrencyLimitInterceptor`               | `(config: ConcurrencyConfig(global:, perHost:, hosts:, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500), logPrint:)`                                                                                 | most requests in flight per host and in total, on `resilience` `Bulkhead`; a null limit means none; full queue → local 429 with `BulkheadRejectedException` and no `Retry-After`; a retry or re-send reuses its request's slot; `getStatistics()`, `dispose()`                                                                                                                    |
+| `ConcurrencyLimitInterceptor`               | `(config: ConcurrencyConfig(global:, perHost:, hosts:, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500), logPrint:)`                                                                                 | most requests in flight per host and in total, on `resilience` `Bulkhead`; a null limit means none; full queue → local 429 with `BulkheadRejectedException` and no `Retry-After`; a retry or re-send sent while its request still holds a slot shares that slot, but `RetryInterceptor` and `TokenRefreshInterceptor` send after the slot is back, so theirs take a new one; `getStatistics()`, `dispose()`                                                                                                                    |
 | `TokenBucketRateLimitInterceptor`           | `(config: TokenBucketRateLimitConfig(global: [], perHost: [], hosts: {}, queueRequests: true, maxQueueSize: 50, maxGlobalQueueSize: 500, pause: PauseConfig()), logPrint:)`                                         | token buckets from `TokenBucketPolicy` lists; no policy means no token limit; pauses a host on 429, or 503 with `Retry-After`; full queue or long pause → local 429 through the error chain; `getStatistics()`, `dispose()`; do not add `RetryAfterPauseInterceptor` next to it                                                                                                   |
 | `RetryAfterPauseInterceptor`                | `(config: PauseOnlyRateLimitConfig(pause: PauseConfig(maxPauseWait: 10 s, maxPause: 10 min, defaultPause: 5 s), maxQueueSize: 50), logPrint:)`                                                                      | the pause of `TokenBucketRateLimitInterceptor` without token limits; `dispose()`                                                                                                                                                                                                                                                                                                  |
 | `HttpLogInterceptor`                        | `(enabled, request, requestHeader, requestBody, responseHeader, responseBody, error, redactHeaders, redactQueryParameters, logPrint)`                                                                               | ANSI-coloured chunked printing, following the global `ansiColorDisabled`, which it never writes; prints the status and duration of every response and error; redacts listed headers and query values; logs requests and responses from anywhere in the chain, errors only when placed before `RetryInterceptor` and the exception handler                                         |
@@ -163,22 +275,27 @@ The public model classes behind the interceptors (`ConcurrencyLimitStatistics`, 
 
 ```dart
 final cache = CacheInterceptor();
+final session = AuthSession(authConfig);
 dio.interceptors.addAll([
+  RequestStampInterceptor(auth: session, dio: dio),
   cache,
   ConcurrencyLimitInterceptor(
     config: const ConcurrencyConfig(global: 16, perHost: 4),
   ),
   TokenBucketRateLimitInterceptor(), // or RetryAfterPauseInterceptor, never both
+  TokenRefreshInterceptor(session: session, dio: dio),
   RetryInterceptor(dio: dio),
   cache.fallback, // answers only when the box enables the offline fallback
   DefaultNetworkExceptionHandlerInterceptor(),
 ]);
 ```
 
-- `CacheInterceptor` comes first: a cache hit answers in `onRequest` before the limiters see the request, so it takes no concurrency slot and spends no token. The hit still passes every response interceptor, where the limiters find no slot to give back. Any interceptor that answers in `onRequest`, such as a cache or a mock, goes before `ConcurrencyLimitInterceptor`; placed after it, every answer it gives with a plain `resolve` keeps a slot forever. The cache's `fallback` goes after `RetryInterceptor`: it answers a failed request from the cache only after the last retry, and after `ConcurrencyLimitInterceptor.onError` has returned the slot.
+- `CacheInterceptor` comes before the limiters: a cache hit answers in `onRequest` before the limiters see the request, so it takes no concurrency slot and spends no token. The hit still passes every response interceptor, where the limiters find no slot to give back. Any interceptor that answers in `onRequest`, such as a cache or a mock, goes before `ConcurrencyLimitInterceptor`; placed after it, every answer it gives with a plain `resolve` keeps a slot forever. The cache's `fallback` goes after `RetryInterceptor`: it answers a failed request from the cache only after the last retry, and after `ConcurrencyLimitInterceptor.onError` has returned the slot.
 - `ConcurrencyLimitInterceptor` comes before the rate limiter: the slot is taken before the tokens, so the token ceiling holds on the wire and the pause gate sees every request. A request holds its slot while the rate limiter holds it, so set `perHost` below `global`, for example 4 and 16, so one slow or paused host cannot take every global slot.
 - The rate limiter comes before `RetryInterceptor`: dio runs `onError` in list order, so the limiter sees a server 429 and starts the pause before the retry is sent. The retry then passes the pause gate, and the total wait is the longer of the retry delay and the pause, never their sum.
-- An interceptor that re-sends from `onError`, such as an auth refresh, goes in your `interceptors` inside a `BaseHttpClient`, which places it before `ConcurrencyLimitInterceptor`. There the re-send reuses its request's slot, as long as the interceptor ends the error phase by the slot-safety rule below. In a chain you build by hand, it may also go after `ConcurrencyLimitInterceptor`.
+- `RequestStampInterceptor` comes first, so the log prints the stamped headers, the cache keys entries by the token, and your interceptors see every stamped header.
+- `TokenRefreshInterceptor` comes after the rate limiter and before `RetryInterceptor`: the 401 attempt gives its slot back and reaches the log like any failure, the re-send takes a new slot and a new token, and a 401 never enters the retry loop. It rejects a failed re-send without the rest of the chain, which the re-send already passed.
+- Use `auth` rather than your own refresh interceptor. One of your own that re-sends from `onError` goes in your `interceptors`, which a `BaseHttpClient` places before `ConcurrencyLimitInterceptor`. There the re-send reuses its request's slot, as long as the interceptor ends the error phase by the slot-safety rule below.
 - **Slot safety.** dio has no "request finished" hook, so `ConcurrencyLimitInterceptor` gives a slot back only when its own `onResponse` or `onError` runs, or when the request's `CancelToken` cancels. Keep both reachable:
   - Interceptors after it end `onRequest` with `handler.next(...)`, `handler.resolve(response, true)`, or `handler.reject(err, true)`. A plain `resolve` or `reject` skips the limiter's `onResponse` and `onError` (a cancel-type reject is safe). An auth interceptor that rejects when it has no token must pass `true`.
   - Interceptors before it end `onResponse` and `onError` with `handler.next(...)` or `handler.reject(err, true)`. A business-error interceptor that turns a 200 into a `DioException` must pass `true`, or go after the limiter. `handler.resolve(...)` in their `onError` is safe only with the response of a re-send of the same `RequestOptions`, which gives the slot back itself.
@@ -318,6 +435,8 @@ DefaultHttpClient.instance.configure(
 | `http.client.request.duration` | seconds, including time spent in the limiters' queues |
 | `http.request.resend_count` | on retries |
 | `falconx.cache.hit`, `falconx.rate_limit.local` | `true` on a cache hit, and on a 429 built by a limiter |
+| `falconx.request.id` | the request ID, when `requestId` is set |
+| `falconx.auth.resent` | `true` on the re-send after a token refresh |
 
 - Opt in to more with `LogConfig.json(requestHeaders: true, responseHeaders: true, requestBody: true, responseBody: true, maxBodyBytes: 4096)`. Headers appear as `http.request.header.<name>` lists; bodies as `falconx.request.body` and `falconx.response.body`, cut at `maxBodyBytes` UTF-8 bytes with a `.truncated` flag. Bodies are never redacted: turn them on only where they carry no personal data.
 - `redactHeaders` (default `defaultRedactedHeaders`) and `redactQueryParameters` (default `defaultRedactedQueryParameters`) apply to both log formats and compare names ignoring case. Extend them: `redactHeaders: {...defaultRedactedHeaders, 'x-tenant-secret'}`. Pass `const {}` to turn one off, for example in development.
@@ -331,7 +450,7 @@ DefaultHttpClient.instance.configure(
 **Web**
 
 - A browser hides every cross-origin response header outside the CORS safelist, including `Retry-After` and `Date`. Have the server send `Access-Control-Expose-Headers: Retry-After, Date`. Without it, a 429 pauses for `defaultPause`, a 503 does not pause, `RetryInterceptor` uses backoff instead of `Retry-After`, and the pause runs on the client clock. Tests with a fake adapter cannot catch this.
-- Chrome opens at most 6 connections per host over HTTP/1.1, so a `perHost` above 6 changes nothing on the web.
+- Chrome opens at most 6 connections per host over HTTP/1.1 and queues the rest itself. That queue time counts toward `connectTimeout`, so keep `perHost` at 6 or less on the web, and the queue stays in `ConcurrencyLimitInterceptor`, where you can see and cancel it.
 
 **Apps**
 
@@ -343,6 +462,7 @@ DefaultHttpClient.instance.configure(
 - Limits are keyed by host. When a partner limits per API key and you use one key per tenant, build one client per key; otherwise one tenant's 429 pauses every tenant.
 - Queued requests outlive the incoming request that started them. Give each incoming request a `CancelToken` that cancels at its deadline; it bounds the concurrency queue, the token wait, the pause hold, retry backoff, and the request in flight together.
 - Build the client once per process (see "Refill timers and `dispose()`").
+- Keep `IoAdapterConfig.maxConnectionsPerHost` at or above every per-host limit of `ConcurrencyConfig`; the client prints a diagnostic when it is lower.
 - For an open-ended set of hosts, prefer named `hosts` keys over `perHost` in `TokenBucketRateLimitInterceptor`: its per-host buckets are never freed. `ConcurrencyLimitInterceptor` forgets idle hosts itself.
 
 ## Retry
