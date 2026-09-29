@@ -21,6 +21,7 @@ dart_faltool      (extensions and helpers)
 
 - Keep every dependency pointing down the diagram: a package depends only on packages below it. Never add `dart_falmodel` or `dart_falconnect` to `dart_faltool`: a cycle makes pub reject `dart_falmodel` or `dart_faltool` when an app lists either one alone as a git dependency.
 - Put a helper that needs `Result` or `CommonException` in `dart_falmodel`, never in `dart_faltool`.
+- Declare a dependency on another package in this repo as a git dependency on `https://github.com/Nextzy/dart-falconx`, with `ref:` set to the repo version and `path:` set to the package; never use a `path:` dependency. The workspace still resolves it to the local folder. An app receives the tag, which matches the tag it writes for the same package; a path dependency reaches the app as a commit hash and conflicts with that tag.
 - Put a file that no app imports under `lib/src/`, in the folder it would have outside `lib/src/`, and export from a barrel only what apps use. Each package's internal prelude is `lib/src/src.dart`; files inside the package import it, and consumers import the barrel.
 
 ## Platform support
@@ -52,7 +53,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 
 - Reset corrupted dependencies with `melos clean`, then `melos bootstrap`.
 - Run one test file from its package: `cd dart_faltool && dart test test/extensions/string_extensions_test.dart`.
-- `dart_falconx` holds only the stub `test/unit_test.dart`; the other three packages hold real tests.
+- `dart_falconx` holds the stub `test/unit_test.dart` and `test/internal_dependencies_test.dart`, which fails when a pubspec breaks the two dependency rules under [Project overview](#project-overview) or a version drifts; the other three packages hold real tests.
 
 ## Architecture
 
@@ -94,7 +95,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 
 **Rule:** whenever a change touches the public API of `dart_falconnect`, `dart_falmodel`, or `dart_faltool` (a new, renamed, or removed public class, method, or parameter; a changed signature; an edit to an export or `hide` list in `dart_*/lib/dart_*.dart`; a newly re-exported third-party package), update `skills/dart-falconx-package/SKILL.md` and the matching file under `skills/dart-falconx-package/references/` in the same change. Internal refactors that leave the public surface unchanged do not require a skill update.
 
-Before bumping a version, confirm the skill still matches the source.
+Before bumping a version, confirm the skill still matches the source. A bump sets the same version in all five pubspecs and in every sibling `ref:`.
 
 ## Configuration
 
