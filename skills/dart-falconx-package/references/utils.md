@@ -5,7 +5,6 @@
 | Symbol                                                     | Signature                                                                                                | Notes                                                                                                                                                                                            |
 |------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `nowUtc`                                                   | `DateTime get nowUtc`                                                                                    | `DateTime.now().toUtc()`                                                                                                                                                                         |
-| `runCatching<T>`                                           | `Future<Result<T>> runCatching(Future<Result<T>> Function() execute)`                                    | `CommonException` passes through; anything else goes through `toException()`; both become `Result.failure`                                                                                       |
 | `constantTimeEquals`                                       | `bool constantTimeEquals(String a, String b)`                                                            | timing-safe comparison for tokens and signatures                                                                                                                                                 |
 | `randomDelay`                                              | `Future<void> randomDelay({int minMs = 100, int maxMs = 300})`                                           | secure-random jitter against timing oracles; asserts `maxMs > minMs`                                                                                                                             |
 | `TypeId.generate`                                          | `String generate(String prefix)`                                                                         | UUIDv7-based TypeID `prefix_` + 26 base32 chars; prefix is `[a-z]` up to 63 chars, `''` for none; throws `FormatException`                                                                       |
@@ -27,7 +26,6 @@
 final id = TypeId.generate('user');        // user_01h455vb4pex5vsknk084sn02q
 final decoded = TypeId.decode(id);         // DecodedTypeId(prefix: 'user', suffix: ..., uuid: ...)
 final same = constantTimeEquals(providedToken, storedToken);
-final result = await runCatching(() async => Result.success(await repo.fetch()));
 await randomDelay();                       // 100..300 ms
 ```
 

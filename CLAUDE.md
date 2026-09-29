@@ -10,14 +10,17 @@ Dart monorepo managed with Melos, holding four packages:
 - **dart_faltool**: extensions, helpers, and re-exported third-party packages.
 
 ```
-dart_falconx (umbrella: re-exports all packages)
-    ↑
-dart_faltool ←→ dart_falmodel (circular dependency via workspace resolution)
-    ↑
-dart_falconnect (top layer: network implementations)
+dart_falconx      (umbrella: re-exports the three packages below)
+    ↓
+dart_falconnect   (network implementations)
+    ↓
+dart_falmodel     (models, exceptions, Result)
+    ↓
+dart_faltool      (extensions and helpers)
 ```
 
-- Leave the `dart_faltool` ↔ `dart_falmodel` cycle in place: Dart workspace resolution resolves it, and it breaks no layering rule.
+- Keep every dependency pointing down the diagram: a package depends only on packages below it. Never add `dart_falmodel` or `dart_falconnect` to `dart_faltool`: a cycle makes pub reject `dart_falmodel` or `dart_faltool` when an app lists either one alone as a git dependency.
+- Put a helper that needs `Result` or `CommonException` in `dart_falmodel`, never in `dart_faltool`.
 - Put a file that no app imports under `lib/src/`, in the folder it would have outside `lib/src/`, and export from a barrel only what apps use. Each package's internal prelude is `lib/src/src.dart`; files inside the package import it, and consumers import the barrel.
 
 ## Platform support

@@ -5,20 +5,6 @@ DateTime get nowUtc => clock.now().toUtc();
 /// Cryptographically secure random number generator shared across utilities.
 final Random _secureRandom = Random.secure();
 
-/// Executes [execute] and wraps any thrown exception into a [Result.failure].
-///
-/// [CommonException] instances are wrapped directly; all other exceptions are
-/// converted via `toException()` before wrapping.
-Future<Result<T>> runCatching<T>(Future<Result<T>> Function() execute) async {
-  try {
-    return await execute();
-  } on CommonException catch (e) {
-    return Result.failure(e);
-  } on Object catch (e) {
-    return Result.failure(e.toException());
-  }
-}
-
 /// Constant-time string comparison to prevent timing side-channel attacks.
 ///
 /// Returns `true` if [a] and [b] are equal, using a bitwise OR accumulator
