@@ -1,6 +1,6 @@
 name: dart_falmodel
 description: A new Flutter package project.
-version: 2.3.0
+version: 2.3.1
 publish_to: none
 
 environment:
@@ -10,7 +10,10 @@ resolution: workspace
 
 dependencies:
   dart_faltool:
-    path: ../dart_faltool
+    git:
+      url: https://github.com/Nextzy/dart-falconx
+      ref: 2.3.1
+      path: dart_faltool
 
   #PLATFORM: All
   dio: ^5.11.1
