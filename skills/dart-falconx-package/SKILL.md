@@ -14,7 +14,7 @@ dependencies:
   dart_falconx:                      # or only dart_falconnect / dart_falmodel / dart_faltool
     git:
       url: https://github.com/Nextzy/dart-falconx
-      ref: <latest_tag>              # e.g. 2.3.0 — see `git ls-remote --tags`
+      ref: <latest_tag>              # e.g. 2.3.1 — see `git ls-remote --tags`
       path: dart_falconx             # dart_falconnect / dart_falmodel / dart_faltool
 environment:
   sdk: ">=3.13.0 <4.0.0"
@@ -22,21 +22,9 @@ environment:
 
 Each package brings the packages it depends on: `dart_falconnect` brings `dart_falmodel` and `dart_faltool`, and `dart_falmodel` brings `dart_faltool`. Listing `dart_falmodel` or `dart_faltool` alone needs 2.3.0 or newer; earlier releases resolve only through `dart_falconx` or `dart_falconnect`.
 
-To list two or more packages, pin every one to the same commit hash. Pub pins the sibling packages a git package brings in to its commit hash, so a tag `ref` on a second package conflicts with that hash and version solving fails. A YAML anchor keeps the hash in one place:
+From 2.3.1 on, list any mix of packages with the same tag, across every pubspec in a workspace. Copy the `url` exactly: each package names its siblings with that spelling, and pub treats a `.git` suffix, an SSH URL, or any other spelling as a different source. Releases 2.3.0 and earlier need one commit hash for every listed package instead of a tag.
 
-```yaml
-dependencies:
-  dart_falmodel:
-    git:
-      url: https://github.com/Nextzy/dart-falconx
-      ref: &falconx <commit>         # git ls-remote <url> 'refs/tags/<tag>^{}'
-      path: dart_falmodel
-  dart_faltool:
-    git:
-      url: https://github.com/Nextzy/dart-falconx
-      ref: *falconx
-      path: dart_faltool
-```
+To build against a local clone, put `dependency_overrides` with `path:` entries in a gitignored `pubspec_overrides.yaml` beside the app's `pubspec.yaml`, or at the workspace root; pub ignores the file inside a workspace member.
 
 ```dart
 import 'package:dart_falconx/dart_falconx.dart';        // umbrella: all three packages
