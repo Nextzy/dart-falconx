@@ -35,6 +35,7 @@ To add a network exception:
 ## Result
 
 - A failed `Result<T>` carries a `CommonException`. Transform with `map`, `mapException`, `flatMap`, `recover`, or `recoverWith`; consume with `resolve` or `when`.
+- `lib/extensions/result_extensions.dart` holds the async helpers: `runCatching` runs an async `Result<T>` operation and turns a throw into `Result.failure`, wrapping a `CommonException` as is and anything else through `toException()`; `toResult()` wraps a plain `Future` or `Stream`.
 
 ## JSON-RPC models (`lib/networks/rpc/`)
 

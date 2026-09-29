@@ -2,7 +2,7 @@
 
 ## Entry points
 
-- `lib/src/src.dart`: internal entry point; re-exports `dart:async`, `dart:convert`, `ansicolor`, `dart_falmodel`, `yaml`, and `dart_faltool.dart`.
+- `lib/src/src.dart`: internal entry point; re-exports `dart:async`, `dart:convert`, `ansicolor`, `yaml`, and `dart_faltool.dart`.
 - `lib/dart_faltool.dart`: public entry point; re-exports the third-party packages plus `extensions/extensions.dart`, `type_def.dart`, and `utils/utils.dart`.
 - Import `package:dart_faltool/src/src.dart` from source files inside this package; consumers import `dart_faltool.dart`.
 
@@ -15,7 +15,6 @@
 
 - `lib/utils/app_info.dart`: `AppInfo` reads `version` from `pubspec.yaml`; call `AppInfo.init()` at startup, then read `AppInfo.version`. A conditional import picks `lib/src/utils/app_info_io.dart` or `app_info_web.dart`; on web, `init()` does nothing and `version` stays `'1.0.0'`.
 - `lib/utils/functions.dart`: top-level helpers.
-  - `runCatching`: runs an async `Result<T>` operation and turns a throw into `Result.failure`, wrapping a `CommonException` as is and anything else through `toException()`.
   - `nowUtc`: current time as a UTC `DateTime`.
   - `constantTimeEquals`: compares two equal-length strings in constant time.
   - `randomDelay`: awaits a secure-random delay in `[minMs, maxMs)` milliseconds; asserts `maxMs > minMs >= 0`.
@@ -31,4 +30,5 @@
 
 ## Gotchas
 
+- Depend on no other package in this repo. `dart_falmodel` depends on `dart_faltool`, so importing `dart_falmodel` here recreates the cycle that stops apps from using either package alone.
 - `lib/dart_faltool.dart` re-exports `dartx` with a `hide` clause (`IterableAll`, `IterableAppend`, `MapOrEmpty`, and others); when a new extension clashes with a `dartx` member, add that member to the clause.
