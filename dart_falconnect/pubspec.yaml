@@ -11,9 +11,15 @@ resolution: workspace
 dependencies:
   ansicolor: ^2.0.3
   dart_falmodel:
-    path: ../dart_falmodel
+    git:
+      url: https://github.com/Nextzy/dart-falconx
+      ref: 2.3.0
+      path: dart_falmodel
   dart_faltool:
-    path: ../dart_faltool
+    git:
+      url: https://github.com/Nextzy/dart-falconx
+      ref: 2.3.0
+      path: dart_faltool
   dio: ^5.11.1
   dio_cache_interceptor: ^4.0.7
   freezed_annotation: ^3.1.0

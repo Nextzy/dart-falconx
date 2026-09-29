@@ -10,7 +10,10 @@ resolution: workspace
 
 dependencies:
   dart_faltool:
-    path: ../dart_faltool
+    git:
+      url: https://github.com/Nextzy/dart-falconx
+      ref: 2.3.0
+      path: dart_faltool
 
   #PLATFORM: All
   dio: ^5.11.1
