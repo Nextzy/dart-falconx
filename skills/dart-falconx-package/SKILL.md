@@ -14,10 +14,28 @@ dependencies:
   dart_falconx:                      # or only dart_falconnect / dart_falmodel / dart_faltool
     git:
       url: https://github.com/Nextzy/dart-falconx
-      ref: <latest_tag>              # e.g. 2.2.0 — see `git ls-remote --tags`
+      ref: <latest_tag>              # e.g. 2.3.0 — see `git ls-remote --tags`
       path: dart_falconx             # dart_falconnect / dart_falmodel / dart_faltool
 environment:
   sdk: ">=3.13.0 <4.0.0"
+```
+
+Each package brings the packages it depends on: `dart_falconnect` brings `dart_falmodel` and `dart_faltool`, and `dart_falmodel` brings `dart_faltool`. Listing `dart_falmodel` or `dart_faltool` alone needs 2.3.0 or newer; earlier releases resolve only through `dart_falconx` or `dart_falconnect`.
+
+To list two or more packages, pin every one to the same commit hash. Pub pins the sibling packages a git package brings in to its commit hash, so a tag `ref` on a second package conflicts with that hash and version solving fails. A YAML anchor keeps the hash in one place:
+
+```yaml
+dependencies:
+  dart_falmodel:
+    git:
+      url: https://github.com/Nextzy/dart-falconx
+      ref: &falconx <commit>         # git ls-remote <url> 'refs/tags/<tag>^{}'
+      path: dart_falmodel
+  dart_faltool:
+    git:
+      url: https://github.com/Nextzy/dart-falconx
+      ref: *falconx
+      path: dart_faltool
 ```
 
 ```dart
@@ -42,7 +60,7 @@ Retrofit, Freezed, and JsonSerializable codegen runs in the consumer project: `d
 | WebSocket streams                               | `SocketClient`, `SocketBoundResource.asStream`, `SocketLogInterceptor`                                                                                                                                                                                                                                                                                                                                     | dart_falconnect             | `references/websocket.md`   |
 | JSON-RPC 2.0                                    | `JsonRpcService` / `DefaultJsonRpcService`: `request`, `notify`, `batch` returning `BatchJsonRpcItem`                                                                                                                                                                                                                                                                                                      | dart_falconnect             | `references/json-rpc.md`    |
 | Local-first repository                          | `DatasourceBoundState.asResultStream` and siblings                                                                                                                                                                                                                                                                                                                                                         | dart_falconnect             | `references/models.md`      |
-| Success/failure without throwing                | `Result<T>`, `runCatching`, `Future.toResult()`                                                                                                                                                                                                                                                                                                                                                            | dart_falmodel, dart_faltool | `references/errors.md`      |
+| Success/failure without throwing                | `Result<T>`, `runCatching`, `Future.toResult()`                                                                                                                                                                                                                                                                                                                                                            | dart_falmodel               | `references/errors.md`      |
 | General exceptions                              | `CommonException` with `DefaultErrorType` enums (`SystemErrorType`, `InputErrorType`, ...)                                                                                                                                                                                                                                                                                                                 | dart_falmodel               | `references/errors.md`      |
 | HTTP status exceptions                          | `NetworkException` with `NetworkErrorType`; `dioException.toException()`                                                                                                                                                                                                                                                                                                                                   | dart_falmodel               | `references/errors.md`      |
 | Certificate pin failures                        | `DioException` of type `badCertificate` whose `error` is a `CertificatePinningException`; its `failure` is a `PinFailure` (`mismatch`, `proxied`, `plainHttp`, `unreadableCertificate`); never retried                                                                                                                                                                                                     | dart_falconnect             | `references/http.md`        |

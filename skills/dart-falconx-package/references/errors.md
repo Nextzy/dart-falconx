@@ -10,7 +10,7 @@ Read: `isSuccess`, `isFailure`, `value` (throws on failure), `valueOrNull`, `val
 
 Transform: `map`, `flatMap`, `mapException`, `resolve(onSuccess, onError)`, `when(onSuccess, onError)`, `recover`, `recoverWith`, `doOnSuccess`, `doOnFailure`, `updateFailMessage(userMessage:, developerMessage:)`, `swap()`. Throws inside a transform become failures. `Result` is `Equatable`.
 
-Async: `runCatching(() async => Result.success(await x))` (`dart_faltool`) turns any throw into `Result.failure`. `Future<T>.toResult([mapException])` and `Stream<T>.toResult([mapException])` wrap plain values. `Future<Result<T>>` adds `mapResult`, `flatMapResult`, `mapResultException`, `onSuccess`, `onFailure`, `getOrElse`, `getOrElseAsync`, `recover`, `recoverWith`, `whenAsync`, `unwrap()`. `Stream<Result<T>>` adds the same plus `whereSuccess`, `whereFailure`, `successOnly`, `failureOnly`, `doOnSuccess`, `doOnFailure`, `getOrElseCompute`, `partition()`, `collect()`, `collectSuccesses()`, `collectFailures()`.
+Async: `runCatching(() async => Result.success(await x))` turns any throw into `Result.failure`. `Future<T>.toResult([mapException])` and `Stream<T>.toResult([mapException])` wrap plain values. `Future<Result<T>>` adds `mapResult`, `flatMapResult`, `mapResultException`, `onSuccess`, `onFailure`, `getOrElse`, `getOrElseAsync`, `recover`, `recoverWith`, `whenAsync`, `unwrap()`. `Stream<Result<T>>` adds the same plus `whereSuccess`, `whereFailure`, `successOnly`, `failureOnly`, `doOnSuccess`, `doOnFailure`, `getOrElseCompute`, `partition()`, `collect()`, `collectSuccesses()`, `collectFailures()`.
 
 ```dart
 final result = await runCatching(() async => Result.success(await repo.load(id)));
