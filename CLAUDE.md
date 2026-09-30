@@ -50,6 +50,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 | `melos run build_runner`                 | `build`, one package at a time                                      |
 | `melos run build_runner:check`           | `build --only-check`: fails on a stale or missing generated file    |
 | `melos run build_runner:watch`           | Watch mode                                                          |
+| `melos run check:exports`                | `tool/export_check`: fails on an export name collision that its allowlist does not settle (about 25 s) |
 
 - Reset corrupted dependencies with `melos clean`, then `melos bootstrap`.
 - Run one test file from its package: `cd dart_faltool && dart test test/extensions/string_extensions_test.dart`.
@@ -82,6 +83,20 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 - Generated files land in `lib/{{path}}/generated/{{file}}.g.dart` or `.freezed.dart`, per each package's `build.yaml`. `dart_falconnect` also generates Retrofit test fixtures into `test/{{path}}/generated/{{file}}.g.dart`.
 - Run `melos run build_runner` after editing a `@freezed` or `@JsonSerializable` class, and `melos run build_runner:check` before committing.
 
+### Export conflicts
+
+A barrel that re-exports a name another library also exports either replaces a `dart:` declaration without any diagnostic or breaks apps with `ambiguous_import`. `melos run check:exports` compares the export namespace of every barrel with the `dart:` libraries and `dart_frog`. It fails on a collision that `_allowlist` in `tool/export_check/bin/check.dart` does not hold, and on an allowlist entry that no longer matches. Settle a collision by this table:
+
+| Collision | Fixed in | How |
+|---|---|---|
+| A declaration owned by this repository collides with anything | The declaring package | Rename; add no deprecated alias under the old name |
+| A re-exported name collides with a `dart:` library | The barrel that re-exports it | `hide` |
+| A re-exported name collides with one framework (Flutter, jaspr) | That framework's adapter repository | `hide` the non-framework side |
+| A re-exported name collides with dart_frog or shelf | The app-level barrel | `hide` there; allowlist it here |
+| Removing the collision breaks a supported use | `_allowlist` | Record the reason |
+
+The design is in `docs/superpowers/specs/2026-09-30-export-conflict-policy-design.md`.
+
 ## Gotchas
 
 - Add every new exception class's export to `dart_falmodel/lib/networks/exceptions/exceptions.dart`; a missing export surfaces as a misleading analyzer error, such as "method can't be unconditionally invoked because receiver can be 'null'".
@@ -95,7 +110,7 @@ Scripts live under the `melos:` key of the root `pubspec.yaml` (there is no `mel
 
 **Rule:** whenever a change touches the public API of `dart_falconnect`, `dart_falmodel`, or `dart_faltool` (a new, renamed, or removed public class, method, or parameter; a changed signature; an edit to an export or `hide` list in `dart_*/lib/dart_*.dart`; a newly re-exported third-party package), update `skills/dart-falconx-package/SKILL.md` and the matching file under `skills/dart-falconx-package/references/` in the same change. Internal refactors that leave the public surface unchanged do not require a skill update.
 
-Before bumping a version, confirm the skill still matches the source. A bump sets the same version in all five pubspecs and in every sibling `ref:`.
+Before bumping a version, confirm the skill still matches the source and `melos run check:exports` passes. A bump sets the same version in all five pubspecs and in every sibling `ref:`.
 
 ## Configuration
 
