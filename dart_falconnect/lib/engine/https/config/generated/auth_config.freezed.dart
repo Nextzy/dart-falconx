@@ -20,7 +20,7 @@ mixin _$AuthConfig {
  AccessTokenCallback get accessToken;/// Refreshes the token and returns true on success; false or a throw
 /// fails the refresh. A request sent from inside it never waits for
 /// the refresh and never refreshes.
- RefreshCallback get refresh;/// Called once per failed refresh, and when a re-sent request gets a
+ TokenRefreshCallback get refresh;/// Called once per failed refresh, and when a re-sent request gets a
 /// 401 again. Not awaited; an error it throws goes to the diagnostics.
  AuthFailedCallback? get onAuthFailed;/// Header that carries the token. A `BaseHttpClient` redacts it in both
 /// logs and keys the cache by it wherever it does so for `authorization`.
@@ -61,7 +61,7 @@ abstract mixin class $AuthConfigCopyWith<$Res>  {
   factory $AuthConfigCopyWith(AuthConfig value, $Res Function(AuthConfig) _then) = _$AuthConfigCopyWithImpl;
 @useResult
 $Res call({
- AccessTokenCallback accessToken, RefreshCallback refresh, AuthFailedCallback? onAuthFailed, String headerName, String scheme
+ AccessTokenCallback accessToken, TokenRefreshCallback refresh, AuthFailedCallback? onAuthFailed, String headerName, String scheme
 });
 
 
@@ -82,7 +82,7 @@ class _$AuthConfigCopyWithImpl<$Res>
   return _then(AuthConfig(
 accessToken: null == accessToken ? _self.accessToken : accessToken // ignore: cast_nullable_to_non_nullable
 as AccessTokenCallback,refresh: null == refresh ? _self.refresh : refresh // ignore: cast_nullable_to_non_nullable
-as RefreshCallback,onAuthFailed: freezed == onAuthFailed ? _self.onAuthFailed : onAuthFailed // ignore: cast_nullable_to_non_nullable
+as TokenRefreshCallback,onAuthFailed: freezed == onAuthFailed ? _self.onAuthFailed : onAuthFailed // ignore: cast_nullable_to_non_nullable
 as AuthFailedCallback?,headerName: null == headerName ? _self.headerName : headerName // ignore: cast_nullable_to_non_nullable
 as String,scheme: null == scheme ? _self.scheme : scheme // ignore: cast_nullable_to_non_nullable
 as String,
@@ -170,7 +170,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AccessTokenCallback accessToken,  RefreshCallback refresh,  AuthFailedCallback? onAuthFailed,  String headerName,  String scheme)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AccessTokenCallback accessToken,  TokenRefreshCallback refresh,  AuthFailedCallback? onAuthFailed,  String headerName,  String scheme)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AuthConfig() when $default != null:
 return $default(_that.accessToken,_that.refresh,_that.onAuthFailed,_that.headerName,_that.scheme);case _:
@@ -191,7 +191,7 @@ return $default(_that.accessToken,_that.refresh,_that.onAuthFailed,_that.headerN
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AccessTokenCallback accessToken,  RefreshCallback refresh,  AuthFailedCallback? onAuthFailed,  String headerName,  String scheme)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AccessTokenCallback accessToken,  TokenRefreshCallback refresh,  AuthFailedCallback? onAuthFailed,  String headerName,  String scheme)  $default,) {final _that = this;
 switch (_that) {
 case _AuthConfig():
 return $default(_that.accessToken,_that.refresh,_that.onAuthFailed,_that.headerName,_that.scheme);case _:
@@ -211,7 +211,7 @@ return $default(_that.accessToken,_that.refresh,_that.onAuthFailed,_that.headerN
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AccessTokenCallback accessToken,  RefreshCallback refresh,  AuthFailedCallback? onAuthFailed,  String headerName,  String scheme)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AccessTokenCallback accessToken,  TokenRefreshCallback refresh,  AuthFailedCallback? onAuthFailed,  String headerName,  String scheme)?  $default,) {final _that = this;
 switch (_that) {
 case _AuthConfig() when $default != null:
 return $default(_that.accessToken,_that.refresh,_that.onAuthFailed,_that.headerName,_that.scheme);case _:
@@ -235,7 +235,7 @@ class _AuthConfig implements AuthConfig {
 /// Refreshes the token and returns true on success; false or a throw
 /// fails the refresh. A request sent from inside it never waits for
 /// the refresh and never refreshes.
-@override final  RefreshCallback refresh;
+@override final  TokenRefreshCallback refresh;
 /// Called once per failed refresh, and when a re-sent request gets a
 /// 401 again. Not awaited; an error it throws goes to the diagnostics.
 @override final  AuthFailedCallback? onAuthFailed;
@@ -277,7 +277,7 @@ abstract mixin class _$AuthConfigCopyWith<$Res> implements $AuthConfigCopyWith<$
   factory _$AuthConfigCopyWith(_AuthConfig value, $Res Function(_AuthConfig) _then) = __$AuthConfigCopyWithImpl;
 @override @useResult
 $Res call({
- AccessTokenCallback accessToken, RefreshCallback refresh, AuthFailedCallback? onAuthFailed, String headerName, String scheme
+ AccessTokenCallback accessToken, TokenRefreshCallback refresh, AuthFailedCallback? onAuthFailed, String headerName, String scheme
 });
 
 
@@ -298,7 +298,7 @@ class __$AuthConfigCopyWithImpl<$Res>
   return _then(_AuthConfig(
 accessToken: null == accessToken ? _self.accessToken : accessToken // ignore: cast_nullable_to_non_nullable
 as AccessTokenCallback,refresh: null == refresh ? _self.refresh : refresh // ignore: cast_nullable_to_non_nullable
-as RefreshCallback,onAuthFailed: freezed == onAuthFailed ? _self.onAuthFailed : onAuthFailed // ignore: cast_nullable_to_non_nullable
+as TokenRefreshCallback,onAuthFailed: freezed == onAuthFailed ? _self.onAuthFailed : onAuthFailed // ignore: cast_nullable_to_non_nullable
 as AuthFailedCallback?,headerName: null == headerName ? _self.headerName : headerName // ignore: cast_nullable_to_non_nullable
 as String,scheme: null == scheme ? _self.scheme : scheme // ignore: cast_nullable_to_non_nullable
 as String,

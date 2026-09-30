@@ -5,8 +5,8 @@ import 'package:dart_falmodel/dart_falmodel.dart';
 ///
 /// Carries the optional [response], human-readable [message], underlying
 /// [exception], and [stackTrace] at the point of failure.
-class SocketException implements Exception {
-  /// Creates a [SocketException] with optional diagnostic context.
+class SocketClientException implements Exception {
+  /// Creates a [SocketClientException] with optional diagnostic context.
   const new({this.response, this.message, this.exception, this.stackTrace});
 
   /// Human-readable description of the failure.
@@ -23,7 +23,7 @@ class SocketException implements Exception {
 
   @override
   String toString() {
-    return 'SocketException{message: $message,\n'
+    return 'SocketClientException{message: $message,\n'
         'response: $response,\n'
         'exception: $exception,\n'
         'stackTrace: $stackTrace}';

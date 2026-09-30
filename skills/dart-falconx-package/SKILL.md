@@ -73,12 +73,19 @@ Retrofit, Freezed, and JsonSerializable codegen runs in the consumer project: `d
 ## Gotchas
 
 - `NetworkException` carries a `NetworkErrorType`; the general hierarchy uses `DefaultErrorType` enums. Do not mix them.
-- Hidden symbols: `dart_faltool` hides `dartx` `IterableAll`, `IterableAppend`, `IterableFilter` (use `where`), `IterableNumAverageExtension`, `IterableNumSumExtension`, `IterablePartition`, `IterableZip`, `MapOrEmpty`, `NumCoerceInRangeExtension`, `StringCapitalizeExtension` and `fpdart` `State`, `Task`. `dart_falconnect` hides Retrofit `Headers`, `Parser`, `CacheControl`; `import 'package:retrofit/retrofit.dart'` directly for `@Headers`.
+- Hidden symbols: `dart_faltool` hides `dart:math` `log`, which collides with `dart:developer`'s (write `import 'dart:math' as math;` and `math.log`), and `dartx` `IterableAll`, `IterableAppend`, `IterableFilter` (use `where`), `IterableNumAverageExtension`, `IterableNumSumExtension`, `IterablePartition`, `IterableZip`, `MapOrEmpty`, `NumCoerceInRangeExtension`, `StringCapitalizeExtension` and `fpdart` `State`, `Task`. `dart_falconnect` hides Retrofit `Headers`, `Parser`, `CacheControl`; `import 'package:retrofit/retrofit.dart'` directly for `@Headers`.
 - `BaseRequestBody` subclasses must implement `Map<String, Object?> toJson()`; the HTTP methods call it.
 - Interceptor order (`BaseHttpClient` assembles it): `RequestStampInterceptor` when `requestId`, `headerProvider`, or `auth` is set, your `interceptors`, `HttpLogInterceptor` or `HttpJsonLogInterceptor`, `CacheInterceptor`, `ConcurrencyLimitInterceptor`, the rate limiter, `TokenRefreshInterceptor` when `auth` is set, `RetryInterceptor`, the cache's offline fallback when enabled, then the exception handler. Use `auth` instead of writing a refresh interceptor; error loggers go before `RetryInterceptor`. Interceptors after `ConcurrencyLimitInterceptor` end `onRequest`, and interceptors before it end `onResponse` and `onError`, with `next` or the call-following flag (`reject(err, true)`), or the slot leaks. See `references/http.md`. Dio's own `LogInterceptor` is a different class.
 - JSON-RPC batch responses silently drop items without an `id`.
 - Kept for compatibility: `NetworkNotImplementException` (501, missing "ed") and both `NetworkAuthenticationException` and `UnauthorizedException` for 401.
 - `dart_falmodel` alone does not re-export `dio`; import it yourself for `Response` / `RequestOptions`.
+- dart_frog apps: dio's `Response` and `FormData` and Retrofit's `HttpMethod` collide with dart_frog's, and Retrofit's `HttpResponse` replaces `dart:io`'s without any diagnostic. Import both through one app-level barrel, and reach dio's `Response` through `import 'package:dio/dio.dart' as dio;` where a route calls an HTTP client:
+
+  ```dart
+  export 'package:dart_falconx/dart_falconx.dart'
+      hide FormData, HttpMethod, HttpResponse, Response;
+  export 'package:dart_frog/dart_frog.dart';
+  ```
 
 ## Out of scope
 
