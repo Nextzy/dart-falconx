@@ -66,7 +66,7 @@ class SocketLogInterceptor extends SocketInterceptor {
   }
 
   @override
-  Future<void> onError(SocketException err, SocketOptions options) async {
+  Future<void> onError(SocketClientException err, SocketOptions options) async {
     if (enabled) {
       if (error) {
         logPrint(_error('*** DioError ***:'));

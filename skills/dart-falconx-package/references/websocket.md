@@ -43,17 +43,17 @@ await socket.closeChannel();
 
 ## Reconnection
 
-On a stream error with retries left, interceptors receive `SocketRetryException(retryCount:)`, the last `options.data` is re-sent, and the counter decrements. At zero, interceptors receive `SocketException`, the error is pushed into the response stream, and the subscription is cancelled. Every received frame resets the counter to `options.retryLimit`. Server-side `done` closes the channel; the next `request` reopens it.
+On a stream error with retries left, interceptors receive `SocketRetryException(retryCount:)`, the last `options.data` is re-sent, and the counter decrements. At zero, interceptors receive `SocketClientException`, the error is pushed into the response stream, and the subscription is cancelled. Every received frame resets the counter to `options.retryLimit`. Server-side `done` closes the channel; the next `request` reopens it.
 
 ## Exceptions
 
-- `SocketException({response, message, exception, stackTrace})`: base; not `dart:io`'s class.
+- `SocketClientException({response, message, exception, stackTrace})`: base.
 - `SocketRetryException({required retryCount, ...})`: one per retry attempt.
 - `SocketOperationNotFound({...})`: default message `'Operation not match'`; throw it from converters that receive an unknown frame.
 
 ## Interceptors
 
-`SocketInterceptor` has `onRequest(SocketOptions)`, `onResponse(SocketResponse)`, `onError(SocketException, SocketOptions)`. `SocketInterceptors` behaves as a `List`. `SocketLogInterceptor({enabled, requestBody, responseBody, error, logPrint})` prints ANSI-coloured, chunked output.
+`SocketInterceptor` has `onRequest(SocketOptions)`, `onResponse(SocketResponse)`, `onError(SocketClientException, SocketOptions)`. `SocketInterceptors` behaves as a `List`. `SocketLogInterceptor({enabled, requestBody, responseBody, error, logPrint})` prints ANSI-coloured, chunked output.
 
 ## `SocketBoundResource.asStream`
 
