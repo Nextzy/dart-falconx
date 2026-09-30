@@ -39,7 +39,7 @@ The umbrella import `package:dart_falconx/dart_falconx.dart` brings every row be
 
 Retry choices: `RetryInterceptor` for Dio requests, `retryWithBackoff` for a single `Future`, `retry()` / `RetryOptions` for a generic operation. In `fakeAsync` tests, build `CircuitBreaker` with `now: clock.now`; its default `Stopwatch` is not faked.
 
-`dart:` libraries re-exported by `dart_faltool`: `dart:async`, `dart:convert`, `dart:math`, `dart:typed_data`.
+`dart:` libraries re-exported by `dart_faltool`: `dart:async`, `dart:convert`, `dart:math` (without `log`), `dart:typed_data`.
 
 ## Not re-exported
 
