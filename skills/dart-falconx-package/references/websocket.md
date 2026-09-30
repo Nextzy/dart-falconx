@@ -47,7 +47,7 @@ On a stream error with retries left, interceptors receive `SocketRetryException(
 
 ## Exceptions
 
-- `SocketClientException({response, message, exception, stackTrace})`: base.
+- `SocketClientException({response, message, exception, stackTrace})`: base (`SocketException` before 2.4.0). In a file that also imports `dart:io`, an old `on SocketException` or `is SocketException` now matches `dart:io`'s class without any diagnostic; rename it to `SocketClientException`.
 - `SocketRetryException({required retryCount, ...})`: one per retry attempt.
 - `SocketOperationNotFound({...})`: default message `'Operation not match'`; throw it from converters that receive an unknown frame.
 
