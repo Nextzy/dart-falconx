@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-30
 **Repositories:** `dart-falconx` (all four packages), `flutter-falconx`, `jaspr-falconx`.
-**Versions:** `dart-falconx` 2.3.1 to 3.0.0; `flutter-falconx` 4.0.1 to 5.0.0; `jaspr-falconx` 1.0.5 to 2.0.0. Each bump is major because each repository removes or renames public symbols.
+**Versions:** `dart-falconx` 2.3.1 to 2.4.0; `flutter-falconx` 4.0.1 to 4.1.0; `jaspr-falconx` 1.0.5 to 2.0.0. Every repository removes or renames public symbols; on 2026-09-30 the owner chose minor bumps for `dart-falconx` and `flutter-falconx`.
 **Builds on:** a throwaway probe run on 2026-09-30 (section 1.2). The probe lived in `/tmp/falconx_probe/` and is not part of any repository.
 
 ## 1. Context
@@ -99,7 +99,7 @@ Collisions left out of scope:
 
 Framework-specific hides stay out of `dart-falconx` for two reasons. A hide there removes the name from every other platform that has no collision. The `dart-falconx` workspace also has no Flutter or jaspr dependency, so its check cannot verify such a hide.
 
-## 4. dart-falconx 3.0.0
+## 4. dart-falconx 2.4.0
 
 ### 4.1 Barrel changes
 
@@ -179,11 +179,11 @@ The tool code follows the root `analysis_options.yaml`, so it writes to `stdout`
   - Drop the websocket note "not `dart:io`'s class".
 - `dart_falconnect/CLAUDE.md`: apply the `SocketClientException` rename.
 
-## 5. flutter-falconx 5.0.0
+## 5. flutter-falconx 4.1.0
 
 `flutter-falconx` 4.0.1, released on 2026-09-30, stopped `flutter_falconnect`, `flutter_falmodel`, and `flutter_falstore` from re-exporting sibling packages, so intl's `TextDirection` now reaches only `flutter_faltool`.
 
-- Set every `dart-falconx` `ref:` to `3.0.0`.
+- Set every `dart-falconx` `ref:` to `2.4.0`.
 - `flutter_falconx/lib/flutter_falconx.dart`:
   - Change `export 'dart:math';` to `export 'dart:math' hide log;`.
   - Drop `RefreshCallback` from the hide on the `flutter_falconnect` export, which then exports `TokenRefreshCallback`.
@@ -202,9 +202,9 @@ The tool code follows the root `analysis_options.yaml`, so it writes to `stdout`
 
 ## 6. jaspr-falconx 2.0.0
 
-Precondition: the uncommitted work in `jaspr-falconx` lands first. That work moves its `dart-falconx` refs from commit `72e44f5` to 2.3.1; moving on to 3.0.0 may still surface breakages unrelated to this spec. Fix those in a separate commit before the changes below.
+Precondition: the uncommitted work in `jaspr-falconx` lands first. That work moves its `dart-falconx` refs from commit `72e44f5` to 2.3.1; moving on to 2.4.0 may still surface breakages unrelated to this spec. Fix those in a separate commit before the changes below.
 
-- Set every `dart-falconx` ref to `3.0.0`.
+- Set every `dart-falconx` ref to `2.4.0`.
 - `jaspr_faltool/lib/jaspr_faltool.dart`, the one file that re-exports `dart_faltool` into this repository: replace the stale `hide Link` so jaspr's `Unit` and `option` win everywhere, as section 3 requires:
 
   ```dart
@@ -232,11 +232,11 @@ Precondition: the uncommitted work in `jaspr-falconx` lands first. That work mov
 
 ## 8. Rollout
 
-1. `dart-falconx`: feature branch, merge into `develop`, then `git flow release` 3.0.0.
-2. `flutter-falconx` and `jaspr-falconx`, in parallel, after tag 3.0.0 exists.
+1. `dart-falconx`: feature branch, merge into `develop`, then `git flow release` 2.4.0.
+2. `flutter-falconx` and `jaspr-falconx`, in parallel, after tag 2.4.0 exists.
 3. Follow-ups outside these repositories:
    - `brick_dartfrog`: drop `SocketException` from the hide in `example-app/packages/core/lib/core.dart`, or `dart analyze` reports `undefined_hidden_name`.
-   - `getdoit_service`: it depends on another clone of `dart-falconx` by path, so it changes only when that clone moves to 3.0.0.
+   - `getdoit_service`: it depends on another clone of `dart-falconx` by path, so it changes only when that clone moves to 2.4.0.
 
 ## 9. Risks
 

@@ -4,7 +4,7 @@
 
 **Goal:** Remove every export name collision between the FalconX barrels and the `dart:` libraries, Flutter, jaspr, and dart_frog, and give each repository a check that fails on any new collision.
 
-**Architecture:** A standalone Dart package, `tool/export_check/`, reads export namespaces with `package:analyzer`, compares each barrel with its target libraries, and applies an allowlist. All three repositories carry the same engine (`lib/`, `test/`), and each has its own `bin/check.dart` configuration. `dart-falconx` 3.0.0 removes the collisions at the source: it hides `dart:math`'s `log` and renames three of its own declarations. `flutter-falconx` 5.0.0 and `jaspr-falconx` 2.0.0 then move to 3.0.0 and settle the framework-side hides.
+**Architecture:** A standalone Dart package, `tool/export_check/`, reads export namespaces with `package:analyzer`, compares each barrel with its target libraries, and applies an allowlist. All three repositories carry the same engine (`lib/`, `test/`), and each has its own `bin/check.dart` configuration. `dart-falconx` 2.4.0 removes the collisions at the source: it hides `dart:math`'s `log` and renames three of its own declarations. `flutter-falconx` 4.1.0 and `jaspr-falconx` 2.0.0 then move to 2.4.0 and settle the framework-side hides.
 
 **Tech Stack:** Dart 3.13, `analyzer` 14.4.0, `package:test`, melos 8 scripts, build_runner with freezed and json_serializable, git flow.
 
@@ -23,7 +23,7 @@
   - A re-exported name collides with one framework: hide the non-framework side in that framework's adapter.
   - A re-exported name collides with dart_frog or shelf: the app-level barrel hides it.
   - Removing the collision breaks a supported use: allowlist it with a reason.
-- Versions: `dart-falconx` 3.0.0, `flutter-falconx` 5.0.0, `jaspr-falconx` 2.0.0.
+- Versions: `dart-falconx` 2.4.0, `flutter-falconx` 4.1.0, `jaspr-falconx` 2.0.0. The owner chose the two minor bumps on 2026-09-30 although both releases rename and remove public symbols.
 - A public API change updates the repository's consumer skill in the same commit.
 - Commit messages follow Conventional Commits, as in `git log`. Add no `Co-Authored-By` line or other AI attribution.
 - Stage explicit paths, and commit with a pathspec (`git commit -m "…" -- <paths>`) so that nothing the owner staged rides along. Never run `git add -A`, `git add .`, or `git commit -a`. On 2026-09-30 the `dart-falconx` tree held the owner's unrelated edits: a staged deletion of `.claude/rules/communication-style.md`, and changes to `.claude/settings.json` and `.gitignore`. Task 1 records whatever such edits exist; Task 7 stashes them around the git flow release, which needs a clean tree, and restores them afterwards.
@@ -80,7 +80,7 @@ A prototype of the engine in this plan ran against all three repositories on 202
 
 ---
 
-## Part 1: dart-falconx 3.0.0
+## Part 1: dart-falconx 2.4.0
 
 Work in `/Users/nonthawit/Data/NTD OS/projects/FalconX/dart-falconx` unless a step says otherwise.
 
@@ -1288,7 +1288,7 @@ In `skills/dart-falconx-package/references/models.md`, replace:
 with:
 
 ```markdown
-- `RemoteErrorBody({code, message, userMessage, developerMessage})` (Freezed; `RemoteError` before 3.0.0): `fromJson`, `fromData(dynamic)`.
+- `RemoteErrorBody({code, message, userMessage, developerMessage})` (Freezed; `RemoteError` before 2.4.0): `fromJson`, `fromData(dynamic)`.
 ```
 
 - [ ] **Step 6: Commit**
@@ -1298,14 +1298,14 @@ git add dart_falmodel/lib/networks/https/responses dart_falmodel/test/networks/h
 git commit -m "refactor(falmodel)!: rename RemoteError to RemoteErrorBody"
 ```
 
-### Task 7: dart-falconx gates and the 3.0.0 release
+### Task 7: dart-falconx gates and the 2.4.0 release
 
 **Files:**
 - Modify: `pubspec.yaml`, `dart_falconnect/pubspec.yaml`, `dart_falconx/pubspec.yaml`, `dart_falmodel/pubspec.yaml`, `dart_faltool/pubspec.yaml`, `skills/dart-falconx-package/SKILL.md`
 
 **Interfaces:**
 - Consumes: Tasks 1 to 6.
-- Produces: tag `3.0.0` on `main`, merged back into `develop`. Parts 2 and 3 depend on the tag.
+- Produces: tag `2.4.0` on `main`, merged back into `develop`. Parts 2 and 3 depend on the tag.
 
 - [ ] **Step 1: Run every gate**
 
@@ -1328,12 +1328,12 @@ git branch -d feature/export-conflict-policy
 
 Skip the `git stash` line when Task 1 recorded no such path. Expected: `git status --short` prints nothing before the merge, and the feature branch is merged into `develop` and deleted.
 
-- [ ] **Step 3: Bump to 3.0.0**
+- [ ] **Step 3: Bump to 2.4.0**
 
 ```bash
-git flow release start 3.0.0
-perl -pi -e 's/^version: 2\.3\.1$/version: 3.0.0/; s/^(\s+ref: )2\.3\.1$/${1}3.0.0/' pubspec.yaml dart_*/pubspec.yaml
-perl -pi -e 's/# e\.g\. 2\.3\.1 /# e.g. 3.0.0 /' skills/dart-falconx-package/SKILL.md
+git flow release start 2.4.0
+perl -pi -e 's/^version: 2\.3\.1$/version: 2.4.0/; s/^(\s+ref: )2\.3\.1$/${1}2.4.0/' pubspec.yaml dart_*/pubspec.yaml
+perl -pi -e 's/# e\.g\. 2\.3\.1 /# e.g. 2.4.0 /' skills/dart-falconx-package/SKILL.md
 grep -rn "2\.3\.1" pubspec.yaml dart_*/pubspec.yaml skills/dart-falconx-package/SKILL.md
 ```
 
@@ -1342,15 +1342,15 @@ Expected: the final `grep` prints nothing.
 - [ ] **Step 4: Verify the release**
 
 Run: `melos run get && melos run analyze && melos run test && melos run check:exports`
-Expected: all pass; `dart_falconx/test/internal_dependencies_test.dart` confirms every version and sibling `ref:` reads 3.0.0.
+Expected: all pass; `dart_falconx/test/internal_dependencies_test.dart` confirms every version and sibling `ref:` reads 2.4.0.
 
 - [ ] **Step 5: Commit and finish the release**
 
 ```bash
 git status --short
 git add pubspec.yaml dart_falconnect/pubspec.yaml dart_falconx/pubspec.yaml dart_falmodel/pubspec.yaml dart_faltool/pubspec.yaml skills/dart-falconx-package/SKILL.md
-git commit -m "chore(release): bump to 3.0.0"
-git flow release finish -m "3.0.0" 3.0.0
+git commit -m "chore(release): bump to 2.4.0"
+git flow release finish -m "2.4.0" 2.4.0
 ```
 
 If `git status` also lists `pubspec.lock`, add it to the same commit.
@@ -1363,9 +1363,9 @@ Show the owner `git log --oneline -8 main develop` and ask for a yes. After the 
 
 ---
 
-## Part 2: flutter-falconx 5.0.0
+## Part 2: flutter-falconx 4.1.0
 
-Work in `/Users/nonthawit/Data/NTD OS/projects/FalconX/flutter-falconx`. Start only after tag `3.0.0` is on origin: `git ls-remote --tags https://github.com/Nextzy/dart-falconx 3.0.0` prints one line.
+Work in `/Users/nonthawit/Data/NTD OS/projects/FalconX/flutter-falconx`. Start only after tag `2.4.0` is on origin: `git ls-remote --tags https://github.com/Nextzy/dart-falconx 2.4.0` prints one line.
 
 ### Task 8: flutter-falconx export check
 
@@ -1557,7 +1557,7 @@ git add tool/export_check/pubspec.yaml tool/export_check/pubspec.lock tool/expor
 git commit -m "feat(tool): check flutter-falconx barrels for export name collisions"
 ```
 
-### Task 9: flutter-falconx on dart-falconx 3.0.0
+### Task 9: flutter-falconx on dart-falconx 2.4.0
 
 **Files:**
 - Modify: `flutter_falconnect/pubspec.yaml`, `flutter_falmodel/pubspec.yaml`, `flutter_faltool/pubspec.yaml`
@@ -1565,18 +1565,18 @@ git commit -m "feat(tool): check flutter-falconx barrels for export name collisi
 - Modify: `CLAUDE.md`, `skills/flutter-falconx-package/SKILL.md`, `skills/flutter-falconx-package/references/third-party.md`
 
 **Interfaces:**
-- Consumes: `dart-falconx` 3.0.0 and `melos run check:exports` from Task 8.
+- Consumes: `dart-falconx` 2.4.0 and `melos run check:exports` from Task 8.
 - Produces: `flutter_falconx` exports `TokenRefreshCallback`, and `dart:math` without `log`.
 
-- [ ] **Step 1: Move to 3.0.0**
+- [ ] **Step 1: Move to 2.4.0**
 
 ```bash
-perl -pi -e 's/^(\s+ref: )2\.3\.1$/${1}3.0.0/' flutter_falconnect/pubspec.yaml flutter_falmodel/pubspec.yaml flutter_faltool/pubspec.yaml
+perl -pi -e 's/^(\s+ref: )2\.3\.1$/${1}2.4.0/' flutter_falconnect/pubspec.yaml flutter_falmodel/pubspec.yaml flutter_faltool/pubspec.yaml
 grep -rn "ref: 2\.3\.1" */pubspec.yaml
 melos run get
 ```
 
-Expected: the `grep` prints nothing, and `melos run get` resolves `dart_falconnect`, `dart_falmodel`, and `dart_faltool` at 3.0.0.
+Expected: the `grep` prints nothing, and `melos run get` resolves `dart_falconnect`, `dart_falmodel`, and `dart_faltool` at 2.4.0.
 
 - [ ] **Step 2: Run the analyzer to see the stale hides**
 
@@ -1632,7 +1632,7 @@ Expected: `No issues found!` in every package, all tests pass, and the check pri
 In `CLAUDE.md`, replace the Gotchas bullet that starts "- `flutter_falconx.dart` keeps `hide Path, RefreshCallback` on its `flutter_falconnect` export" with:
 
 ```markdown
-- `flutter_falconx.dart` keeps `hide Path` on its `flutter_falconnect` export (Retrofit's `@Path` collides with `dart:ui`'s `Path`), `hide TextDirection` on its `flutter_faltool` export (intl's `TextDirection` collides with `dart:ui`'s), and `hide log` on `dart:math` (it collides with `dart:developer`'s `log`). Since 5.0.0 `dart_falconnect`'s auth typedef is `TokenRefreshCallback`, which collides with nothing, so the umbrella exports it. `melos run check:exports` fails on a new collision and on an allowlist entry that no longer matches; an `undefined_hidden_name` warning on a `hide` means that entry no longer hides anything and should be dropped.
+- `flutter_falconx.dart` keeps `hide Path` on its `flutter_falconnect` export (Retrofit's `@Path` collides with `dart:ui`'s `Path`), `hide TextDirection` on its `flutter_faltool` export (intl's `TextDirection` collides with `dart:ui`'s), and `hide log` on `dart:math` (it collides with `dart:developer`'s `log`). Since 4.1.0 `dart_falconnect`'s auth typedef is `TokenRefreshCallback`, which collides with nothing, so the umbrella exports it. `melos run check:exports` fails on a new collision and on an allowlist entry that no longer matches; an `undefined_hidden_name` warning on a `hide` means that entry no longer hides anything and should be dropped.
 ```
 
 In the next Gotchas bullet ("- Single-package hide, re-derived per package …"), replace:
@@ -1650,7 +1650,7 @@ with:
 In `skills/flutter-falconx-package/SKILL.md`, replace the bullet that starts "- `flutter_falconx` hides `Path` and `RefreshCallback` on its `flutter_falconnect` export" with:
 
 ```markdown
-- `flutter_falconx` hides `Path` on its `flutter_falconnect` export, `TextDirection` on its `flutter_faltool` export, and `log` on `dart:math`. `Path` is Retrofit's annotation; `TextDirection` is intl's; `log` would collide with `dart:developer`'s. Import `package:retrofit/retrofit.dart` directly for `@Path`/`@Headers`, `package:intl/intl.dart` for intl's `TextDirection`, or write `import 'dart:math' as math;` for `math.log`. `dart_falconnect`'s auth typedef is `TokenRefreshCallback` since 5.0.0 and is exported.
+- `flutter_falconx` hides `Path` on its `flutter_falconnect` export, `TextDirection` on its `flutter_faltool` export, and `log` on `dart:math`. `Path` is Retrofit's annotation; `TextDirection` is intl's; `log` would collide with `dart:developer`'s. Import `package:retrofit/retrofit.dart` directly for `@Path`/`@Headers`, `package:intl/intl.dart` for intl's `TextDirection`, or write `import 'dart:math' as math;` for `math.log`. `dart_falconnect`'s auth typedef is `TokenRefreshCallback` since 4.1.0 and is exported.
 ```
 
 In the following bullet ("- Importing a single package next to `package:flutter/material.dart` …"), replace:
@@ -1674,12 +1674,12 @@ Expected: `grep -rnw "RefreshCallback" CLAUDE.md skills/` prints nothing; `-w` s
 ```bash
 git add flutter_falconnect/pubspec.yaml flutter_falmodel/pubspec.yaml flutter_faltool/pubspec.yaml flutter_falconx/lib/flutter_falconx.dart flutter_faltool/lib/flutter_faltool.dart CLAUDE.md skills/flutter-falconx-package
 git status --short
-git commit -m "refactor!: move to dart-falconx 3.0.0 and settle export collisions"
+git commit -m "refactor!: move to dart-falconx 2.4.0 and settle export collisions"
 ```
 
 If `git status --short` lists `pubspec.lock` as modified, add it before committing.
 
-### Task 10: flutter-falconx 5.0.0 release
+### Task 10: flutter-falconx 4.1.0 release
 
 **Files:**
 - Modify: `pubspec.yaml` and the five package pubspecs, `CHANGELOG.md`
@@ -1688,8 +1688,8 @@ If `git status --short` lists `pubspec.lock` as modified, add it before committi
 
 ```bash
 git flow feature finish export-conflict-policy
-git flow release start 5.0.0
-perl -pi -e 's/^version: 4\.0\.1$/version: 5.0.0/; s/^(\s+ref: )4\.0\.1$/${1}5.0.0/' pubspec.yaml flutter_*/pubspec.yaml
+git flow release start 4.1.0
+perl -pi -e 's/^version: 4\.0\.1$/version: 4.1.0/; s/^(\s+ref: )4\.0\.1$/${1}4.1.0/' pubspec.yaml flutter_*/pubspec.yaml
 grep -rn "4\.0\.1" pubspec.yaml flutter_*/pubspec.yaml
 ```
 
@@ -1700,11 +1700,11 @@ Expected: the `grep` prints nothing.
 In `CHANGELOG.md`, insert after `# Changelog` and its blank line (use today's date in `YYYY-MM-DD` form):
 
 ```markdown
-## 5.0.0 — YYYY-MM-DD
+## 4.1.0 — YYYY-MM-DD
 
 ### Breaking
 
-1. Every `dart-falconx` dependency moves to 3.0.0, whose barrels changed:
+1. Every `dart-falconx` dependency moves to 2.4.0, whose barrels changed:
    - `dart_faltool` no longer exports `dart:math`'s `log`, which collided with `dart:developer`'s; write `import 'dart:math' as math;` and call `math.log`.
    - `dart_falconnect`'s `SocketException` is now `SocketClientException`, so `SocketException` next to `dart:io` means `dart:io`'s class again.
    - `dart_falconnect`'s `RefreshCallback` is now `TokenRefreshCallback`.
@@ -1724,8 +1724,8 @@ In `CHANGELOG.md`, insert after `# Changelog` and its blank line (use today's da
 melos run get && melos run analyze && melos run test && melos run check:exports
 git status --short
 git add pubspec.yaml flutter_falconnect/pubspec.yaml flutter_falconx/pubspec.yaml flutter_falmodel/pubspec.yaml flutter_falstore/pubspec.yaml flutter_faltool/pubspec.yaml CHANGELOG.md
-git commit -m "chore: release 5.0.0"
-git flow release finish -m "5.0.0" 5.0.0
+git commit -m "chore: release 4.1.0"
+git flow release finish -m "4.1.0" 4.1.0
 ```
 
 Add `pubspec.lock` to the commit if `git status` lists it.
@@ -1738,7 +1738,7 @@ Show `git log --oneline -6 main develop`, ask for a yes, then run `git push orig
 
 ## Part 3: jaspr-falconx 2.0.0
 
-Work in `/Users/nonthawit/Data/NTD OS/projects/FalconX/jaspr-falconx`. Start only after tag `3.0.0` is on origin.
+Work in `/Users/nonthawit/Data/NTD OS/projects/FalconX/jaspr-falconx`. Start only after tag `2.4.0` is on origin.
 
 ### Task 11: jaspr-falconx precondition and export check
 
@@ -1922,7 +1922,7 @@ git add tool/export_check/pubspec.yaml tool/export_check/pubspec.lock tool/expor
 git commit -m "feat(tool): check jaspr-falconx barrels for export name collisions"
 ```
 
-### Task 12: jaspr-falconx on dart-falconx 3.0.0
+### Task 12: jaspr-falconx on dart-falconx 2.4.0
 
 **Files:**
 - Modify: `jaspr_falconnect/pubspec.yaml`, `jaspr_falmodel/pubspec.yaml`, `jaspr_faltool/pubspec.yaml`
@@ -1930,20 +1930,20 @@ git commit -m "feat(tool): check jaspr-falconx barrels for export name collision
 - Modify: `CLAUDE.md`
 
 **Interfaces:**
-- Consumes: `dart-falconx` 3.0.0 and `melos run check:exports` from Task 11.
+- Consumes: `dart-falconx` 2.4.0 and `melos run check:exports` from Task 11.
 - Produces: every jaspr barrel keeps jaspr's `Unit`, `option`, and `IterableFilter`.
 
-- [ ] **Step 1: Move to 3.0.0**
+- [ ] **Step 1: Move to 2.4.0**
 
 ```bash
-perl -pi -e 's/^(\s+ref: )2\.3\.1$/${1}3.0.0/' jaspr_falconnect/pubspec.yaml jaspr_falmodel/pubspec.yaml jaspr_faltool/pubspec.yaml
+perl -pi -e 's/^(\s+ref: )2\.3\.1$/${1}2.4.0/' jaspr_falconnect/pubspec.yaml jaspr_falmodel/pubspec.yaml jaspr_faltool/pubspec.yaml
 dart pub get
 dart analyze
 ```
 
-If `dart analyze` reports errors that do not name `Link`, `Unit`, `option`, or `IterableFilter`, the 3.0.0 move broke something unrelated. Fix it in its own commit before Step 2, as the spec requires.
+If `dart analyze` reports errors that do not name `Link`, `Unit`, `option`, or `IterableFilter`, the 2.4.0 move broke something unrelated. Fix it in its own commit before Step 2, as the spec requires.
 
-- [ ] **Step 2: Run the check to see what 3.0.0 left**
+- [ ] **Step 2: Run the check to see what 2.4.0 left**
 
 Run: `melos run check:exports`
 Expected: exit code 1 with `FAIL` lines only for `Unit` and `option`: `Unit` in `jaspr_falconnect/lib.dart`, `jaspr_falconx.dart`, and `jaspr_faltool/lib.dart`; `option` in all four subjects. The `log`, `SocketException`, `RemoteError`, and `IterableFilter` lines are gone.
@@ -2014,7 +2014,7 @@ In `CLAUDE.md`, under the `### Export conflicts` subsection from Task 11, after 
 ```markdown
 - `jaspr_faltool/lib/jaspr_faltool.dart`, the one file that re-exports `dart_faltool`, hides fpdart's `Unit` and `option` so jaspr's CSS `Unit` and `<option>` element win; write `Option.of(...)` or `some(...)` for fpdart's option.
 - `jaspr_falconx.dart` hides `AsyncError` on its `jaspr_faltool` export so riverpod's `AsyncError` wins over `dart:async`'s.
-- Since 2.0.0, `dart-falconx` 3.0.0 no longer exports `dart:math`'s `log` or dartx's `IterableFilter`, and renames `SocketException`, `RefreshCallback`, and `RemoteError` to `SocketClientException`, `TokenRefreshCallback`, and `RemoteErrorBody`.
+- Since 2.0.0, `dart-falconx` 2.4.0 no longer exports `dart:math`'s `log` or dartx's `IterableFilter`, and renames `SocketException`, `RefreshCallback`, and `RemoteError` to `SocketClientException`, `TokenRefreshCallback`, and `RemoteErrorBody`.
 ```
 
 - [ ] **Step 6: Commit**
@@ -2022,7 +2022,7 @@ In `CLAUDE.md`, under the `### Export conflicts` subsection from Task 11, after 
 ```bash
 git add jaspr_falconnect/pubspec.yaml jaspr_falmodel/pubspec.yaml jaspr_faltool/pubspec.yaml jaspr_faltool/lib/jaspr_faltool.dart jaspr_faltool/lib/lib.dart jaspr_falkit/lib/lib.dart CLAUDE.md
 git status --short
-git commit -m "refactor!: move to dart-falconx 3.0.0 and let jaspr's Unit and option win"
+git commit -m "refactor!: move to dart-falconx 2.4.0 and let jaspr's Unit and option win"
 ```
 
 Add `pubspec.lock` to the commit if `git status` lists it.
@@ -2077,5 +2077,5 @@ Show `git log --oneline -6 main develop`, ask for a yes, then run `git push orig
 
 The spec (section 8) lists these. They are not tasks in this plan:
 
-- `brick_dartfrog`: drop `SocketException` from the hide in `example-app/packages/core/lib/core.dart` when the app moves to 3.0.0, or `dart analyze` reports `undefined_hidden_name`.
-- `getdoit_service`: it depends on another clone of `dart-falconx` by path, so it changes only when that clone moves to 3.0.0.
+- `brick_dartfrog`: drop `SocketException` from the hide in `example-app/packages/core/lib/core.dart` when the app moves to 2.4.0, or `dart analyze` reports `undefined_hidden_name`.
+- `getdoit_service`: it depends on another clone of `dart-falconx` by path, so it changes only when that clone moves to 2.4.0.
