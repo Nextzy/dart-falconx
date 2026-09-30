@@ -1,35 +1,36 @@
 import 'package:dart_falmodel/src/src.dart';
 
-part 'generated/remote_error.freezed.dart';
+part 'generated/remote_error_body.freezed.dart';
 
-part 'generated/remote_error.g.dart';
+part 'generated/remote_error_body.g.dart';
 
 /// Freezed model representing an error payload returned by a remote API.
 ///
 /// Used to deserialize structured error bodies from HTTP responses.
 @freezed
-abstract class RemoteError with _$RemoteError {
-  /// Creates a [RemoteError] with optional code, message, and
+abstract class RemoteErrorBody with _$RemoteErrorBody {
+  /// Creates a [RemoteErrorBody] with optional code, message, and
   /// developer/user messages.
   const factory({
     int? code,
     String? message,
     String? userMessage,
     String? developerMessage,
-  }) = _RemoteError;
+  }) = _RemoteErrorBody;
 
-  /// Deserializes a [RemoteError] from a JSON map.
-  factory fromJson(Map<String, dynamic> json) => _$RemoteErrorFromJson(json);
+  /// Deserializes a [RemoteErrorBody] from a JSON map.
+  factory fromJson(Map<String, dynamic> json) =>
+      _$RemoteErrorBodyFromJson(json);
 
-  /// Creates a [RemoteError] from an arbitrary [data] value.
+  /// Creates a [RemoteErrorBody] from an arbitrary [data] value.
   ///
   /// If [data] is a `Map<String, dynamic>`, delegates to `fromJson`;
   /// otherwise converts the value to a string message.
   factory fromData(dynamic data) {
     if (data is Map<String, dynamic>) {
-      return RemoteError.fromJson(data);
+      return RemoteErrorBody.fromJson(data);
     } else {
-      return RemoteError(message: data.toString());
+      return RemoteErrorBody(message: data.toString());
     }
   }
 }
