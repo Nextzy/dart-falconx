@@ -102,7 +102,7 @@ DefaultHttpClient.instance.configure(
     requestId: const RequestIdConfig(),
     auth: AuthConfig(
       accessToken: tokenStore.accessToken,         // FutureOr<String?> Function()
-      refresh: tokenStore.refresh,                 // Future<bool>
+      refresh: tokenStore.refresh,                 // TokenRefreshCallback: Future<bool> Function() (RefreshCallback before 2.4.0)
       onAuthFailed: (error) => router.go('/login'),
     ),
   ),

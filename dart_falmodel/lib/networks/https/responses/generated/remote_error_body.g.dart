@@ -1,14 +1,14 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of '../remote_error.dart';
+part of '../remote_error_body.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-_RemoteError _$RemoteErrorFromJson(Map<String, dynamic> json) =>
-    $checkedCreate('_RemoteError', json, ($checkedConvert) {
-      final val = _RemoteError(
+_RemoteErrorBody _$RemoteErrorBodyFromJson(Map<String, dynamic> json) =>
+    $checkedCreate('_RemoteErrorBody', json, ($checkedConvert) {
+      final val = _RemoteErrorBody(
         code: $checkedConvert('code', (v) => (v as num?)?.toInt()),
         message: $checkedConvert('message', (v) => v as String?),
         userMessage: $checkedConvert('userMessage', (v) => v as String?),
@@ -20,7 +20,7 @@ _RemoteError _$RemoteErrorFromJson(Map<String, dynamic> json) =>
       return val;
     });
 
-Map<String, dynamic> _$RemoteErrorToJson(_RemoteError instance) =>
+Map<String, dynamic> _$RemoteErrorBodyToJson(_RemoteErrorBody instance) =>
     <String, dynamic>{
       'code': instance.code,
       'message': instance.message,

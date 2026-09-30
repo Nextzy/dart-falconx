@@ -1,6 +1,6 @@
 export 'dart:async';
 export 'dart:convert';
-export 'dart:math';
+export 'dart:math' hide log;
 export 'dart:typed_data';
 
 export 'package:big_decimal/big_decimal.dart';
@@ -9,6 +9,7 @@ export 'package:dartx/dartx.dart'
     hide
         IterableAll,
         IterableAppend,
+        IterableFilter,
         IterableNumAverageExtension,
         IterableNumSumExtension,
         IterablePartition,

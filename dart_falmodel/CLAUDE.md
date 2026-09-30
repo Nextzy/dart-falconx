@@ -51,4 +51,4 @@ To add a network exception:
 
 ## Code generation
 
-- Five sources produce `.freezed.dart` and `.g.dart` output: `feedbacks/feedback.dart`, `networks/https/responses/remote_error.dart`, `networks/rpc/json_rpc_error.dart`, `networks/rpc/json_rpc_request.dart`, and `networks/rpc/json_rpc_response.dart`.
+- Five sources produce `.freezed.dart` and `.g.dart` output: `feedbacks/feedback.dart`, `networks/https/responses/remote_error_body.dart`, `networks/rpc/json_rpc_error.dart`, `networks/rpc/json_rpc_request.dart`, and `networks/rpc/json_rpc_response.dart`.

@@ -3,7 +3,7 @@ import 'package:dart_falconnect/src/src.dart';
 /// Thrown each time the socket client attempts to reconnect after an error.
 ///
 /// [retryCount] reflects how many retry attempts remain.
-class SocketRetryException extends SocketException {
+class SocketRetryException extends SocketClientException {
   /// Creates a [SocketRetryException].
   ///
   /// [retryCount] is the number of remaining retry attempts. The default
