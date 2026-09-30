@@ -88,7 +88,7 @@ class _Tokens {
     }
   }
 
-  AuthConfig config({RefreshCallback? refresh}) => AuthConfig(
+  AuthConfig config({TokenRefreshCallback? refresh}) => AuthConfig(
     accessToken: read,
     refresh: refresh ?? this.refresh,
     onAuthFailed: (_) => failures++,
