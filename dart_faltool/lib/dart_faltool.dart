@@ -9,6 +9,7 @@ export 'package:dartx/dartx.dart'
     hide
         IterableAll,
         IterableAppend,
+        IterableFilter,
         IterableNumAverageExtension,
         IterableNumSumExtension,
         IterablePartition,
