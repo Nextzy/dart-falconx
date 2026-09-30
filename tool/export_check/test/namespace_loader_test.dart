@@ -27,6 +27,13 @@ void main() {
     );
   });
 
+  test('throws a StateError when a library file does not exist', () {
+    expect(
+      loadNamespaces([(uri: 'package:path/missing.dart', root: '.')]),
+      throwsStateError,
+    );
+  });
+
   test('throws a StateError when a root directory does not exist', () {
     expect(
       loadNamespaces([(uri: 'dart:math', root: 'missing_directory')]),

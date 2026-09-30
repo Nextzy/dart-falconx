@@ -11,8 +11,8 @@ typedef LibraryRef = ({String uri, String root});
 /// Reads the export namespace of every library in [refs], keyed by URI.
 ///
 /// A relative root resolves against the current directory. Throws a
-/// [StateError] when a root directory does not exist or a library does not
-/// resolve from its root.
+/// [StateError] when a root directory does not exist, or when a library does
+/// not resolve from its root or exports no names.
 Future<Map<String, ExportNamespace>> loadNamespaces(
   List<LibraryRef> refs,
 ) async {
@@ -37,6 +37,13 @@ Future<Map<String, ExportNamespace>> loadNamespaces(
         );
       }
       final names = result.element.exportNamespace.definedNames2;
+      if (names.isEmpty) {
+        // The analyzer resolves a missing file inside a known package to an
+        // empty library instead of failing.
+        throw StateError(
+          '${ref.uri} exports no names from ${ref.root}; check the URI',
+        );
+      }
       namespaces[ref.uri] = {
         for (final MapEntry(:key, :value) in names.entries)
           key: value.library?.uri.toString() ?? '',
