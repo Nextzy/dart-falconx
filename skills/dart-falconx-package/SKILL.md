@@ -79,7 +79,7 @@ Retrofit, Freezed, and JsonSerializable codegen runs in the consumer project: `d
 - JSON-RPC batch responses silently drop items without an `id`.
 - Kept for compatibility: `NetworkNotImplementException` (501, missing "ed") and both `NetworkAuthenticationException` and `UnauthorizedException` for 401.
 - `dart_falmodel` alone does not re-export `dio`; import it yourself for `Response` / `RequestOptions`.
-- dart_frog apps: dio's `Response` and `FormData` and Retrofit's `HttpMethod` collide with dart_frog's, and Retrofit's `HttpResponse` replaces `dart:io`'s without any diagnostic. Import both through one app-level barrel, and reach dio's `Response` through `import 'package:dio/dio.dart' as dio;` where a route calls an HTTP client:
+- Server apps (`dart:io` `HttpServer`, shelf, dart_frog): Retrofit's `HttpResponse` replaces `dart:io`'s without any diagnostic, and dio's `Response` collides with shelf's and dart_frog's; in a dart_frog app, dio's `FormData` and Retrofit's `HttpMethod` also collide with dart_frog's. Import the packages through one app-level barrel that hides these names, and reach dio's `Response` through `import 'package:dio/dio.dart' as dio;` where a route calls an HTTP client. For dart_frog:
 
   ```dart
   export 'package:dart_falconx/dart_falconx.dart'
