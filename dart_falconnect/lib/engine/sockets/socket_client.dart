@@ -90,7 +90,10 @@ abstract class SocketClient implements RequestSocketService {
       }
     } else {
       _executeInterceptorOnError(
-        exception: SocketException(exception: error, stackTrace: stackTrace),
+        exception: SocketClientException(
+          exception: error,
+          stackTrace: stackTrace,
+        ),
         options: _tmpOptions.copyWith(),
       );
       _isClose = true;
@@ -170,7 +173,7 @@ abstract class SocketClient implements RequestSocketService {
   }
 
   void _executeInterceptorOnError({
-    required SocketException exception,
+    required SocketClientException exception,
     required SocketOptions options,
   }) {
     for (final interceptor in interceptors) {

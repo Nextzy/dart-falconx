@@ -48,5 +48,5 @@ abstract class SocketInterceptor {
   ///
   /// [err] carries the exception detail and [options] reflects the request
   /// state at the time of the failure.
-  void onError(SocketException err, SocketOptions options);
+  void onError(SocketClientException err, SocketOptions options);
 }

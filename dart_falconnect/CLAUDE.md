@@ -39,7 +39,7 @@
 
 - `SocketClient` opens its channel on the first `request()` and emits responses through a `PublishSubject<SocketResponse>`.
 - `SocketBoundResource` turns a socket stream into `Result<EntityType>`, with optional response processing and local persistence.
-- Socket errors: `SocketException` and its subclasses `SocketRetryException` and `SocketOperationNotFound`.
+- Socket errors: `SocketClientException` and its subclasses `SocketRetryException` and `SocketOperationNotFound`.
 - Socket interceptors: `SocketInterceptor` and `SocketLogInterceptor`.
 
 ## JSON-RPC (`engine/rpc/`)
