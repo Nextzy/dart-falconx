@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-30
 **Repositories:** `dart-falconx` (all four packages), `flutter-falconx`, `jaspr-falconx`.
-**Versions:** `dart-falconx` 2.3.1 to 3.0.0; `flutter-falconx` 4.0.0 to 5.0.0; `jaspr-falconx` 1.0.5 to 2.0.0. Each bump is major because each repository removes or renames public symbols.
+**Versions:** `dart-falconx` 2.3.1 to 3.0.0; `flutter-falconx` 4.0.1 to 5.0.0; `jaspr-falconx` 1.0.5 to 2.0.0. Each bump is major because each repository removes or renames public symbols.
 **Builds on:** a throwaway probe run on 2026-09-30 (section 1.2). The probe lived in `/tmp/falconx_probe/` and is not part of any repository.
 
 ## 1. Context
@@ -136,6 +136,7 @@ A standalone package at `tool/export_check/`:
   - `frameworkOwned`: URI prefixes of framework libraries. A collision whose subject-side declaration comes from one of them belongs to the framework, such as Flutter's `Flow` widget against `dart:developer`, and the script skips it.
   - `allowlist`: a map from a `(subject barrel, name)` record to the reason the collision stays. One entry covers every target the name collides with, and a regression in another barrel still fails.
 - For each subject and target, the script reads both export namespaces through `AnalysisContextCollection` and `getLibraryByUri`. It skips setter entries (`name=`) and reports every name whose declaring library URI differs.
+- It throws when a root directory does not exist or a library does not resolve, so a run from the wrong directory fails instead of passing.
 - It exits with code 1 when a collision is missing from the allowlist, or when an allowlist entry matches no collision. The second condition keeps the allowlist from going stale, as the `Link` hide did.
 - Each reported line names the collision, the subject barrel and its declaring library, and the target and its declaring library.
 
@@ -180,7 +181,7 @@ The tool code follows the root `analysis_options.yaml`, so it writes to `stdout`
 
 ## 5. flutter-falconx 5.0.0
 
-Precondition: the uncommitted work in `flutter-falconx` lands on `develop` first.
+`flutter-falconx` 4.0.1, released on 2026-09-30, stopped `flutter_falconnect`, `flutter_falmodel`, and `flutter_falstore` from re-exporting sibling packages, so intl's `TextDirection` now reaches only `flutter_faltool`.
 
 - Set every `dart-falconx` `ref:` to `3.0.0`.
 - `flutter_falconx/lib/flutter_falconx.dart`:
@@ -194,14 +195,14 @@ Precondition: the uncommitted work in `flutter-falconx` lands on `develop` first
   - Allowlist:
     - `HttpResponse` in `flutter_falconx` and `flutter_falconnect` (collides with `dart:io`)
     - `Codec` in `flutter_falconx` and `flutter_faltool`, which keep `dart:convert`'s. Section 3 would pick `dart:ui`'s image `Codec`, but apps reach that one through `instantiateImageCodec` without naming it, and switching would break apps that name the encoding `Codec`.
-    - `TextDirection` in `flutter_faltool`, `flutter_falmodel`, `flutter_falstore`, and `flutter_falconnect`, and `Path` in `flutter_falconnect`. These single-package barrels carry no Flutter import, and `CHANGELOG.md` tells apps to hide both names when they import one next to `material`.
-  - Once the renames and the `log` hide land, the probe's data (section 1.2) predicts no other collision for `flutter_falconx` or `flutter_faltool`. The probe did not read `flutter_falconnect`, `flutter_falmodel`, or `flutter_falstore`, so settle whatever their first run reports under section 3.
+    - `TextDirection` in `flutter_faltool` and `Path` in `flutter_falconnect`. These single-package barrels carry no Flutter import, and the package skill tells apps to hide both names when they import one next to `material`.
+  - A prototype run on 2026-09-30 against 4.0.1 reported exactly the collisions this section removes: `log`, `SocketException`, `RemoteError`, and, in `flutter_falconnect`, `RefreshCallback`.
 - Add the `check:exports` melos script and put it in the release steps of `CLAUDE.md`.
 - Update `CHANGELOG.md`, `CLAUDE.md`, and `skills/flutter-falconx-package/` (`SKILL.md` and `references/third-party.md`) for the removed `log`, the three renames, and `TokenRefreshCallback`, now exported.
 
 ## 6. jaspr-falconx 2.0.0
 
-Precondition: the uncommitted work in `jaspr-falconx` lands first. Its `dart-falconx` ref is commit `72e44f5`, older than 2.3.1, so moving to 3.0.0 may surface breakages unrelated to this spec. Fix those in a separate commit before the changes below.
+Precondition: the uncommitted work in `jaspr-falconx` lands first. That work moves its `dart-falconx` refs from commit `72e44f5` to 2.3.1; moving on to 3.0.0 may still surface breakages unrelated to this spec. Fix those in a separate commit before the changes below.
 
 - Set every `dart-falconx` ref to `3.0.0`.
 - `jaspr_faltool/lib/jaspr_faltool.dart`, the one file that re-exports `dart_faltool` into this repository: replace the stale `hide Link` so jaspr's `Unit` and `option` win everywhere, as section 3 requires:
@@ -216,16 +217,18 @@ Precondition: the uncommitted work in `jaspr-falconx` lands first. Its `dart-fal
 - Add `tool/export_check/` with this configuration:
   - Subjects: `package:jaspr_falconx/jaspr_falconx.dart`, `package:jaspr_falkit/lib.dart`, `package:jaspr_faltool/lib.dart`, and `package:jaspr_falconnect/lib.dart`.
   - Targets: the `dart:` list of section 4.3 without `dart_frog`, plus `package:jaspr/jaspr.dart`, `dom.dart`, `server.dart`, and `client.dart`.
-  - `frameworkOwned`: `package:jaspr/` and `package:jaspr_router/`, which covers `jaspr_router`'s `Link` against `dart:io`.
-  - Allowlist: `Response` in every subject that exports `dart_falconnect`. It collides with shelf's `Response` from `jaspr/server.dart`, which no barrel exports, so server code hides it at the import.
+  - `frameworkOwned`: `package:jaspr/`, `package:jaspr_router/`, `package:jaspr_riverpod/`, and `package:riverpod/`. These cover `jaspr_router`'s `Link` against `dart:io` and riverpod's `AsyncError`, which `jaspr_falconx` keeps over `dart:async`'s.
+  - Allowlist, in `jaspr_falconx.dart` and `jaspr_falconnect/lib.dart`, the two subjects that export `dart_falconnect`:
+    - `Response`: it collides with shelf's `Response` from `jaspr/server.dart`, which no barrel exports, so server code hides it at the import.
+    - `HttpResponse`: it collides with `dart:io`, as in section 4.3.
 - Add the `check:exports` script to `melos.yaml` and document it in `CLAUDE.md`.
 
 ## 7. Testing
 
-- The check is its own red-green test. Written before the barrel changes and renames, `dart-falconx`'s `check:exports` must fail and list `log`, `SocketException`, and `RemoteError`; after them it must pass. `flutter-falconx` must first fail on `log`, `SocketException`, and `RemoteError` in `flutter_falconx`, and `jaspr-falconx` on `IterableFilter`, `option`, `Unit`, and `RemoteError`; each must pass after its changes. `RefreshCallback` collides only with Flutter, so only `flutter-falconx` can see it: the hide on `flutter_falconx` covers it until 3.0.0, and the rename removes it.
+- The check is its own red-green test. Written before the barrel changes and renames, `dart-falconx`'s `check:exports` must fail and list `log`, `SocketException`, and `RemoteError`; after them it must pass. `flutter-falconx` must first fail on `log`, `SocketException`, `RemoteError`, and `RefreshCallback` (in `flutter_falconnect`), and `jaspr-falconx` on `log`, `SocketException`, `RemoteError`, `IterableFilter`, `option`, and `Unit`; each must pass after its changes. `RefreshCallback` collides only with Flutter, so only `flutter-falconx` can see it.
 - `dart-falconx` gates: `melos run analyze`, `format`, `test`, `build_runner:check`, `test:platforms`, and `check:exports`.
 - `flutter-falconx` and `jaspr-falconx` gates: `melos run analyze`, `test`, and `check:exports`. `analyze` also catches stale hides, because `dart analyze` fails on the `undefined_hidden_name` warning.
-- Measure the run time of `check:exports` in each repository and record it in that repository's `CLAUDE.md`. The probe took 2 min 13 s for all contexts together, most of it resolving Flutter.
+- Record the run time of `check:exports` in each repository's `CLAUDE.md`. A prototype took 25 s for `dart-falconx`, 54 s for `flutter-falconx`, and 44 s for `jaspr-falconx`.
 
 ## 8. Rollout
 
