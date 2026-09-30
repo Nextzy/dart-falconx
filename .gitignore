@@ -9,6 +9,16 @@
 .serena
 benchmarks/
 
+### AI ###
+.serena/
+.superpowers/
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+.claude.local.md
+.claude/settings.local.json
+.mcp.local.json
+.playwright-mcp
+
 
 ### IntelliJ ###
 *.iml
@@ -66,14 +76,6 @@ hosting.*
 
 # Java class files
 *.class
-
-# AI
-.serena/
-.claude/worktrees/
-.claude.local.md
-.claude/settings.local.json
-.mcp.local.json
-.playwright-mcp
 
 # Worktrees
 .worktrees/

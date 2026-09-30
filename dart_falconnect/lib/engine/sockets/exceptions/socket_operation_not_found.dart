@@ -1,7 +1,7 @@
 import 'package:dart_falconnect/src/src.dart';
 
 /// Thrown when an inbound socket response does not match any known operation.
-class SocketOperationNotFound extends SocketException {
+class SocketOperationNotFound extends SocketClientException {
   /// Creates a [SocketOperationNotFound] with a default message of
   /// `'Operation not match'` when [message] is omitted.
   const new({

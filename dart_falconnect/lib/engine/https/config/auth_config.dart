@@ -9,7 +9,7 @@ part 'generated/auth_config.freezed.dart';
 typedef AccessTokenCallback = FutureOr<String?> Function();
 
 /// Refreshes the access token; returns true on success.
-typedef RefreshCallback = Future<bool> Function();
+typedef TokenRefreshCallback = Future<bool> Function();
 
 /// Called when the app must sign in again.
 typedef AuthFailedCallback = FutureOr<void> Function(DioException error);
@@ -30,7 +30,7 @@ abstract class AuthConfig with _$AuthConfig {
     /// Refreshes the token and returns true on success; false or a throw
     /// fails the refresh. A request sent from inside it never waits for
     /// the refresh and never refreshes.
-    required RefreshCallback refresh,
+    required TokenRefreshCallback refresh,
 
     /// Called once per failed refresh, and when a re-sent request gets a
     /// 401 again. Not awaited; an error it throws goes to the diagnostics.
