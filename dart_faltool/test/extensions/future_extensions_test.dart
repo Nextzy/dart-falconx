@@ -298,7 +298,9 @@ void main() {
 
         expect(result, 'success');
         expect(measuredDuration, isNotNull);
-        expect(measuredDuration!.inMilliseconds, greaterThanOrEqualTo(100));
+        // The delay starts when the future is created, before timed() starts
+        // its stopwatch, so the measured time can fall just under 100 ms.
+        expect(measuredDuration!.inMilliseconds, greaterThanOrEqualTo(90));
       });
 
       test('should measure execution time for failed future', () async {
@@ -319,7 +321,9 @@ void main() {
         }
 
         expect(measuredDuration, isNotNull);
-        expect(measuredDuration!.inMilliseconds, greaterThanOrEqualTo(100));
+        // The delay starts when the future is created, before timed() starts
+        // its stopwatch, so the measured time can fall just under 100 ms.
+        expect(measuredDuration!.inMilliseconds, greaterThanOrEqualTo(90));
       });
     });
 
