@@ -1,6 +1,6 @@
 name: dart_falconx_core
 description: A dart falcon package.
-version: 2.4.0
+version: 2.4.1
 
 environment:
   sdk: ">=3.13.0 <4.0.0"
@@ -12,7 +12,7 @@ workspace:
   - dart_faltool
 
 dev_dependencies:
-  melos: ^8.9.0
+  melos: ^8.10.0
 
 melos:
   scripts:
@@ -127,10 +127,10 @@ melos:
         concurrency: 5
 
     upgrade:
-      description: Upgrade the current package's dependencies to latest versions.
-      exec:
-        command: dart pub upgrade
-        concurrency: 5
+      description: >-
+        Upgrade every workspace member's dependencies within their constraints
+        and raise each lower bound to the resolved version.
+      run: dart pub upgrade --tighten
 
     outdated:
       description: Analyze your dependencies to find which ones can be upgraded.
@@ -141,3 +141,7 @@ melos:
     check:exports:
       description: Fail when a barrel exports a name that collides with a dart library or dart_frog and tool/export_check/bin/check.dart does not allowlist it.
       run: cd tool/export_check && dart pub get && dart run bin/check.dart
+
+    check:exports:test:
+      description: Analyze and test tool/export_check, which melos run analyze and melos run test skip.
+      run: cd tool/export_check && dart pub get && dart analyze && dart test

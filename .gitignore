@@ -79,3 +79,6 @@ hosting.*
 
 # Worktrees
 .worktrees/
+
+# Agent scratchpad
+tmp/

@@ -1,6 +1,6 @@
 name: dart_falconx
 description: A dart falcon package.
-version: 2.4.0
+version: 2.4.1
 publish_to: none
 
 environment:
@@ -12,21 +12,21 @@ dependencies:
   dart_falconnect:
     git:
       url: https://github.com/Nextzy/dart-falconx
-      ref: 2.4.0
+      ref: 2.4.1
       path: dart_falconnect
   dart_falmodel:
     git:
       url: https://github.com/Nextzy/dart-falconx
-      ref: 2.4.0
+      ref: 2.4.1
       path: dart_falmodel
   dart_faltool:
     git:
       url: https://github.com/Nextzy/dart-falconx
-      ref: 2.4.0
+      ref: 2.4.1
       path: dart_faltool
 
 dev_dependencies:
   lints: ^6.1.0
-  test: ^1.32.0
+  test: ^1.33.0
   very_good_analysis: ^11.0.0
   yaml: ^3.1.4
