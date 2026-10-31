@@ -1,6 +1,6 @@
 name: dart_faltool
 description: A tools library for Flutter.
-version: 2.4.1
+version: 2.4.2
 publish_to: none
 
 environment:
@@ -34,7 +34,6 @@ dependencies:
   timeago: ^3.7.1
   universal_io: ^2.3.1
   version: ^3.0.2
-  web: ^1.1.2
   yaml: ^3.1.4
 
 dev_dependencies:
